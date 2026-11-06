@@ -8,6 +8,7 @@ import { formatDate, formatDuration } from '../lib/format';
 export function History() {
   const history = useSession((s) => s.history);
   const loadHistory = useSession((s) => s.loadHistory);
+  const removeSession = useSession((s) => s.removeSession);
   const [loaded, setLoaded] = useState(false);
   const now = useNow(60_000);
 
@@ -45,10 +46,10 @@ export function History() {
         {history.map((row) => {
           const s = summarize(row.state, row.finishedAt ?? row.state.updatedAt);
           return (
-            <li key={row.id}>
+            <li key={row.id} className="flex items-stretch gap-2">
               <a
                 href={`#/summary/${row.id}`}
-                className="block rounded-xl border border-line bg-surface px-4 py-4"
+                className="block min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-4"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-medium">{row.programName}</p>
@@ -59,6 +60,17 @@ export function History() {
                   {s.endedEarly && <span className="text-danger"> · ended early</span>}
                 </p>
               </a>
+              <button
+                type="button"
+                aria-label={`Delete ${row.programName} from ${formatDate(row.finishedAt)}`}
+                onClick={() => {
+                  if (!confirm('Delete this session? It cannot be recovered.')) return;
+                  void removeSession(row.id);
+                }}
+                className="w-11 shrink-0 rounded-xl border border-line bg-surface text-lg text-danger"
+              >
+                ×
+              </button>
             </li>
           );
         })}

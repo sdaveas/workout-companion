@@ -6,7 +6,7 @@ import { reduce } from '../engine/reduce';
 import { remainingMs } from '../engine/rest';
 import { db, type SessionRow } from './db';
 import { recoverSession } from './recovery';
-import { saveSession } from './sessions';
+import { deleteSession, saveSession } from './sessions';
 
 const program: Program = {
   id: 'p',
@@ -48,6 +48,18 @@ const rowOf = (state: WorkoutState): SessionRow => ({
   startedAt: state.startedAt ?? 0,
   finishedAt: state.finishedAt,
   state,
+});
+
+describe('deleteSession', () => {
+  it('removes the row and the pointers that named it', async () => {
+    const inProgress = setDone(started(1_000), 2_000);
+    await saveSession(inProgress);
+    expect((await db.settings.get('activeSessionId'))?.value).toBe(inProgress.sessionId);
+
+    await deleteSession(inProgress.sessionId);
+    expect(await db.sessions.get(inProgress.sessionId)).toBeUndefined();
+    expect(await db.settings.get('activeSessionId')).toBeUndefined();
+  });
 });
 
 describe('session recovery', () => {

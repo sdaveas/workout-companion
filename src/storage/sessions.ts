@@ -81,6 +81,27 @@ export async function loadHistory(): Promise<SessionRow[]> {
   return rows.sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0));
 }
 
+/**
+ * Removes one stored session. Used from History when a row was a mistake (or a test run).
+ * Pointers that named it are cleared too, so the app cannot resume a session that is gone.
+ */
+export async function deleteSession(id: string): Promise<void> {
+  await db.transaction('rw', db.sessions, db.settings, async () => {
+    await db.sessions.delete(id);
+    for (const key of ['activeSessionId', 'lastSessionId'] as const) {
+      const row = await db.settings.get(key);
+      if (row?.value === id) await db.settings.delete(key);
+    }
+  });
+  if (readSnapshot()?.sessionId === id) {
+    try {
+      localStorage.removeItem(SNAPSHOT);
+    } catch {
+      // Private mode: nothing mirrored.
+    }
+  }
+}
+
 export async function getActiveSessionId(): Promise<string | null> {
   const row = await db.settings.get('activeSessionId');
   return row?.value ?? null;

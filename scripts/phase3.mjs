@@ -85,6 +85,23 @@ await page.click('text=Workout B');
 await page.waitForSelector('text=Session complete');
 check(await page.getByRole('button', { name: '7', exact: true }).getAttribute('aria-pressed') === 'true', 'RPE persisted');
 
+// the delete button must not push the row off the screen
+const overflowX = await page.evaluate(
+  () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+);
+check(overflowX === 0, `history fits a 390px viewport (overflow ${overflowX}px)`);
+await page.screenshot({ path: '/tmp/wc-history.png', fullPage: true });
+
+// delete from history: confirm, row disappears, stays gone after reload
+page.once('dialog', (d) => d.accept());
+await page.goto(`${BASE}/#/history`);
+await page.getByRole('button', { name: /^Delete Workout B/ }).click();
+await page.waitForSelector('text=No finished sessions yet');
+await page.reload();
+await page.waitForSelector('text=No finished sessions yet');
+const rowsAfterReload = await page.locator('ul li').count();
+check(rowsAfterReload === 0, `deleted session stays deleted after reload (${rowsAfterReload} rows)`);
+
 await page.screenshot({ path: '/tmp/wc-phase3.png', fullPage: true });
 console.log('JS ERRORS:', errors.length ? errors : 'none');
 await browser.close();

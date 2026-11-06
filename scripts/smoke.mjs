@@ -11,7 +11,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
-await page.goto('http://localhost:5183/#/programs');
+await page.goto('http://localhost:5183/#/programs/paste');
 await page.textContent('h1');
 
 // invalid JSON → visible path error
@@ -26,7 +26,7 @@ const preview = await page.textContent('section:has-text("Preview")');
 console.log('PREVIEW:', preview?.replace(/\s+/g, ' ').slice(0, 160));
 
 await page.click('button:has-text("Save program")');
-await page.waitForSelector('text=Saved "Workout B"');
+await page.waitForSelector('text=Program "Workout B" added');
 console.log('SAVED: yes');
 
 // persists across reload

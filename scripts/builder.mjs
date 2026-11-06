@@ -1,7 +1,10 @@
 import { chromium } from '@playwright/test';
 
 const BASE = 'http://localhost:5183';
-const browser = await chromium.launch();
+// HEADED=1 opens a real Chrome window so the UI can be watched while it runs.
+const browser = await chromium.launch(
+  process.env.HEADED ? { headless: false, channel: 'chrome', slowMo: 150 } : {},
+);
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
@@ -39,7 +42,9 @@ const second = page.locator('li').filter({ hasText: 'Exercise 2' });
 await second.getByPlaceholder('Goblet Squat').fill('Inverted Row');
 
 await page.getByRole('button', { name: 'Create program' }).click();
-await page.waitForSelector('text=Saved "Builder Day"');
+await page.waitForSelector('text=Program "Builder Day" added');
+check(await page.getByRole('link', { name: 'Back home' }).isVisible(), 'confirmation offers Back home');
+check(await page.getByRole('button', { name: 'Add another' }).isVisible(), 'confirmation offers Add another');
 
 const saved = await page.textContent('section:has-text("Saved (1)")');
 check(/Builder Day/.test(saved) && /2 exercises/.test(saved), 'program saved with 2 exercises');
@@ -53,7 +58,8 @@ check(await page.getByText('4').first().isVisible(), '4 sets carried through');
 await page.getByRole('button', { name: 'Complete set' }).click();
 await page.waitForSelector('text=Rest remaining');
 const rest = (await page.textContent('body')).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
-check(rest === '02:00', `rest is the 120s from the form (${rest})`);
+// a second can elapse between the tap and the assertion, especially with slowMo
+check(rest === '02:00' || rest === '01:59', `rest is the 120s from the form (${rest})`);
 
 await page.screenshot({ path: '/tmp/wc-builder.png', fullPage: true });
 // an invalid program must keep what the user typed

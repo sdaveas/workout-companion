@@ -58,7 +58,7 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
     try {
       await saveProgram(preview, { replace });
       prefetchImages(preview);
-      set({ ...empty, notice: `Saved "${preview.name}".` });
+      set({ ...empty, notice: `Program "${preview.name}" added.` });
       await get().load();
       return true;
     } catch (err) {

@@ -4,7 +4,14 @@ import { newSessionId } from '../engine/ids';
 import { reduce } from '../engine/reduce';
 import type { SessionRow } from '../storage/db';
 import { getProgram } from '../storage/programs';
-import { loadHistory, loadSession, saveSession, clearSetting, writeSnapshot } from '../storage/sessions';
+import {
+  clearSetting,
+  deleteSession,
+  loadHistory,
+  loadSession,
+  saveSession,
+  writeSnapshot,
+} from '../storage/sessions';
 import { recoverSession } from '../storage/recovery';
 import type { WorkoutAction, WorkoutEvent, WorkoutState } from '../engine/types';
 
@@ -22,6 +29,7 @@ interface SessionStore {
   editStored: (sessionId: string, action: WorkoutAction) => Promise<WorkoutState | null>;
   recover: () => Promise<void>;
   loadHistory: () => Promise<void>;
+  removeSession: (id: string) => Promise<void>;
   clearError: () => void;
   reset: () => void;
 }
@@ -106,6 +114,15 @@ export const useSession = create<SessionStore>((set, get) => ({
 
   async loadHistory() {
     try {
+      set({ history: await loadHistory() });
+    } catch (err) {
+      set({ error: message(err) });
+    }
+  },
+
+  async removeSession(id) {
+    try {
+      await deleteSession(id);
       set({ history: await loadHistory() });
     } catch (err) {
       set({ error: message(err) });

@@ -139,7 +139,28 @@ export function Programs() {
       )}
 
       {notice && (
-        <p className="mt-5 rounded-xl border border-line bg-surface p-4 text-sm">{notice}</p>
+        <section
+          role="status"
+          aria-live="polite"
+          className="mt-5 rounded-xl border border-accent/50 bg-surface p-4"
+        >
+          <p className="text-sm">{notice}</p>
+          <div className="mt-3 flex gap-2">
+            <a
+              href="#/"
+              className="flex h-11 flex-1 items-center justify-center rounded-lg bg-accent text-sm font-semibold text-ink"
+            >
+              Back home
+            </a>
+            <button
+              type="button"
+              onClick={clear}
+              className="h-11 flex-1 rounded-lg border border-line text-sm"
+            >
+              Add another
+            </button>
+          </div>
+        </section>
       )}
 
       {preview && (
