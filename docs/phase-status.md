@@ -8,7 +8,7 @@
 | 2 Engine | done | 86 tests, typecheck, build, `grep Date.now` = 1 (id fallback only), `engine/` imports no React | `426c8dd` |
 | 3 Interface | done | 86 tests, typecheck, build, Playwright full run; manual: start→finish Workout B in the UI (16/16 sets), summary 16 of 16, RPE 7 + note saved, history lists it, summary reopens from IndexedDB with RPE intact, zero console errors | `e18570c` |
 | 4 Recovery | done | 92 tests (4 recovery cases), typecheck, build; manual: reload mid-set at set 3 → resumed set 3 of 3 on the same exercise; pause mid-rest at 01:27 → reload → still paused at 01:27 → resume; corrupt row reported on Home and kept in storage; full workout still finishes 16/16 after both reloads; zero console errors (`scripts/phase4.mjs`) | `7a20d90` |
-| 5 PWA / polish | done | 92 tests, typecheck, build; manifest + 192/512/180 PNG icons + SW controlled page; offline cold reload, set completed offline, hash navigation offline; a11y spot checks (all buttons/links named, one main landmark, lang=en); install hint + iOS limits on Home; phase 3 and 4 E2E scripts still green; zero console errors (`scripts/phase5.mjs`) | pending |
+| 5 PWA / polish | done | 92 tests, typecheck, build; manifest + 192/512/180 PNG icons + SW controlled page; offline cold reload, set completed offline, hash navigation offline; a11y spot checks (all buttons/links named, one main landmark, lang=en); install hint + iOS limits on Home; phase 3 and 4 E2E scripts still green; zero console errors (`scripts/phase5.mjs`) | `69d44e5` |
 
 ## Phase gate (run before starting the next phase)
 
