@@ -11,8 +11,8 @@ history, so there is no trace that a workout was ever started by mistake.
 
 A second, related gap: Home features exactly one program. When anything is
 scheduled for today, every unscheduled program disappears from the screen even
-though the engine lets them be started any day and the week view still lists
-them.
+though the engine lets them be started any day. (`weekView` only lists programs
+with a `scheduleDay`, so a `null` day is invisible everywhere on Home.)
 
 ## Technical Plan
 
@@ -27,6 +27,11 @@ Two changes, both client-side:
 2. **Home stops hiding programs.** The featured card stays as is; everything
    not shown in it goes into an "Also available" list, so a scheduled day
    never shadows the unscheduled ones.
+
+The preview deliberately shows **one** exercise — the one about to be
+performed, exactly as the set screen will show it — plus the session totals.
+It is a "does this look right?" gate, not a browsable program; the full
+program lives in Programs.
 
 A `ready` session stays in memory only. Leaving the preview (`← Home`) calls
 `reset()`, so the candidate session disappears without touching storage. A
@@ -46,8 +51,8 @@ stray ready state (e.g. after the browser's back button) can never show the
   an unstarted session on reload, show "In progress" on Home, and add a second
   writer for a state that can always be rebuilt from the program id.
 - **A confirmation dialog before starting.** Rejected: a modal cannot show the
-  exercise, the target reps, or the rest recipe, which is what the user wants
-  to check. It also adds a tap instead of replacing one.
+  exercise name, its target reps, the prescribed weight, or the image, which is
+  what the user wants to check. It also adds a tap instead of replacing one.
 - **Keep every program on Home in one undifferentiated list.** Rejected: the
   "today / next / done today" card is the answer to "what should I do now" and
   must stay first. The secondary list is explicitly labelled as extra options.
@@ -75,7 +80,29 @@ stray ready state (e.g. after the browser's back button) can never show the
     name; no clock, no End, no progress bar.
   - `ready` body: the same `ExerciseCard` plus `N exercises · M sets · ~T min`.
   - `ready` footer: one primary `Start` button.
-- Tests: `scripts/scenarios.mjs` scenario 9 — preview appears instead of a live
-  set, nothing is written to history, `← Home` leaves no "In progress", and
-  Start begins the timed workout; plus the scheduled + unscheduled pair both
-  being reachable from Home.
+  - `startedAt` within the last 700 ms disables `Complete set`: Start and
+    Complete set occupy the same sticky footer slot, so a fast double-tap would
+    otherwise log a set the user never performed. The 1 Hz `useNow` tick
+    re-renders the button as enabled; Undo remains the backstop.
+  - Browser Back (not `← Home`) leaves the ready state in memory: Home ignores
+    it (`active` excludes `ready`), and the next Start replaces it. Nothing is
+    persisted, so a reload also drops it.
+- Guarantees that make "nothing is written" true: `saveSession` returns early for
+  `ready` (`src/storage/sessions.ts`) and `writeSnapshot` deletes the
+  `wc:activeSnapshot` mirror for it. `recovery.ts` still lists `ready` in its
+  `ACTIVE` set, which is harmless because such a row can never be written; if
+  one ever appeared, it would resume into the preview rather than the clock.
+
+- Tests: every Home→workout flow now passes through the preview.
+  - `scripts/scenarios.mjs` — `beginFromPreview()` in scenarios 1–8, plus
+    scenario 9: preview instead of a live set, no history entry, no "In
+    progress" after `← Home`, a double-tap logs no set, Start begins the timed
+    workout, and a scheduled + unscheduled pair is both reachable from Home.
+  - `scripts/phase3.mjs`, `phase4.mjs`, `phase5.mjs`, `builder.mjs` — one extra
+    Start tap each.
+  - Not covered by unit tests: `prepareWorkout`'s failure path (`Program not
+    found.` banner) and `startWorkout`'s transition are exercised only through
+    the browser suite; the engine's `START` transition is already unit-tested.
+
+This document supersedes `docs/designs/workout-companion.md` where it said a
+`ready` state "immediately redirects to `#/`".

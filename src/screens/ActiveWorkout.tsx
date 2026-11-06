@@ -49,6 +49,9 @@ export function ActiveWorkout() {
   const progress = getWorkoutProgress(state);
 
   const isReady = state.status === 'ready';
+  // A fast double-tap on the preview's Start would land on "Complete set"
+  // (same button position) and log a set nobody performed.
+  const justStarted = state.startedAt != null && now - state.startedAt < 700;
 
   return (
     <main className="flex min-h-dvh flex-col">
@@ -220,6 +223,7 @@ export function ActiveWorkout() {
             <Button
               variant="primary"
               className="h-16 w-full text-base"
+              disabled={justStarted}
               onClick={() =>
                 dispatch({
                   type: 'COMPLETE_SET',

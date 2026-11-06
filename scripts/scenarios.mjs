@@ -432,7 +432,16 @@ const auditScreen = async (page, screen) => {
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start workout/ }).click();
   await page.getByRole('region', { name: 'Alpha' }).waitFor();
-  await beginFromPreview(page);
+
+  // a fast double-tap must not land on the Complete set button that replaces Start
+  const startBox = await page.getByRole('button', { name: 'Start', exact: true }).boundingBox();
+  const tap = () => page.mouse.click(startBox.x + startBox.width / 2, startBox.y + startBox.height / 2);
+  await tap();
+  await tap();
+  await page.waitForSelector('[role="progressbar"]');
+  const afterDoubleTap = await progress(page);
+  expect(/^0 of/.test(afterDoubleTap), `a double-tap on Start logs no set (${afterDoubleTap})`);
+  await page.getByLabel('elapsed time').waitFor();
   expect(await page.getByLabel('elapsed time').isVisible(), 'Start begins the timed workout');
   expect(errors.length === 0, `no console errors (${errors.join(' | ') || 'none'})`);
   await context.close();
