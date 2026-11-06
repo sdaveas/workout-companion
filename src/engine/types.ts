@@ -87,3 +87,32 @@ export interface WorkoutState {
 }
 
 export type UndoEntry = Omit<WorkoutState, 'program' | 'undoStack'>;
+
+export type WorkoutEvent =
+  | { type: 'START'; now: number }
+  | { type: 'COMPLETE_SET'; now: number; reps: number; weightKg: number | null }
+  | { type: 'SKIP_SET'; now: number }
+  | {
+      type: 'UPDATE_SET_RESULT';
+      now: number;
+      exerciseIndex: number;
+      setNumber: number;
+      reps: number;
+      weightKg: number | null;
+    }
+  | { type: 'SET_DRAFT'; now: number; reps: number; weightKg: number | null }
+  | { type: 'PAUSE'; now: number }
+  | { type: 'RESUME'; now: number }
+  | { type: 'ADJUST_REST'; now: number; seconds: number }
+  | { type: 'RESTART_REST'; now: number }
+  | { type: 'REST_DONE'; now: number }
+  | { type: 'SKIP_REST'; now: number }
+  | { type: 'NEXT_EXERCISE'; now: number }
+  | { type: 'SKIP_EXERCISE'; now: number }
+  | { type: 'FINISH'; now: number }
+  | { type: 'UNDO'; now: number }
+  | { type: 'SET_RPE'; now: number; rpe: number | null }
+  | { type: 'SET_NOTES'; now: number; notes: string }
+  | { type: 'ABANDON'; now: number };
+
+export type WorkoutAction = Omit<WorkoutEvent, 'now'>;
