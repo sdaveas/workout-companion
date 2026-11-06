@@ -6,8 +6,8 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `docs/designs/workout-companion.md` — design (how, and what was rejected).
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
-Status: design complete, no application code yet. Next step is phase 1 in the design
-doc's §2.17.
+Status: phases 1–2 done (JSON import + pure engine). Current phase: 3 (interface).
+See `docs/phase-status.md`.
 
 ```bash
 npm create vite@latest . -- --template react-ts   # then §4.2 of the design doc

@@ -3,7 +3,8 @@
 Implements `docs/spec.md` (the product contract). This document decides **how**, and
 records what was rejected so it doesn't get re-proposed.
 
-Status: design only. No application code exists yet; every path below is a plan.
+Status: phases 1–2 implemented (`src/schemas`, `src/storage`, `src/engine`); §2–§4 below
+remain the plan for phases 3–5. Live status: `docs/phase-status.md`.
 
 Rule of precedence: where this document and the spec disagree on a *field name* or an
 API signature, this document wins (called out inline, e.g. `restDurationMs`). Where they
@@ -670,6 +671,30 @@ Two, both product-visible, both accepted for v1:
 
 Total ~20–29 h. Phases 1–2 are independent of 3: build and test the engine without a
 browser.
+
+### 2.18 Implementation deviations
+
+Appended during implementation; §2–§4 above are not rewritten.
+
+**2026-11-06 — `elapsedMs` moved to `engine/time.ts`.** §4.1 put it in
+`selectors.ts`, but `summary.ts` needs it and `selectors.ts` imports `summarize`, which is
+an import cycle (works in ESM, breaks Vitest's module graph in confusing ways). `time.ts`
+is the smallest fix. Not revisited: merging the two files would drag summary math into
+selectors and make the import surface worse.
+
+**2026-11-06 — `formatPath` accepts `PropertyKey[]`.** Zod v4's `issue.path` is
+`PropertyKey[]`, so numeric segments are not guaranteed to be `number` by the type. Symbols
+are stringified. Behaviour for real paths is unchanged; only the signature widened.
+
+**2026-11-06 — `newSessionId()` lives in `engine/ids.ts`, not `create.ts`.** §2.4 implied
+`createSession` also minted the id. It takes the id instead, so tests can pin it; the
+generator sits beside `draftFor` in `ids.ts`. Not revisited: a generator inside the
+constructor makes deterministic tests need injection anyway.
+
+**2026-11-06 — added `InvalidArgument`.** §2.13 listed `InvalidTransition` only. Bad
+payloads (negative reps, `setNumber` that was never recorded, RPE 11) are a different
+failure from a bad state, and the UI shows them differently (dismissible banner vs. the
+state is simply not wrong). Both live in `engine/errors.ts`.
 
 ---
 
