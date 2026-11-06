@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "id": "workout-b",
+  "name": "Workout B",
+  "description": "Full body strength training",
+  "schedule": { "day": "saturday" },
+  "estimated_duration_minutes": 40,
+  "exercises": [
+    {
+      "id": "push-ups",
+      "name": "Push-ups",
+      "sets": 3,
+      "reps": { "min": 6, "max": 10 },
+      "rest_seconds": 90,
+      "instructions": [
+        "Keep your body straight",
+        "Lower your chest towards the floor",
+        "Push up without arching your back"
+      ],
+      "muscle_groups": ["chest", "triceps", "shoulders"]
+    },
+    {
+      "id": "floor-press",
+      "name": "Dumbbell Floor Press",
+      "sets": 3,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg", "per_hand": true },
+      "rest_seconds": 90,
+      "instructions": [
+        "Lie on your back, knees bent, dumbbells at chest height",
+        "Press up until your arms are straight",
+        "Lower until your upper arms touch the floor"
+      ],
+      "muscle_groups": ["chest", "triceps"]
+    },
+    {
+      "id": "dumbbell-row",
+      "name": "One-arm Dumbbell Row",
+      "sets": 3,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg" },
+      "rest_seconds": 90,
+      "instructions": [
+        "Support yourself on a bench with one hand",
+        "Pull the dumbbell towards your hip",
+        "Lower slowly under control"
+      ],
+      "muscle_groups": ["back", "biceps"]
+    },
+    {
+      "id": "goblet-squat",
+      "name": "Goblet Squat",
+      "sets": 3,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg" },
+      "rest_seconds": 90,
+      "instructions": [
+        "Hold the dumbbell at chest height",
+        "Squat down between your knees",
+        "Drive through your heels to stand"
+      ],
+      "muscle_groups": ["quads", "glutes"]
+    },
+    {
+      "id": "triceps-extension",
+      "name": "Overhead Triceps Extension",
+      "sets": 2,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg" },
+      "rest_seconds": 60,
+      "instructions": [
+        "Hold the dumbbell overhead with both hands",
+        "Lower behind your head",
+        "Extend without flaring your elbows"
+      ],
+      "muscle_groups": ["triceps"]
+    },
+    {
+      "id": "biceps-curl",
+      "name": "Biceps Curl",
+      "sets": 2,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg", "per_hand": true },
+      "rest_seconds": 60,
+      "instructions": [
+        "Keep your elbows close to your body",
+        "Curl up without swinging",
+        "Lower slowly"
+      ],
+      "muscle_groups": ["biceps"]
+    }
+  ]
+}
