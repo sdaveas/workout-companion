@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Weekday } from '../../engine/types';
+import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
 import {
   buildProgramJson,
@@ -49,7 +50,7 @@ function Num({
   );
 }
 
-export function ProgramBuilder({ onDone }: { onDone: () => void }) {
+export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
   const setText = usePrograms((s) => s.setText);
   const save = usePrograms((s) => s.save);
   const [draft, setDraft] = useState<ProgramDraft>(emptyDraft);
@@ -73,7 +74,7 @@ export function ProgramBuilder({ onDone }: { onDone: () => void }) {
     setText(buildProgramJson(draft));
     await save();
     setDraft(emptyDraft());
-    onDone();
+    onDone?.();
   }
 
   return (
@@ -103,7 +104,7 @@ export function ProgramBuilder({ onDone }: { onDone: () => void }) {
           >
             {DAYS.map((d) => (
               <option key={d || 'none'} value={d}>
-                {d === '' ? 'No fixed day' : d}
+                {d === '' ? 'No fixed day' : formatDay(d)}
               </option>
             ))}
           </select>

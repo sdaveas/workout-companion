@@ -27,7 +27,7 @@ export const emptyExercise = (): DraftExercise => ({
 });
 
 export const emptyDraft = (): ProgramDraft => ({
-  name: '',
+  name: 'My workout',
   day: '',
   exercises: [emptyExercise()],
 });
@@ -38,6 +38,17 @@ const slug = (name: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 40) || 'program';
+
+/**
+ * The weight field is free text so "bodyweight" can be typed as written on a program.
+ * Returns null for bodyweight/empty, a number for "20", "20kg", NaN for anything else
+ * (the importer then reports the error instead of silently dropping the weight).
+ */
+function parseWeight(raw: string): number | null {
+  const text = raw.trim().toLowerCase().replace(/kg$/, '').trim();
+  if (!text || ['bw', 'bodyweight', 'body weight', 'body-weight'].includes(text)) return null;
+  return Number(text);
+}
 
 /**
  * Draft → the exact JSON the importer accepts. The builder never bypasses the schema,
@@ -51,22 +62,25 @@ export function buildProgramJson(draft: ProgramDraft): string {
     ...(draft.day ? { schedule: { day: draft.day } } : {}),
     exercises: draft.exercises
       .filter((e) => e.name.trim())
-      .map((e, i) => ({
-        id: slug(e.name) || `exercise-${i + 1}`,
-        name: e.name.trim(),
-        sets: e.sets,
-        reps: { min: e.repsMin, max: e.repsMax },
-        ...(e.weightKg.trim()
-          ? {
-              weight: {
-                value: Number(e.weightKg),
-                unit: 'kg',
-                ...(e.perHand ? { per_hand: true } : {}),
-              },
-            }
-          : {}),
-        rest_seconds: e.restSeconds,
-      })),
+      .map((e, i) => {
+        const kg = parseWeight(e.weightKg);
+        return {
+          id: slug(e.name) || `exercise-${i + 1}`,
+          name: e.name.trim(),
+          sets: e.sets,
+          reps: { min: e.repsMin, max: e.repsMax },
+          ...(kg != null
+            ? {
+                weight: {
+                  value: kg,
+                  unit: 'kg',
+                  ...(e.perHand ? { per_hand: true } : {}),
+                },
+              }
+            : {}),
+          rest_seconds: e.restSeconds,
+        };
+      }),
   };
 
   return JSON.stringify(program, null, 2);

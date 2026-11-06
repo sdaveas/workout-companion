@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Program } from '../engine/types';
+import { useHashRoute } from '../hooks/useHashRoute';
 import { usePrograms } from '../store/programsStore';
+import { formatDay } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 
@@ -16,7 +18,14 @@ export function Programs() {
   const remove = usePrograms((s) => s.remove);
   const clear = usePrograms((s) => s.clear);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<'paste' | 'build'>('paste');
+  const route = useHashRoute();
+  const [mode, setMode] = useState<'paste' | 'build'>(() =>
+    route.param === 'paste' ? 'paste' : 'build',
+  );
+
+  useEffect(() => {
+    if (route.param === 'build' || route.param === 'paste') setMode(route.param);
+  }, [route.param]);
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -32,17 +41,6 @@ export function Programs() {
         <button
           type="button"
           role="tab"
-          aria-selected={mode === 'paste'}
-          onClick={() => setMode('paste')}
-          className={`h-11 rounded-xl border text-sm ${
-            mode === 'paste' ? 'border-accent text-white' : 'border-line text-muted'
-          }`}
-        >
-          Paste JSON
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={mode === 'build'}
           onClick={() => setMode('build')}
           className={`h-11 rounded-xl border text-sm ${
@@ -51,9 +49,20 @@ export function Programs() {
         >
           Build it
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'paste'}
+          onClick={() => setMode('paste')}
+          className={`h-11 rounded-xl border text-sm ${
+            mode === 'paste' ? 'border-accent text-white' : 'border-line text-muted'
+          }`}
+        >
+          Paste JSON
+        </button>
       </div>
 
-      {mode === 'build' && <ProgramBuilder onDone={() => setMode('paste')} />}
+      {mode === 'build' && <ProgramBuilder />}
 
       <SyncFromDisk />
 
@@ -138,7 +147,7 @@ export function Programs() {
           <p className="text-xs uppercase tracking-widest text-accent">Preview</p>
           <h2 className="mt-2 text-2xl font-semibold">{preview.name}</h2>
           <p className="mt-1 text-sm text-muted">
-            {preview.scheduleDay ? `${preview.scheduleDay} · ` : ''}
+            {preview.scheduleDay ? `${formatDay(preview.scheduleDay)} · ` : ''}
             {preview.exercises.length} exercises
             {preview.estimatedDurationMinutes ? ` · ~${preview.estimatedDurationMinutes} min` : ''}
           </p>
@@ -179,7 +188,7 @@ export function Programs() {
                 <div>
                   <p className="font-medium">{p.name}</p>
                   <p className="text-xs text-muted">
-                    {p.exercises.length} exercises · {p.scheduleDay ?? 'unscheduled'}
+                    {p.exercises.length} exercises · {formatDay(p.scheduleDay)}
                   </p>
                 </div>
                 <div className="flex gap-2">

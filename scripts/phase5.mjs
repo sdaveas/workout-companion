@@ -60,7 +60,7 @@ check(a11y.unnamed === 0, 'every button and link has an accessible name');
 check(a11y.main === 1 && a11y.lang === 'en', 'one main landmark, lang set');
 
 // import while online
-await page.goto(`${APP}#/programs`);
+await page.goto(`${APP}#/programs/paste`);
 await page.fill('#json', fixture);
 await page.waitForSelector('text=Preview');
 await page.click('button:has-text("Save program")');

@@ -29,8 +29,23 @@ describe('buildProgramJson', () => {
     expect(result.program.exercises[1].weightKg).toBeNull();
   });
 
-  it('drops blank exercise rows instead of failing the import', () => {
+  it('accepts "bodyweight" and "20kg" in the weight field', () => {
     const draft = emptyDraft();
+    draft.exercises = [
+      { ...emptyExercise(), name: 'Push-ups', weightKg: 'bodyweight' },
+      { ...emptyExercise(), name: 'Row', weightKg: '20kg' },
+      { ...emptyExercise(), name: 'Bench', weightKg: 'BW' },
+    ];
+
+    const result = parseProgram(buildProgramJson(draft));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.program.exercises[0].weightKg).toBeNull();
+    expect(result.program.exercises[1].weightKg).toBe(20);
+    expect(result.program.exercises[2].weightKg).toBeNull();
+  });
+
+  it('drops blank exercise rows instead of failing the import', () => {    const draft = emptyDraft();
     draft.name = 'Solo';
     draft.exercises = [{ ...emptyExercise() }, { ...emptyExercise(), name: 'Plank' }];
 

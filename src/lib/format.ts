@@ -23,3 +23,9 @@ export function formatWeight(kg: number | null, perHand = false): string {
   if (kg == null) return 'Bodyweight';
   return `${kg} kg${perHand ? ' / hand' : ''}`;
 }
+
+/** Programs store weekdays lowercase (they come from JSON); the UI shows them capitalized. */
+export function formatDay(day: string | null): string {
+  if (!day) return 'unscheduled';
+  return day[0].toUpperCase() + day.slice(1);
+}

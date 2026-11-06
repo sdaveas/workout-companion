@@ -12,10 +12,17 @@ const check = (cond, msg) => {
   console.log('ok:', msg);
 };
 
-await page.goto(`${BASE}/#/programs`);
-await page.reload();
-await page.getByRole('tab', { name: 'Build it' }).click();
+await page.goto(`${BASE}/#/`);
+await page.waitForLoadState('networkidle');
+await page.getByRole('link', { name: 'Build a program' }).click();
+check(page.url().endsWith('#/programs/build'), 'empty Home sends the user to the Build it tab');
 
+const buildTab = page.getByRole('tab', { name: 'Build it' });
+check((await buildTab.getAttribute('aria-selected')) === 'true', 'Build it is the first and default tab');
+check(
+  (await page.getByPlaceholder('Workout C').inputValue()) === 'My workout',
+  'default program name is "My workout"',
+);
 await page.getByPlaceholder('Workout C').fill('Builder Day');
 await page.getByLabel('Scheduled day').selectOption('thursday');
 

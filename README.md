@@ -12,8 +12,7 @@ Status: all five phases done — import, engine, UI, recovery, PWA. See
 
 Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
 localStorage mirror of the active session. No account, no server, no sync. A fresh profile
-is seeded once with Workout A and B so the app is never empty; deleting them keeps them
-deleted.
+starts empty: Home sends you to Programs → **Build it**.
 
 ## Agent bridge (MCP)
 

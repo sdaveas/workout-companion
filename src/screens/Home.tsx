@@ -7,7 +7,7 @@ import { nextUp, weekView } from '../engine/schedule';
 import { getWorkoutProgress } from '../engine/selectors';
 import { summarize } from '../engine/summary';
 import { elapsedMs } from '../engine/time';
-import { formatDate, formatDuration } from '../lib/format';
+import { formatDate, formatDay, formatDuration } from '../lib/format';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
@@ -91,7 +91,7 @@ export function Home() {
       {!active && next.kind === 'upcoming' && (
         <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
           <p className="text-xs uppercase tracking-widest text-muted">
-            Next · {next.weekday}
+            Next · {formatDay(next.weekday)}
           </p>
           <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
           <p className="mt-1 text-sm text-muted">
@@ -130,14 +130,14 @@ export function Home() {
           <p className="text-xs uppercase tracking-widest text-muted">Get started</p>
           <p className="mt-2 text-sm text-muted">
             {programs.length === 0
-              ? 'Import a workout program to begin.'
+              ? 'Build a workout program to begin.'
               : 'No program is scheduled. Start one from your list.'}
           </p>
           <a
-            href="#/programs"
+            href={programs.length === 0 ? '#/programs/build' : '#/programs'}
             className="mt-4 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
           >
-            Manage programs
+            {programs.length === 0 ? 'Build a program' : 'Manage programs'}
           </a>
         </section>
       )}
@@ -195,16 +195,16 @@ export function Home() {
 
       <nav className="mt-8 flex gap-3">
         <a
-          href="#/history"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
-        >
-          History
-        </a>
-        <a
           href="#/programs"
           className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
         >
           Programs
+        </a>
+        <a
+          href="#/history"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
+        >
+          History
         </a>
       </nav>
 

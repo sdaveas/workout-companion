@@ -20,7 +20,7 @@ const check = (cond, msg) => {
 };
 
 // import program
-await page.goto(`${BASE}/#/programs`);
+await page.goto(`${BASE}/#/programs/paste`);
 await page.fill('#json', fixture);
 await page.waitForSelector('text=Preview');
 await page.click('button:has-text("Save program")');
