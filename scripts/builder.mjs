@@ -62,6 +62,22 @@ const rest = (await page.textContent('body')).match(/Rest remaining(\d{2}:\d{2})
 check(rest === '02:00' || rest === '01:59', `rest is the 120s from the form (${rest})`);
 
 await page.screenshot({ path: '/tmp/wc-builder.png', fullPage: true });
+// editing opens the builder pre-filled and updates in place
+await page.goto(`${BASE}/#/programs/build`);
+await page.getByRole('button', { name: 'Edit' }).first().click();
+await page.waitForSelector('text=Editing');
+check(
+  (await page.getByPlaceholder('Workout C').inputValue()) === 'Builder Day',
+  'Edit pre-fills the builder with the saved program',
+);
+check(await page.getByRole('button', { name: 'Update program' }).isVisible(), 'edit says Update, not Create');
+await page.getByPlaceholder('Workout C').fill('Builder Night');
+await page.getByRole('button', { name: 'Update program' }).click();
+await page.waitForSelector('text=Program "Builder Night" updated');
+const listed = await page.textContent('section:has-text("Saved (")');
+check(/Builder Night/.test(listed) && !/Builder Day/.test(listed), 'renamed program replaced the old one');
+check(await page.getByText('Saved (1)').isVisible(), 'no duplicate program was created by the update');
+
 // an invalid program must keep what the user typed
 await page.goto(`${BASE}/#/programs/build`);
 await page.getByLabel('Program name').fill('Keep me');

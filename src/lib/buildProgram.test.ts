@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyDraft, emptyExercise, buildProgramJson } from './buildProgram';
+import { emptyDraft, emptyExercise, buildProgramJson, draftFromProgram } from './buildProgram';
 import { parseProgram } from '../schemas/program';
 
 describe('buildProgramJson', () => {
@@ -45,6 +45,26 @@ describe('buildProgramJson', () => {
     expect(result.program.exercises[1].weightKg).toBe(20);
     expect(result.program.exercises[2].weightKg).toBeNull();
     expect(result.program.exercises[3].weightKg).toBe(5.6);
+  });
+
+  it('round-trips an existing program through the builder, keeping its id', () => {
+    const draft = emptyDraft();
+    draft.name = 'Old name';
+    draft.day = 'friday';
+    draft.exercises = [{ ...emptyExercise(), name: 'Row', sets: 4, repsMin: 8, repsMax: 10, weightKg: '5,6' }];
+    const original = parseProgram(buildProgramJson(draft));
+    expect(original.ok).toBe(true);
+    if (!original.ok) return;
+
+    const edited = draftFromProgram(original.program);
+    edited.name = 'New name';
+    const result = parseProgram(buildProgramJson(edited, original.program.id));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.program.id).toBe(original.program.id);
+    expect(result.program.name).toBe('New name');
+    expect(result.program.exercises[0]).toMatchObject({ sets: 4, reps: { min: 8, max: 10 }, weightKg: 5.6 });
   });
 
   it('drops blank exercise rows instead of failing the import', () => {    const draft = emptyDraft();

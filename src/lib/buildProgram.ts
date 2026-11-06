@@ -1,4 +1,4 @@
-import type { Weekday } from '../engine/types';
+import type { Program, Weekday } from '../engine/types';
 
 export interface DraftExercise {
   name: string;
@@ -57,10 +57,28 @@ function parseWeight(raw: string): number | string | null {
  * Draft → the exact JSON the importer accepts. The builder never bypasses the schema,
  * so a program that cannot be created by hand also cannot be created here.
  */
-export function buildProgramJson(draft: ProgramDraft): string {
+/** An existing program → the builder's form, so Edit can reuse the same screen. */
+export function draftFromProgram(program: Program): ProgramDraft {
+  return {
+    name: program.name,
+    day: program.scheduleDay ?? '',
+    exercises: program.exercises.map((e) => ({
+      name: e.name,
+      sets: e.sets,
+      repsMin: e.reps.min,
+      repsMax: e.reps.max,
+      weightKg: e.weightKg == null ? '' : String(e.weightKg),
+      perHand: e.perHand,
+      restSeconds: e.restSeconds,
+    })),
+  };
+}
+
+export function buildProgramJson(draft: ProgramDraft, id?: string): string {
   const program = {
     schema_version: 1,
-    id: slug(draft.name),
+    // Keep the existing id when updating, even if the name changed.
+    id: id ?? slug(draft.name),
     name: draft.name.trim(),
     ...(draft.day ? { schedule: { day: draft.day } } : {}),
     exercises: draft.exercises

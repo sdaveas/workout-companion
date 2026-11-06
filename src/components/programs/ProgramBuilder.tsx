@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { Weekday } from '../../engine/types';
+import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
 import {
   buildProgramJson,
+  draftFromProgram,
   emptyDraft,
   emptyExercise,
   type DraftExercise,
@@ -51,10 +52,15 @@ function Num({
   );
 }
 
-export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
+export function ProgramBuilder({
+  initial,
+  onDone,
+}: { initial?: Program; onDone?: () => void } = {}) {
   const setText = usePrograms((s) => s.setText);
   const save = usePrograms((s) => s.save);
-  const [draft, setDraft] = useState<ProgramDraft>(emptyDraft);
+  const [draft, setDraft] = useState<ProgramDraft>(() =>
+    initial ? draftFromProgram(initial) : emptyDraft(),
+  );
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -72,10 +78,10 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
   const ready = draft.name.trim().length > 0 && draft.exercises.some((e) => e.name.trim());
 
   async function create() {
-    setText(buildProgramJson(draft));
+    setText(buildProgramJson(draft, initial?.id));
     // Only clear the form when the program was actually written, or the user loses
     // everything they typed on a validation error.
-    if (await save()) {
+    if (await save(initial != null)) {
       setDraft(emptyDraft());
       onDone?.();
     }
@@ -83,7 +89,9 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
 
   return (
     <section className="mt-6">
-      <p className="text-xs uppercase tracking-widest text-accent">Build a program</p>
+      <p className="text-xs uppercase tracking-widest text-accent">
+        {initial ? `Editing "${initial.name}"` : 'Build a program'}
+      </p>
       <p className="mt-1 text-sm text-muted">
         No JSON needed. It is validated by the same importer, then saved.
       </p>
@@ -224,7 +232,7 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
         onClick={() => void create()}
         className="mt-4 h-14 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-40"
       >
-        Create program
+        {initial ? 'Update program' : 'Create program'}
       </button>
     </section>
   );

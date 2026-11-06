@@ -19,6 +19,7 @@ export function Programs() {
   const clear = usePrograms((s) => s.clear);
   const fileInput = useRef<HTMLInputElement>(null);
   const route = useHashRoute();
+  const [editing, setEditing] = useState<Program | null>(null);
   const [mode, setMode] = useState<'paste' | 'build'>(() =>
     route.param === 'paste' ? 'paste' : 'build',
   );
@@ -62,7 +63,13 @@ export function Programs() {
         </button>
       </div>
 
-      {mode === 'build' && <ProgramBuilder />}
+      {mode === 'build' && (
+        <ProgramBuilder
+          key={editing?.id ?? 'new'}
+          initial={editing ?? undefined}
+          onDone={() => setEditing(null)}
+        />
+      )}
 
       <SyncFromDisk />
 
@@ -90,7 +97,10 @@ export function Programs() {
             </button>
             <button
               type="button"
-              onClick={clear}
+              onClick={() => {
+                clear();
+                setEditing(null);
+              }}
               className="h-11 flex-1 rounded-xl border border-line bg-surface text-sm"
             >
               Clear
@@ -154,7 +164,10 @@ export function Programs() {
             </a>
             <button
               type="button"
-              onClick={clear}
+              onClick={() => {
+                clear();
+                setEditing(null);
+              }}
               className="h-11 flex-1 rounded-lg border border-line text-sm"
             >
               Add another
@@ -216,8 +229,8 @@ export function Programs() {
                   <button
                     type="button"
                     onClick={() => {
-                      setText(p.raw);
-                      setMode('paste');
+                      setEditing(p);
+                      setMode('build');
                     }}
                     className="h-9 rounded-lg border border-line px-3 text-xs"
                   >
