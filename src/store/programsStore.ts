@@ -20,7 +20,8 @@ interface ProgramsStore {
 
   load: () => Promise<void>;
   setText: (text: string) => void;
-  save: (replace?: boolean) => Promise<void>;
+  /** true when the program was written; false when validation or a duplicate stopped it. */
+  save: (replace?: boolean) => Promise<boolean>;
   remove: (id: string) => Promise<void>;
   clear: () => void;
 }
@@ -53,18 +54,20 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
 
   async save(replace = false) {
     const { preview } = get();
-    if (!preview) return;
+    if (!preview) return false;
     try {
       await saveProgram(preview, { replace });
       prefetchImages(preview);
       set({ ...empty, notice: `Saved "${preview.name}".` });
       await get().load();
+      return true;
     } catch (err) {
       if (err instanceof DuplicateProgramId) {
         set({ duplicateId: err.id, notice: null });
       } else {
         set({ notice: null, issues: [{ path: 'storage', message: (err as Error).message }] });
       }
+      return false;
     }
   },
 

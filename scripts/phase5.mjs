@@ -29,7 +29,8 @@ await page.waitForSelector('text=Ready to train');
 // manifest is real and installable-shaped
 const manifest = await page.evaluate(async () => (await fetch('/manifest.webmanifest')).json());
 check(manifest.name === 'Workout Companion', 'manifest name');
-check(manifest.display === 'standalone' && manifest.start_url === '/', 'standalone, scoped start_url');
+const startUrl = await page.evaluate((url) => new URL(url, location.href).href, manifest.start_url);
+check(manifest.display === 'standalone' && startUrl === new URL(APP).href, `standalone, start_url -> ${startUrl}`);
 const sizes = manifest.icons.map((i) => i.sizes);
 check(sizes.includes('192x192') && sizes.includes('512x512'), `icons: ${sizes.join(', ')}`);
 

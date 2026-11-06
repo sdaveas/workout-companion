@@ -18,7 +18,7 @@ export function History() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between">
-        <a href="#/" className="text-sm text-muted">
+        <a href="#/" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
           ← Home
         </a>
         <h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>

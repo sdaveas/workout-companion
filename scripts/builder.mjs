@@ -56,5 +56,19 @@ const rest = (await page.textContent('body')).match(/Rest remaining(\d{2}:\d{2})
 check(rest === '02:00', `rest is the 120s from the form (${rest})`);
 
 await page.screenshot({ path: '/tmp/wc-builder.png', fullPage: true });
+// an invalid program must keep what the user typed
+await page.goto(`${BASE}/#/programs/build`);
+await page.getByLabel('Program name').fill('Keep me');
+const row = page.locator('li').filter({ hasText: 'Exercise 1' });
+await row.getByPlaceholder('Goblet Squat').fill('Squat');
+await row.getByLabel('Sets').fill('0');
+await page.getByRole('button', { name: 'Create program' }).click();
+await page.waitForSelector('text=Invalid program');
+check(
+  (await page.getByLabel('Program name').inputValue()) === 'Keep me',
+  'a rejected program keeps the form filled',
+);
+check((await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Squat', 'exercise rows survive the error');
+
 console.log('JS ERRORS:', errors.length ? errors : 'none');
 await browser.close();

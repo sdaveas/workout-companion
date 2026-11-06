@@ -44,6 +44,7 @@ function Num({
         min={min}
         max={max}
         onChange={(e) => onChange(Number(e.target.value))}
+        onFocus={(e) => e.currentTarget.select()}
         className="mt-1 h-11 w-full rounded-lg border border-line bg-ink px-2 text-center tabular-nums outline-none focus:border-accent"
       />
     </label>
@@ -72,9 +73,12 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
 
   async function create() {
     setText(buildProgramJson(draft));
-    await save();
-    setDraft(emptyDraft());
-    onDone?.();
+    // Only clear the form when the program was actually written, or the user loses
+    // everything they typed on a validation error.
+    if (await save()) {
+      setDraft(emptyDraft());
+      onDone?.();
+    }
   }
 
   return (
@@ -132,7 +136,7 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
                   aria-label={`Move ${ex.name || `exercise ${i + 1}`} up`}
                   disabled={i === 0}
                   onClick={() => moveExercise(i, -1)}
-                  className="h-12 w-9 rounded-lg border border-line text-muted disabled:opacity-30"
+                  className="h-12 w-11 rounded-lg border border-line text-muted disabled:opacity-30"
                 >
                   ↑
                 </button>
@@ -141,7 +145,7 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
                   aria-label={`Move ${ex.name || `exercise ${i + 1}`} down`}
                   disabled={i === draft.exercises.length - 1}
                   onClick={() => moveExercise(i, 1)}
-                  className="h-12 w-9 rounded-lg border border-line text-muted disabled:opacity-30"
+                  className="h-12 w-11 rounded-lg border border-line text-muted disabled:opacity-30"
                 >
                   ↓
                 </button>
@@ -149,7 +153,7 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
                   type="button"
                   aria-label={`Remove ${ex.name || `exercise ${i + 1}`}`}
                   onClick={() => removeExercise(i)}
-                  className="h-12 w-9 rounded-lg border border-line text-danger"
+                  className="h-12 w-11 rounded-lg border border-line text-danger"
                 >
                   ×
                 </button>
@@ -179,6 +183,7 @@ export function ProgramBuilder({ onDone }: { onDone?: () => void } = {}) {
                   inputMode="decimal"
                   value={ex.weightKg}
                   onChange={(e) => patchExercise(i, { weightKg: e.target.value })}
+                  onFocus={(e) => e.currentTarget.select()}
                   placeholder="bodyweight"
                   className="mt-1 h-11 w-full rounded-lg border border-line bg-ink px-2 text-center tabular-nums outline-none focus:border-accent"
                 />

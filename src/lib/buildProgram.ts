@@ -41,13 +41,15 @@ const slug = (name: string) =>
 
 /**
  * The weight field is free text so "bodyweight" can be typed as written on a program.
- * Returns null for bodyweight/empty, a number for "20", "20kg", NaN for anything else
- * (the importer then reports the error instead of silently dropping the weight).
+ * Returns null for bodyweight/empty, a number for "20" and "20kg", and the raw text for
+ * anything else — the importer then says "expected number, received string" instead of the
+ * meaningless "received null" that NaN turns into when JSON-encoded.
  */
-function parseWeight(raw: string): number | null {
+function parseWeight(raw: string): number | string | null {
   const text = raw.trim().toLowerCase().replace(/kg$/, '').trim();
   if (!text || ['bw', 'bodyweight', 'body weight', 'body-weight'].includes(text)) return null;
-  return Number(text);
+  const n = Number(text);
+  return Number.isFinite(n) ? n : raw.trim();
 }
 
 /**
