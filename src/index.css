@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #0b0b0d;
+  --color-surface: #15161a;
+  --color-line: #26282e;
+  --color-muted: #8b8f98;
+  --color-accent: #d7ff3f;
+  --color-danger: #ff5c5c;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--color-ink);
+  color: #f5f6f7;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

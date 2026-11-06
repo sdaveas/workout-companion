@@ -1,0 +1,89 @@
+export type Weekday =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export interface ProgramExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: { min: number; max: number };
+  weightKg: number | null;
+  perHand: boolean;
+  restSeconds: number;
+  instructions: string[];
+  commonMistakes: string[];
+  equipment: string[];
+  muscleGroups: string[];
+  imageUrl: string | null;
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  description: string | null;
+  scheduleDay: Weekday | null;
+  estimatedDurationMinutes: number | null;
+  exercises: ProgramExercise[];
+  raw: string;
+}
+
+export type WorkoutStatus =
+  | 'ready'
+  | 'exercise_active'
+  | 'resting'
+  | 'paused'
+  | 'exercise_complete'
+  | 'completed'
+  | 'abandoned';
+
+export interface SetRecord {
+  setNumber: number;
+  targetReps: { min: number; max: number };
+  targetWeightKg: number | null;
+  actualReps: number | null;
+  actualWeightKg: number | null;
+  completed: boolean;
+  skipped: boolean;
+  completedAt: number | null;
+}
+
+export interface ExerciseRecord {
+  exerciseId: string;
+  name: string;
+  sets: SetRecord[];
+  skipped: boolean;
+  skippedAt: number | null;
+  completedAt: number | null;
+}
+
+export interface WorkoutState {
+  sessionId: string;
+  programId: string;
+  program: Program;
+  status: WorkoutStatus;
+  currentExerciseIndex: number;
+  currentSetIndex: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+  pausedAt: number | null;
+  pausedFrom: 'exercise_active' | 'resting' | null;
+  totalPausedMs: number;
+  restStartedAt: number | null;
+  restDurationMs: number;
+  restPausedMs: number | null;
+  restCount: number;
+  exerciseRecords: ExerciseRecord[];
+  undoStack: UndoEntry[];
+  draft: { reps: number; weightKg: number | null } | null;
+  endedEarly: boolean;
+  rpe: number | null;
+  notes: string | null;
+  updatedAt: number;
+}
+
+export type UndoEntry = Omit<WorkoutState, 'program' | 'undoStack'>;
