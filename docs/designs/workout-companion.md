@@ -733,6 +733,16 @@ regenerating them is one command. §2.14 also precached `src/assets/exercises/*`
 directory does not exist because no exercise images ship with the app — every image is a
 remote `image_url` (cached on import) or the bundled placeholder.
 
+**2026-11-06 — post-phase-5: in-app program builder.** The spec only defines JSON
+import, but authoring JSON by hand was the last place the product dropped the user into a
+text editor. `ProgramBuilder` collects name, day, and per-exercise sets/reps/weight/rest,
+then emits the same JSON shape and runs it through `parseProgram` before saving — so the
+builder cannot create a program the importer would reject, and the paste path keeps
+working. It covers the fields a session needs; instructions, mistakes, equipment and
+images are still JSON-only, which is why the paste tab stays the default. Not revisited:
+a full editor would duplicate the schema in UI state for fields the workout screen barely
+uses.
+
 ---
 
 ## 3. Alternatives

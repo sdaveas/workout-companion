@@ -7,7 +7,8 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
 Status: all five phases done — import, engine, UI, recovery, PWA. See
-`docs/phase-status.md`.
+`docs/phase-status.md`. Programs can be pasted as JSON or built with the in-app form
+(Programs → **Build it**).
 
 ```bash
 npm install
