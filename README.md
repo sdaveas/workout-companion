@@ -6,9 +6,13 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `docs/designs/workout-companion.md` — design (how, and what was rejected).
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
-Status: phases 1–4 done (import, engine, UI, recovery). Current phase: 4 (recovery) — gated.
-See `docs/phase-status.md`.
+Status: all five phases done — import, engine, UI, recovery, PWA. See
+`docs/phase-status.md`.
 
 ```bash
-npm create vite@latest . -- --template react-ts   # then §4.2 of the design doc
+npm install
+npm run dev        # http://localhost:5173, PWA disabled in dev
+npm test           # engine + schema + storage tests
+npm run typecheck
+npm run build && npm run preview   # service worker, offline, installable
 ```

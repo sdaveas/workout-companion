@@ -7,6 +7,7 @@ import {
   listPrograms,
   saveProgram,
 } from '../storage/programs';
+import { prefetchImages } from '../lib/images';
 
 interface ProgramsStore {
   programs: Program[];
@@ -55,6 +56,7 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
     if (!preview) return;
     try {
       await saveProgram(preview, { replace });
+      prefetchImages(preview);
       set({ ...empty, notice: `Saved "${preview.name}".` });
       await get().load();
     } catch (err) {

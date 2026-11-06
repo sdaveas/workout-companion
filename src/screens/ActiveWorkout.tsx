@@ -59,6 +59,7 @@ export function ActiveWorkout() {
           <button
             type="button"
             onClick={() => setEnding((v) => !v)}
+            aria-expanded={ending}
             className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
           >
             End

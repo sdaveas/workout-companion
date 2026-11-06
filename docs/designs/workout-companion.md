@@ -723,6 +723,16 @@ history/summary source; the mirror exists only for the active session and is rem
 so quota is not a concern, and storing nothing but the active session keeps the copy
 surface small.
 
+**2026-11-06 — PWA verified by assertions, not Lighthouse; icons generated.** §4.8 mapped
+phase 5 to "Lighthouse", but Lighthouse needs a separate Chrome install and audits a
+generic installability checklist that the phase-5 Playwright script asserts directly
+(manifest fields, icon PNG magic bytes, an active service worker controlling the page, a
+cold offline reload, a set completed offline). No lint score is recorded. Icons have no
+source SVG in the repo: `scripts/icons.mjs` renders one inline mark to 180/192/512 PNGs, so
+regenerating them is one command. §2.14 also precached `src/assets/exercises/*`; that
+directory does not exist because no exercise images ship with the app — every image is a
+remote `image_url` (cached on import) or the bundled placeholder.
+
 ---
 
 ## 3. Alternatives

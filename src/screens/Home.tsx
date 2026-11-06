@@ -10,6 +10,7 @@ import { elapsedMs } from '../engine/time';
 import { formatDate, formatDuration } from '../lib/format';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
+import { InstallHint } from '../components/ui/InstallHint';
 
 export function Home() {
   const programs = usePrograms((s) => s.programs);
@@ -206,6 +207,8 @@ export function Home() {
           Programs
         </a>
       </nav>
+
+      <InstallHint />
     </main>
   );
 }
