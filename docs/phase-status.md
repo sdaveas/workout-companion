@@ -7,7 +7,7 @@
 | 1 Foundation | done | 17 tests, typecheck, build, Playwright smoke (error path, preview, save, reload, duplicate id) | `10a70d5` |
 | 2 Engine | done | 86 tests, typecheck, build, `grep Date.now` = 1 (id fallback only), `engine/` imports no React | `426c8dd` |
 | 3 Interface | done | 86 tests, typecheck, build, Playwright full run; manual: start→finish Workout B in the UI (16/16 sets), summary 16 of 16, RPE 7 + note saved, history lists it, summary reopens from IndexedDB with RPE intact, zero console errors | `e18570c` |
-| 4 Recovery | done | 92 tests (4 recovery cases), typecheck, build; manual: reload mid-set at set 3 → resumed set 3 of 3 on the same exercise; pause mid-rest at 01:27 → reload → still paused at 01:27 → resume; corrupt row reported on Home and kept in storage; full workout still finishes 16/16 after both reloads; zero console errors (`scripts/phase4.mjs`) | pending |
+| 4 Recovery | done | 92 tests (4 recovery cases), typecheck, build; manual: reload mid-set at set 3 → resumed set 3 of 3 on the same exercise; pause mid-rest at 01:27 → reload → still paused at 01:27 → resume; corrupt row reported on Home and kept in storage; full workout still finishes 16/16 after both reloads; zero console errors (`scripts/phase4.mjs`) | `7a20d90` |
 | 5 PWA / polish | not started | — | — |
 
 ## Phase gate (run before starting the next phase)
