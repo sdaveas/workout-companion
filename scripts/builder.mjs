@@ -92,5 +92,21 @@ check(
 );
 check((await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Squat', 'exercise rows survive the error');
 
+// a program with no scheduled day must still be startable from Home
+const solo = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+const soloPage = await solo.newPage();
+await soloPage.goto(`${BASE}/#/programs/build`);
+await soloPage.getByPlaceholder('Workout C').fill('Unscheduled');
+await soloPage.locator('li').filter({ hasText: 'Exercise 1' }).getByPlaceholder('Goblet Squat').fill('Plank');
+await soloPage.getByRole('button', { name: 'Create program' }).click();
+await soloPage.waitForSelector('text=Program "Unscheduled" added');
+await soloPage.goto(`${BASE}/#/`);
+const homeText = await soloPage.textContent('main');
+check(homeText.includes('Start one anyway'), 'Home offers unscheduled programs instead of a dead end');
+await soloPage.getByRole('button', { name: /Unscheduled/ }).click();
+await soloPage.waitForSelector('text=Complete set');
+check((await soloPage.textContent('h1')).includes('Plank'), 'the unscheduled program actually starts');
+await solo.close();
+
 console.log('JS ERRORS:', errors.length ? errors : 'none');
 await browser.close();

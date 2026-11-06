@@ -128,17 +128,40 @@ export function Home() {
       {!active && next.kind === 'none' && (
         <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
           <p className="text-xs uppercase tracking-widest text-muted">Get started</p>
-          <p className="mt-2 text-sm text-muted">
-            {programs.length === 0
-              ? 'Build a workout program to begin.'
-              : 'No program is scheduled. Start one from your list.'}
-          </p>
-          <a
-            href={programs.length === 0 ? '#/programs/build' : '#/programs'}
-            className="mt-4 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
-          >
-            {programs.length === 0 ? 'Build a program' : 'Manage programs'}
-          </a>
+          {programs.length === 0 ? (
+            <>
+              <p className="mt-2 text-sm text-muted">Build a workout program to begin.</p>
+              <a
+                href="#/programs/build"
+                className="mt-4 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+              >
+                Build a program
+              </a>
+            </>
+          ) : (
+            <>
+              {/* Nothing is on today's schedule (or nothing is scheduled at all): the
+                  programs are still startable, so offer them instead of hiding them. */}
+              <p className="mt-2 text-sm text-muted">No program is scheduled. Start one anyway:</p>
+              <ul className="mt-3 space-y-2">
+                {programs.map((p) => (
+                  <li key={p.id}>
+                    <Button
+                      className="flex h-14 w-full items-center justify-between"
+                      disabled={starting != null}
+                      onClick={() => void start(p.id)}
+                    >
+                      <span>{p.name}</span>
+                      <span className="text-xs text-muted">{p.exercises.length} exercises</span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              <a href="#/programs" className="mt-3 flex h-11 items-center justify-center text-xs text-muted underline">
+                Manage programs
+              </a>
+            </>
+          )}
         </section>
       )}
 
