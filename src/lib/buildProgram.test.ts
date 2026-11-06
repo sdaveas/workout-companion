@@ -35,6 +35,7 @@ describe('buildProgramJson', () => {
       { ...emptyExercise(), name: 'Push-ups', weightKg: 'bodyweight' },
       { ...emptyExercise(), name: 'Row', weightKg: '20kg' },
       { ...emptyExercise(), name: 'Bench', weightKg: 'BW' },
+      { ...emptyExercise(), name: 'Curl', weightKg: '5,6' },
     ];
 
     const result = parseProgram(buildProgramJson(draft));
@@ -43,6 +44,7 @@ describe('buildProgramJson', () => {
     expect(result.program.exercises[0].weightKg).toBeNull();
     expect(result.program.exercises[1].weightKg).toBe(20);
     expect(result.program.exercises[2].weightKg).toBeNull();
+    expect(result.program.exercises[3].weightKg).toBe(5.6);
   });
 
   it('drops blank exercise rows instead of failing the import', () => {    const draft = emptyDraft();

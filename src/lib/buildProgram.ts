@@ -46,7 +46,8 @@ const slug = (name: string) =>
  * meaningless "received null" that NaN turns into when JSON-encoded.
  */
 function parseWeight(raw: string): number | string | null {
-  const text = raw.trim().toLowerCase().replace(/kg$/, '').trim();
+  // A Greek/European keyboard types "5,6"; the importer only speaks JSON numbers.
+  const text = raw.trim().toLowerCase().replace(/kg$/, '').replace(',', '.').trim();
   if (!text || ['bw', 'bodyweight', 'body weight', 'body-weight'].includes(text)) return null;
   const n = Number(text);
   return Number.isFinite(n) ? n : raw.trim();
