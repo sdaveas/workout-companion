@@ -5,13 +5,17 @@
 | Phase | Status | Evidence | Commit |
 |---|---|---|---|
 | 1 Foundation | done | 17 tests, typecheck, build, Playwright smoke (error path, preview, save, reload, duplicate id) | `10a70d5` |
-| 2 Engine | done | 86 tests, typecheck, build, `grep Date.now` = 1 (id fallback only), `engine/` imports no React | `61869fc` |
+| 2 Engine | done | 86 tests, typecheck, build, `grep Date.now` = 1 (id fallback only), `engine/` imports no React | `426c8dd` |
 | 3 Interface | not started | — | — |
 | 4 Recovery | not started | — | — |
 | 5 PWA / polish | not started | — | — |
 
 ## Phase gate (run before starting the next phase)
 
+0. **Delegate the verdict**: `Use the phase-gate subagent` (`.opencode/agents/phase-gate.md`,
+   model `deepseek-v4-pro`). It reads this file, design §2.17/§4.8 and spec §13, runs the
+   checks below, and returns `GATE: pass|fail` plus one next action. The primary agent
+   applies findings; it does not grade its own phase.
 1. **Triad**: `npm test` green, `npm run typecheck` clean, `npm run build` succeeds.
 2. **Phase clause**: satisfy every clause of that phase's *Done when* row in design §2.17.
    For phases 3–5 one clause is manual and must be recorded here verbatim, e.g.
