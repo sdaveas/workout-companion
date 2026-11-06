@@ -24,7 +24,9 @@ interface SessionStore {
   busy: boolean;
   restoring: boolean;
 
-  beginWorkout: (programId: string) => Promise<void>;
+  /** Load a program into a `ready` session — nothing is written until START. */
+  prepareWorkout: (programId: string) => Promise<boolean>;
+  startWorkout: () => void;
   dispatch: (action: WorkoutAction) => void;
   editStored: (sessionId: string, action: WorkoutAction) => Promise<WorkoutState | null>;
   recover: () => Promise<void>;
@@ -41,17 +43,21 @@ export const useSession = create<SessionStore>((set, get) => ({
   busy: false,
   restoring: true,
 
-  async beginWorkout(programId) {
+  async prepareWorkout(programId) {
     set({ busy: true });
     try {
       const program = await getProgram(programId);
       if (!program) throw new Error('Program not found.');
-      const state = createSession(program, Date.now(), newSessionId());
-      set({ state, error: null, busy: false });
-      get().dispatch({ type: 'START' });
+      set({ state: createSession(program, Date.now(), newSessionId()), error: null, busy: false });
+      return true;
     } catch (err) {
       set({ error: message(err), busy: false });
+      return false;
     }
+  },
+
+  startWorkout() {
+    get().dispatch({ type: 'START' });
   },
 
   dispatch(action) {

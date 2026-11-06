@@ -74,6 +74,7 @@ await page.reload();
 await page.waitForSelector('text=Ready to train');
 check(true, 'app shell loads offline (cold reload)');
 await page.getByRole('button', { name: /^Start/ }).click();
+await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
 await page.waitForSelector('text=Complete set');
 await page.getByRole('button', { name: 'Complete set' }).click();
 await page.waitForSelector('text=Rest remaining');

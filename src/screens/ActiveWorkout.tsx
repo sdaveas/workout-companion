@@ -20,6 +20,8 @@ export function ActiveWorkout() {
   const error = useSession((s) => s.error);
   const clearError = useSession((s) => s.clearError);
   const dispatch = useSession((s) => s.dispatch);
+  const reset = useSession((s) => s.reset);
+  const startWorkout = useSession((s) => s.startWorkout);
   const [ending, setEnding] = useState(false);
 
   const pausedInRest = state?.status === 'paused' && state.pausedFrom === 'resting';
@@ -46,67 +48,107 @@ export function ActiveWorkout() {
   const nextExercise = getNextExercise(state);
   const progress = getWorkoutProgress(state);
 
+  const isReady = state.status === 'ready';
+
   return (
     <main className="flex min-h-dvh flex-col">
       <header className="px-5 pt-[max(1rem,env(safe-area-inset-top))]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">{state.program.name}</p>
-            <p className="text-2xl font-semibold tabular-nums" aria-label="elapsed time">
-              {formatClock(elapsedMs(state, now))}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {state.undoStack.length > 0 && (
-              <button
-                type="button"
-                onClick={() => dispatch({ type: 'UNDO' })}
-                className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
-              >
-                Undo
-              </button>
-            )}
+        {isReady ? (
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => setEnding((v) => !v)}
-              aria-expanded={ending}
-              className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
-            >
-              End
-            </button>
-          </div>
-        </div>
-        <div className="mt-3">
-          <ProgressBar
-            value={progress.ratio}
-            label={`${progress.done} of ${progress.total} sets${
-              progress.skipped > 0 ? `, ${progress.skipped} skipped` : ''
-            }`}
-          />
-        </div>
-        {ending && (
-          <div className="mt-3 flex gap-2 rounded-xl border border-line bg-surface p-3">
-            <Button className="flex-1" onClick={() => dispatch({ type: 'FINISH' })}>
-              Finish &amp; save
-            </Button>
-            <Button
-              variant="danger"
-              className="flex-1"
               onClick={() => {
-                if (confirm('Abandon this session? It will not appear in history.')) {
-                  dispatch({ type: 'ABANDON' });
-                }
+                reset();
+                navigate('#/');
               }}
+              className="h-11 shrink-0 rounded-xl border border-line px-4 text-sm text-muted"
             >
-              Abandon
-            </Button>
+              ← Home
+            </button>
+            <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
+              {state.program.name}
+            </p>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted">{state.program.name}</p>
+                <p className="text-2xl font-semibold tabular-nums" aria-label="elapsed time">
+                  {formatClock(elapsedMs(state, now))}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {state.undoStack.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'UNDO' })}
+                    className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
+                  >
+                    Undo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setEnding((v) => !v)}
+                  aria-expanded={ending}
+                  className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
+                >
+                  End
+                </button>
+              </div>
+            </div>
+            <div className="mt-3">
+              <ProgressBar
+                value={progress.ratio}
+                label={`${progress.done} of ${progress.total} sets${
+                  progress.skipped > 0 ? `, ${progress.skipped} skipped` : ''
+                }`}
+              />
+            </div>
+            {ending && (
+              <div className="mt-3 flex gap-2 rounded-xl border border-line bg-surface p-3">
+                <Button className="flex-1" onClick={() => dispatch({ type: 'FINISH' })}>
+                  Finish &amp; save
+                </Button>
+                <Button
+                  variant="danger"
+                  className="flex-1"
+                  onClick={() => {
+                    if (confirm('Abandon this session? It will not appear in history.')) {
+                      dispatch({ type: 'ABANDON' });
+                    }
+                  }}
+                >
+                  Abandon
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </header>
 
       {error && <Banner message={error} onDismiss={clearError} />}
 
       <div className="flex-1 overflow-y-auto px-5 pb-6 pt-6">
+        {isReady && exercise && record && (
+          <>
+            <ExerciseCard
+              exercise={exercise}
+              index={state.currentExerciseIndex}
+              total={state.program.exercises.length}
+              setNumber={state.currentSetIndex + 1}
+              totalSets={record.sets.length}
+            />
+            <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
+              {state.program.exercises.length} exercises · {progress.total} sets
+              {state.program.estimatedDurationMinutes
+                ? ` · ~${state.program.estimatedDurationMinutes} min`
+                : ''}
+            </p>
+          </>
+        )}
+
         {state.status === 'exercise_active' && exercise && record && (
           <>
             <ExerciseCard
@@ -167,6 +209,12 @@ export function ActiveWorkout() {
       </div>
 
       <footer className="sticky bottom-0 border-t border-line bg-ink px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+        {isReady && (
+          <Button variant="primary" className="h-16 w-full text-base" onClick={startWorkout}>
+            Start
+          </Button>
+        )}
+
         {state.status === 'exercise_active' && record && (
           <div className="space-y-2">
             <Button

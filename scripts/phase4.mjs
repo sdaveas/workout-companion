@@ -68,6 +68,7 @@ await page.click('button:has-text("Save program")');
 await page.waitForSelector('text=Saved (1)');
 await page.goto(`${BASE}/#/`);
 await page.getByRole('button', { name: /^Start/ }).click();
+await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
 await page.waitForSelector('text=Complete set');
 
 for (let i = 0; i < 2; i += 1) await completeOneSet();

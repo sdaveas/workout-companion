@@ -52,6 +52,7 @@ check(/Builder Day/.test(saved) && /2 exercises/.test(saved), 'program saved wit
 // the built program is complete enough to train
 await page.goto(`${BASE}/#/`);
 await page.getByRole('button', { name: /^Start/ }).click();
+await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
 await page.waitForSelector('text=Complete set');
 check((await page.textContent('h1')).includes('Front Squat'), 'first exercise is the first row');
 check(await page.getByText('4').first().isVisible(), '4 sets carried through');
@@ -104,6 +105,7 @@ await soloPage.goto(`${BASE}/#/`);
 const homeText = await soloPage.textContent('main');
 check(homeText.includes('Start one anyway'), 'Home offers unscheduled programs instead of a dead end');
 await soloPage.getByRole('button', { name: /Unscheduled/ }).click();
+await soloPage.getByRole('button', { name: 'Start', exact: true }).click(); // preview
 await soloPage.waitForSelector('text=Complete set');
 check((await soloPage.textContent('h1')).includes('Plank'), 'the unscheduled program actually starts');
 await solo.close();

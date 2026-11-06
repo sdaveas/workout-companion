@@ -32,6 +32,7 @@ await page.waitForSelector('text=Ready to train');
 const start = page.getByRole('button', { name: /^Start/ });
 check(await start.isVisible(), 'home offers a start button');
 await start.click();
+await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
 await page.waitForSelector('text=Complete set');
 
 // drive the workout to the end

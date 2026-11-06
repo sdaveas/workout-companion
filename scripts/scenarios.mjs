@@ -77,6 +77,16 @@ async function drive(page, limit = 60) {
   return sets;
 }
 
+/** Home's start button opens a preview screen; the workout itself begins from there. */
+async function beginFromPreview(page) {
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.waitForSelector('text=Complete set');
+}
+
+const todayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][
+  new Date().getDay()
+];
+
 const progress = async (page) =>
   (await page.getAttribute('[role="progressbar"]', 'aria-valuetext').catch(() => '')) ?? '';
 
@@ -137,7 +147,10 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: /Start/ }).waitFor();
   expect(await page.getByRole('button', { name: /Start/ }).isVisible(), 'home offers Start after creating');
   await page.getByRole('button', { name: /Start/ }).click();
-  await page.waitForSelector('text=Complete set');
+  const backHome = page.getByRole('button', { name: '← Home' });
+  await backHome.waitFor();
+  expect(await backHome.isVisible(), 'starting opens the preview instead of the workout');
+  await beginFromPreview(page);
   await auditScreen(page, 'workout/active');
   const completed = await drive(page);
   expect(completed === 3, `completed the programmed sets (${completed})`);
@@ -174,6 +187,7 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('rest-day', 'Rest Day', 'monday', [ex('squat', 'Squat', 2, 60)]));
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   await page.getByRole('button', { name: 'Complete set' }).click();
   await page.waitForSelector('text=Rest remaining');
   expect(true, 'a completed set starts the rest timer');
@@ -202,6 +216,7 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('long-day', 'Long Day', 'monday', [ex('a', 'Alpha', 2, 0), ex('b', 'Beta', 2, 0), ex('c', 'Gamma', 2, 0)]));
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   const twoSets = async () => {
     for (let i = 0; i < 2; i += 1) {
       await page.getByRole('button', { name: 'Complete set' }).click();
@@ -260,6 +275,7 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=updated.');
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   const label = await progress(page);
   expect(/0 of 3/.test(label), `the update reached the workout (${label})`);
   await context.close();
@@ -271,6 +287,7 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('skip-day', 'Skip Day', 'monday', [ex('a', 'Alpha', 2, 0), ex('b', 'Beta', 1, 0)]));
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   await page.getByRole('button', { name: 'Skip set' }).click();
   await page.waitForSelector('text=2 / 2');
   expect(true, 'Skip set advances to the next set of the same exercise');
@@ -306,6 +323,7 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('del-day', 'Del Day', 'monday', [ex('a', 'Alpha')]));
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   await drive(page);
   await page.waitForSelector('text=Session complete');
   await page.getByRole('button', { name: 'Done' }).click();
@@ -333,6 +351,7 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('many-day', 'Many Day', 'monday', many));
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
   const footer = page.getByRole('button', { name: 'Complete set' });
   const inView = await footer.evaluate((el) => {
     const r = el.getBoundingClientRect();
@@ -356,6 +375,7 @@ const auditScreen = async (page, screen) => {
   await page.goto(`${BASE}/#/`);
   expect(await page.getByRole('button', { name: /Unscheduled/ }).isVisible(), 'an unscheduled program is startable');
   await page.getByRole('button', { name: /Unscheduled/ }).click();
+  await beginFromPreview(page);
   await page.getByRole('button', { name: 'Complete set' }).click();
   await page.waitForSelector('button:has-text("Finish workout")');
   await page.getByRole('button', { name: 'Finish workout' }).click();
@@ -366,12 +386,55 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: 'Done' }).click();
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Unscheduled/ }).click();
+  await beginFromPreview(page);
   await page.getByRole('button', { name: 'End' }).click();
   await page.getByRole('button', { name: 'Abandon' }).click();
   await page.waitForSelector('text=Ready to train');
   await page.goto(`${BASE}/#/history`);
   const rows = await page.locator('ul li').count();
   expect(rows === 1, `an abandoned session stays out of history (${rows} row)`);
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 9
+{
+  const { context, page, errors } = await fresh();
+  await saveProgram(page, program('today-prog', 'Today Day', todayName, [ex('a', 'Alpha')]));
+  await saveProgram(page, program('any-prog', 'Any Day', null, [ex('b', 'Beta')]));
+
+  await page.goto(`${BASE}/#/`);
+  await page.waitForSelector('text=Today Day');
+  expect(
+    await page.getByRole('button', { name: /Any Day/ }).isVisible(),
+    'the unscheduled program is reachable while a scheduled one is featured',
+  );
+  await auditScreen(page, 'home/two-programs');
+
+  await page.getByRole('button', { name: /Any Day/ }).click();
+  await page.getByRole('region', { name: 'Beta' }).waitFor();
+  const previewBody = (await page.textContent('body')).replace(/\s+/g, ' ');
+  expect(!/Complete set/.test(previewBody), 'the preview does not begin the workout');
+  expect(/Start/.test(previewBody), 'the preview offers Start');
+
+  await page.getByRole('button', { name: '← Home' }).click();
+  await page.waitForSelector('text=Ready to train');
+  expect(
+    !(await page.getByText('In progress').isVisible().catch(() => false)),
+    'backing out of the preview leaves no session in progress',
+  );
+  await page.goto(`${BASE}/#/history`);
+  const rows = await page.locator('ul li').count().catch(() => 0);
+  expect(
+    (await page.getByText('No finished sessions yet').isVisible().catch(() => false)) || rows === 0,
+    'the preview was never saved as a session',
+  );
+
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: /Start workout/ }).click();
+  await page.getByRole('region', { name: 'Alpha' }).waitFor();
+  await beginFromPreview(page);
+  expect(await page.getByLabel('elapsed time').isVisible(), 'Start begins the timed workout');
+  expect(errors.length === 0, `no console errors (${errors.join(' | ') || 'none'})`);
   await context.close();
 }
 

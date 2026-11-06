@@ -17,7 +17,7 @@ export function Home() {
   const state = useSession((s) => s.state);
   const history = useSession((s) => s.history);
   const loadHistory = useSession((s) => s.loadHistory);
-  const beginWorkout = useSession((s) => s.beginWorkout);
+  const prepareWorkout = useSession((s) => s.prepareWorkout);
   const error = useSession((s) => s.error);
   const clearError = useSession((s) => s.clearError);
   const [starting, setStarting] = useState<string | null>(null);
@@ -27,19 +27,24 @@ export function Home() {
     void loadHistory();
   }, [loadHistory]);
 
-  const active = state && state.status !== 'completed' && state.status !== 'abandoned' ? state : null;
+  const active =
+    state && state.status !== 'completed' && state.status !== 'abandoned' && state.status !== 'ready'
+      ? state
+      : null;
   const sessions = history.map((h) => ({ programId: h.programId, finishedAt: h.finishedAt }));
   const next = nextUp(programs, sessions, now, active ? { programId: active.programId } : null);
+  /** The card above features one program; the rest must stay startable. */
+  const featuredId = 'program' in next ? next.program.id : null;
+  const otherPrograms = programs.filter((p) => p.id !== featuredId);
   const week = weekView(programs, sessions, now);
   const last = history[0] ?? null;
   const lastSummary = last ? summarize(last.state, last.finishedAt ?? last.state.updatedAt) : null;
 
   async function start(programId: string) {
     setStarting(programId);
-    await beginWorkout(programId);
+    const ok = await prepareWorkout(programId);
     setStarting(null);
-    const started = useSession.getState().state;
-    if (started && started.status !== 'ready') navigate('#/session');
+    if (ok) navigate('#/session');
   }
 
   return (
@@ -162,6 +167,28 @@ export function Home() {
               </a>
             </>
           )}
+        </section>
+      )}
+
+      {!active && next.kind !== 'none' && otherPrograms.length > 0 && (
+        <section className="mt-4">
+          <p className="text-xs uppercase tracking-widest text-muted">Also available</p>
+          <ul className="mt-3 space-y-2">
+            {otherPrograms.map((p) => (
+              <li key={p.id}>
+                <Button
+                  className="flex h-14 w-full items-center justify-between"
+                  disabled={starting != null}
+                  onClick={() => void start(p.id)}
+                >
+                  <span className="truncate">{p.name}</span>
+                  <span className="ml-3 shrink-0 text-xs text-muted">
+                    {p.scheduleDay ? p.scheduleDay : 'any day'}
+                  </span>
+                </Button>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
