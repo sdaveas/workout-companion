@@ -213,7 +213,7 @@ export function ActiveWorkout() {
 
       <footer className="sticky bottom-0 border-t border-line bg-ink px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
         {isReady && (
-          <Button variant="primary" className="h-16 w-full text-base" onClick={startWorkout}>
+          <Button variant="primary" className="h-14 w-full text-base" onClick={startWorkout}>
             Start
           </Button>
         )}
@@ -222,7 +222,7 @@ export function ActiveWorkout() {
           <div className="space-y-2">
             <Button
               variant="primary"
-              className="h-16 w-full text-base"
+              className="h-14 w-full text-base"
               disabled={justStarted}
               onClick={() =>
                 dispatch({
@@ -249,13 +249,13 @@ export function ActiveWorkout() {
           (remainingMs(state, restNow) === 0 ? (
             <Button
               variant="primary"
-              className="h-16 w-full text-base"
+              className="h-14 w-full text-base"
               onClick={() => dispatch({ type: 'REST_DONE' })}
             >
               Start set
             </Button>
           ) : (
-            <Button className="h-14 w-full" onClick={() => dispatch({ type: 'SKIP_REST' })}>
+            <Button className="h-12 w-full" onClick={() => dispatch({ type: 'SKIP_REST' })}>
               Skip rest
             </Button>
           ))}
@@ -263,7 +263,7 @@ export function ActiveWorkout() {
         {state.status === 'paused' && (
           <Button
             variant="primary"
-            className="h-16 w-full text-base"
+            className="h-14 w-full text-base"
             onClick={() => dispatch({ type: 'RESUME' })}
           >
             Resume
@@ -273,7 +273,7 @@ export function ActiveWorkout() {
         {state.status === 'exercise_complete' && (
           <Button
             variant="primary"
-            className="h-16 w-full text-base"
+            className="h-14 w-full text-base"
             onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}
           >
             {nextExercise ? 'Continue' : 'Finish workout'}

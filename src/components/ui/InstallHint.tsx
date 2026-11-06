@@ -16,7 +16,7 @@ export function InstallHint() {
   if (dismissed || isInstalled()) return null;
 
   return (
-    <section className="mt-8 rounded-xl border border-line bg-surface p-4">
+    <section className="mt-8 border-t border-line pt-4">
       <p className="text-xs uppercase tracking-widest text-muted">Install</p>
       <p className="mt-2 text-sm">
         In Safari: Share → <span className="text-white">Add to Home Screen</span>. Works

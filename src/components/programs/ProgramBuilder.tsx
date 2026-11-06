@@ -46,7 +46,7 @@ function Num({
         max={max}
         onChange={(e) => onChange(Number(e.target.value))}
         onFocus={(e) => e.currentTarget.select()}
-        className="mt-1 h-11 w-full rounded-lg border border-line bg-ink px-2 text-center tabular-nums outline-none focus:border-accent"
+        className="mt-1 h-11 w-full rounded-lg bg-field px-2 text-center tabular-nums outline-none focus:ring-2 focus:ring-accent"
       />
     </label>
   );
@@ -103,7 +103,7 @@ export function ProgramBuilder({
             value={draft.name}
             onChange={(e) => patch({ name: e.target.value })}
             placeholder="Workout C"
-            className="mt-1 h-12 w-full rounded-xl border border-line bg-surface px-3 outline-none focus:border-accent"
+            className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
           />
         </label>
 
@@ -112,7 +112,7 @@ export function ProgramBuilder({
           <select
             value={draft.day}
             onChange={(e) => patch({ day: e.target.value as Weekday | '' })}
-            className="mt-1 h-12 w-full rounded-xl border border-line bg-surface px-3 outline-none focus:border-accent"
+            className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
           >
             {DAYS.map((d) => (
               <option key={d || 'none'} value={d}>
@@ -123,9 +123,9 @@ export function ProgramBuilder({
         </label>
       </div>
 
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-5 space-y-4">
         {draft.exercises.map((ex, i) => (
-          <li key={i} className="rounded-xl border border-line bg-surface p-3">
+          <li key={i} className="border-t border-line pt-4 first:border-0 first:pt-0">
             <div className="flex items-start gap-2">
               <label className="block flex-1">
                 <span className="text-[10px] uppercase tracking-widest text-muted">
@@ -135,7 +135,7 @@ export function ProgramBuilder({
                   value={ex.name}
                   onChange={(e) => patchExercise(i, { name: e.target.value })}
                   placeholder="Goblet Squat"
-                  className="mt-1 h-12 w-full rounded-lg border border-line bg-ink px-3 outline-none focus:border-accent"
+                  className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
                 />
               </label>
               <div className="mt-5 flex gap-1">
@@ -144,7 +144,7 @@ export function ProgramBuilder({
                   aria-label={`Move ${ex.name || `exercise ${i + 1}`} up`}
                   disabled={i === 0}
                   onClick={() => moveExercise(i, -1)}
-                  className="h-12 w-11 rounded-lg border border-line text-muted disabled:opacity-30"
+                  className="h-12 w-11 rounded-lg bg-field text-muted disabled:opacity-30"
                 >
                   ↑
                 </button>
@@ -153,7 +153,7 @@ export function ProgramBuilder({
                   aria-label={`Move ${ex.name || `exercise ${i + 1}`} down`}
                   disabled={i === draft.exercises.length - 1}
                   onClick={() => moveExercise(i, 1)}
-                  className="h-12 w-11 rounded-lg border border-line text-muted disabled:opacity-30"
+                  className="h-12 w-11 rounded-lg bg-field text-muted disabled:opacity-30"
                 >
                   ↓
                 </button>
@@ -161,14 +161,14 @@ export function ProgramBuilder({
                   type="button"
                   aria-label={`Remove ${ex.name || `exercise ${i + 1}`}`}
                   onClick={() => removeExercise(i)}
-                  className="h-12 w-11 rounded-lg border border-line text-danger"
+                  className="h-12 w-11 rounded-lg bg-field text-danger"
                 >
                   ×
                 </button>
               </div>
             </div>
 
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <Num label="Sets" value={ex.sets} min={1} onChange={(sets) => patchExercise(i, { sets })} />
               <Num
                 label="Reps min"
@@ -184,7 +184,7 @@ export function ProgramBuilder({
               />
             </div>
 
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-widest text-muted">Weight kg</span>
                 <input
@@ -193,7 +193,7 @@ export function ProgramBuilder({
                   onChange={(e) => patchExercise(i, { weightKg: e.target.value })}
                   onFocus={(e) => e.currentTarget.select()}
                   placeholder="bodyweight"
-                  className="mt-1 h-11 w-full rounded-lg border border-line bg-ink px-2 text-center tabular-nums outline-none focus:border-accent"
+                  className="mt-1 h-11 w-full rounded-lg bg-field px-2 text-center tabular-nums outline-none focus:ring-2 focus:ring-accent"
                 />
               </label>
               <Num
@@ -202,13 +202,13 @@ export function ProgramBuilder({
                 max={600}
                 onChange={(restSeconds) => patchExercise(i, { restSeconds })}
               />
-              <label className="flex min-h-11 flex-col justify-end pb-1 text-xs">
+              <label className="flex min-h-11 flex-col justify-end pb-1 text-sm">
                 <span className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={ex.perHand}
                     onChange={(e) => patchExercise(i, { perHand: e.target.checked })}
-                    className="h-5 w-5 accent-accent"
+                    className="h-6 w-6 shrink-0 appearance-none rounded border border-line bg-field accent-accent checked:border-accent checked:bg-accent"
                   />
                   Per hand
                 </span>
@@ -230,7 +230,7 @@ export function ProgramBuilder({
         type="button"
         disabled={!ready}
         onClick={() => void create()}
-        className="mt-4 h-14 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-40"
+        className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
       >
         {initial ? 'Update program' : 'Create program'}
       </button>

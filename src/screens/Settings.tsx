@@ -94,7 +94,7 @@ export function Settings() {
         <button
           type="button"
           onClick={() => void exportBackup()}
-          className="mt-4 h-14 w-full rounded-xl bg-accent font-semibold text-ink"
+          className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink"
         >
           Export backup
         </button>
@@ -113,7 +113,7 @@ export function Settings() {
         />
         <label
           htmlFor="backup-file"
-          className="mt-2 flex h-14 w-full items-center justify-center rounded-xl border border-line text-sm"
+          className="mt-2 flex h-12 w-full items-center justify-center rounded-xl border border-line text-sm"
         >
           Import a file
         </label>

@@ -3,6 +3,7 @@
 @theme {
   --color-ink: #0b0b0d;
   --color-surface: #15161a;
+  --color-field: #1d1f25;
   --color-line: #26282e;
   --color-muted: #8b8f98;
   --color-accent: #d7ff3f;
@@ -23,9 +24,37 @@ body,
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  /* iOS keeps text at the size it was laid out at */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* iOS zooms the page when a focused field is under 16px. Pinch zoom stays enabled:
+   this fixes the accidental zoom, it does not lock the viewport. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* No double-tap zoom, no 300ms delay on controls. */
+button,
+a,
+label,
+input,
+select {
+  touch-action: manipulation;
+}
+
+/* A scrollbar strip on a phone reads as a bezel. */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 :focus-visible {

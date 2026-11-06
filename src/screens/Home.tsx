@@ -48,7 +48,7 @@ export function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
       <p className="text-xs uppercase tracking-[0.2em] text-muted">Workout Companion</p>
       <h1 className="mt-3 text-3xl font-semibold">Ready to train</h1>
 
@@ -131,14 +131,14 @@ export function Home() {
       )}
 
       {!active && next.kind === 'none' && (
-        <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
+        <section className="mt-8 rounded-2xl bg-surface p-4">
           <p className="text-xs uppercase tracking-widest text-muted">Get started</p>
           {programs.length === 0 ? (
             <>
               <p className="mt-2 text-sm text-muted">Build a workout program to begin.</p>
               <a
                 href="#/programs/build"
-                className="mt-4 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+                className="mt-4 flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
               >
                 Build a program
               </a>
@@ -243,28 +243,27 @@ export function Home() {
         </section>
       )}
 
-      <nav className="mt-8 flex gap-3">
-        <a
-          href="#/programs"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
-        >
-          Programs
-        </a>
-        <a
-          href="#/history"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
-        >
-          History
-        </a>
-        <a
-          href="#/settings"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
-        >
-          Settings
-        </a>
-      </nav>
+
 
       <InstallHint />
+
+      <nav className="mt-auto flex overflow-hidden rounded-xl border border-line bg-surface">
+        {[
+          ['#/programs', 'Programs'],
+          ['#/history', 'History'],
+          ['#/settings', 'Settings'],
+        ].map(([href, label], i) => (
+          <a
+            key={href}
+            href={href}
+            className={`flex h-12 flex-1 items-center justify-center text-sm ${
+              i > 0 ? 'border-l border-line' : ''
+            }`}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
     </main>
   );
 }
