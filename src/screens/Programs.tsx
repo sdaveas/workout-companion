@@ -1,32 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Program } from '../engine/types';
-import { useHashRoute } from '../hooks/useHashRoute';
 import { usePrograms } from '../store/programsStore';
 import { formatDay } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 
-function weightLabel(e: Program['exercises'][number]): string {
-  if (e.weightKg == null) return 'bodyweight';
-  return `${e.weightKg} kg${e.perHand ? ' / hand' : ''}`;
-}
-
 export function Programs() {
-  const { programs, text, preview, issues, duplicateId, notice } = usePrograms();
-  const setText = usePrograms((s) => s.setText);
-  const save = usePrograms((s) => s.save);
+  const programs = usePrograms((s) => s.programs);
   const remove = usePrograms((s) => s.remove);
   const clear = usePrograms((s) => s.clear);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const route = useHashRoute();
+  const notice = usePrograms((s) => s.notice);
+  const issues = usePrograms((s) => s.issues);
+  const duplicateId = usePrograms((s) => s.duplicateId);
+  const save = usePrograms((s) => s.save);
   const [editing, setEditing] = useState<Program | null>(null);
-  const [mode, setMode] = useState<'paste' | 'build'>(() =>
-    route.param === 'paste' ? 'paste' : 'build',
-  );
-
-  useEffect(() => {
-    if (route.param === 'build' || route.param === 'paste') setMode(route.param);
-  }, [route.param]);
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -38,87 +25,13 @@ export function Programs() {
         <span className="w-12" />
       </header>
 
-      <div className="mt-6 grid grid-cols-2 gap-2" role="tablist" aria-label="Program source">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'build'}
-          onClick={() => setMode('build')}
-          className={`h-11 rounded-xl border text-sm ${
-            mode === 'build' ? 'border-accent text-white' : 'border-line text-muted'
-          }`}
-        >
-          Build it
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'paste'}
-          onClick={() => setMode('paste')}
-          className={`h-11 rounded-xl border text-sm ${
-            mode === 'paste' ? 'border-accent text-white' : 'border-line text-muted'
-          }`}
-        >
-          Paste JSON
-        </button>
-      </div>
-
-      {mode === 'build' && (
-        <ProgramBuilder
-          key={editing?.id ?? 'new'}
-          initial={editing ?? undefined}
-          onDone={() => setEditing(null)}
-        />
-      )}
+      <ProgramBuilder
+        key={editing?.id ?? 'new'}
+        initial={editing ?? undefined}
+        onDone={() => setEditing(null)}
+      />
 
       <SyncFromDisk />
-
-      {mode === 'paste' && (
-        <section className="mt-6">
-          <label htmlFor="json" className="text-xs uppercase tracking-widest text-muted">
-            Paste program JSON
-          </label>
-          <textarea
-            id="json"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            spellCheck={false}
-            rows={8}
-            placeholder='{ "schema_version": 1, ... }'
-            className="mt-2 w-full rounded-xl border border-line bg-surface p-3 font-mono text-xs leading-relaxed outline-none focus:border-accent"
-          />
-          <div className="mt-3 flex gap-3">
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              className="h-11 flex-1 rounded-xl border border-line bg-surface text-sm"
-            >
-              Load file
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                clear();
-                setEditing(null);
-              }}
-              className="h-11 flex-1 rounded-xl border border-line bg-surface text-sm"
-            >
-              Clear
-            </button>
-          </div>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (file) setText(await file.text());
-              e.target.value = '';
-            }}
-          />
-        </section>
-      )}
 
       {issues.length > 0 && (
         <section className="mt-5 rounded-xl border border-danger/40 bg-danger/10 p-4">
@@ -176,40 +89,8 @@ export function Programs() {
         </section>
       )}
 
-      {preview && (
-        <section className="mt-5 rounded-2xl border border-line bg-surface p-5">
-          <p className="text-xs uppercase tracking-widest text-accent">Preview</p>
-          <h2 className="mt-2 text-2xl font-semibold">{preview.name}</h2>
-          <p className="mt-1 text-sm text-muted">
-            {preview.scheduleDay ? `${formatDay(preview.scheduleDay)} · ` : ''}
-            {preview.exercises.length} exercises
-            {preview.estimatedDurationMinutes ? ` · ~${preview.estimatedDurationMinutes} min` : ''}
-          </p>
-          {preview.description && <p className="mt-2 text-sm text-muted">{preview.description}</p>}
-          <ul className="mt-4 divide-y divide-line">
-            {preview.exercises.map((e) => (
-              <li key={e.id} className="py-3">
-                <p className="font-medium">{e.name}</p>
-                <p className="mt-0.5 text-xs text-muted">
-                  {e.sets} × {e.reps.min}–{e.reps.max} · {weightLabel(e)} · rest {e.restSeconds}s
-                </p>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={() => void save()}
-            className="mt-4 h-14 w-full rounded-xl bg-accent font-semibold text-ink"
-          >
-            Save program
-          </button>
-        </section>
-      )}
-
       <section className="mt-8">
-        <p className="text-xs uppercase tracking-widest text-muted">
-          Saved ({programs.length})
-        </p>
+        <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
         {programs.length === 0 ? (
           <p className="mt-3 text-sm text-muted">Nothing saved yet.</p>
         ) : (
@@ -228,10 +109,7 @@ export function Programs() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setEditing(p);
-                      setMode('build');
-                    }}
+                    onClick={() => setEditing(p)}
                     className="h-11 rounded-lg border border-line px-3 text-xs"
                   >
                     Edit

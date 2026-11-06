@@ -1,5 +1,7 @@
+import { writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
+const BASE = 'http://localhost:5183';
 const browser = await chromium.launch();
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
@@ -11,34 +13,38 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
-await page.goto('http://localhost:5183/#/programs/paste');
+await page.goto(`${BASE}/#/settings`);
 await page.textContent('h1');
+console.log('SETTINGS SCREEN: yes');
 
-// invalid JSON → visible path error
-await page.fill('#json', JSON.stringify({ schema_version: 1, id: 'x', name: 'X', exercises: [{ id: 'a', name: 'A', sets: 0, reps: { min: 5, max: 5 }, rest_seconds: 60 }] }));
-const errorText = await page.textContent('section:has-text("Invalid program")');
-console.log('ERRORS:', errorText?.replace(/\s+/g, ' '));
+// invalid file → visible error, nothing imported
+const bad = '/tmp/wc-smoke-bad.json';
+await writeFile(bad, '{"schema_version":1}');
+await page.setInputFiles('#backup-file', bad);
+await page.waitForSelector('text=neither a workout program');
+console.log('INVALID FILE REPORTED:', (await page.textContent('text=neither a workout program'))?.trim().slice(0, 80));
 
-// valid fixture → preview → save
-await page.fill('#json', await (await fetch('http://localhost:5183/src/fixtures/workout-b.json')).text());
-await page.waitForSelector('text=Preview');
-const preview = await page.textContent('section:has-text("Preview")');
-console.log('PREVIEW:', preview?.replace(/\s+/g, ' ').slice(0, 160));
-
-await page.click('button:has-text("Save program")');
-await page.waitForSelector('text=Program "Workout B" added');
-console.log('SAVED: yes');
+// a program file imports
+const fixture = await (await fetch(`${BASE}/src/fixtures/workout-b.json`)).text();
+const good = '/tmp/wc-smoke-good.json';
+await writeFile(good, fixture);
+await page.setInputFiles('#backup-file', good);
+await page.waitForSelector('text=Imported');
+console.log('IMPORTED:', (await page.textContent('text=Imported'))?.trim());
 
 // persists across reload
 await page.reload();
+await page.goto(`${BASE}/#/programs`);
 await page.waitForSelector('text=Saved (1)');
 console.log('PERSISTED AFTER RELOAD: yes');
 
-// duplicate id → replace flow
-await page.fill('#json', await (await fetch('http://localhost:5183/src/fixtures/workout-b.json')).text());
-await page.click('button:has-text("Save program")');
-await page.waitForSelector('text=already exists');
-console.log('DUPLICATE GUARD: yes');
+// re-import is idempotent, not a duplicate
+await page.goto(`${BASE}/#/settings`);
+await page.setInputFiles('#backup-file', good);
+await page.waitForSelector('text=Imported');
+await page.goto(`${BASE}/#/programs`);
+await page.waitForSelector('text=Saved (1)');
+console.log('RE-IMPORT IS IDEMPOTENT: yes');
 
 await page.screenshot({ path: '/tmp/wc-programs.png', fullPage: true });
 console.log('JS ERRORS:', errors.length ? errors : 'none');

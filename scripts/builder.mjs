@@ -18,10 +18,9 @@ const check = (cond, msg) => {
 await page.goto(`${BASE}/#/`);
 await page.waitForLoadState('networkidle');
 await page.getByRole('link', { name: 'Build a program' }).click();
-check(page.url().endsWith('#/programs/build'), 'empty Home sends the user to the Build it tab');
-
-const buildTab = page.getByRole('tab', { name: 'Build it' });
-check((await buildTab.getAttribute('aria-selected')) === 'true', 'Build it is the first and default tab');
+check(page.url().endsWith('#/programs/build'), 'empty Home sends the user to the builder');
+check((await page.getByRole('tab').count()) === 0, 'Programs has no source tabs any more');
+check((await page.getByText('Paste JSON').count()) === 0, 'the Paste JSON pane is gone');
 check(
   (await page.getByPlaceholder('Workout C').inputValue()) === 'My workout',
   'default program name is "My workout"',

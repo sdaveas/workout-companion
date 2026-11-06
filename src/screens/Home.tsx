@@ -256,6 +256,12 @@ export function Home() {
         >
           History
         </a>
+        <a
+          href="#/settings"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
+        >
+          Settings
+        </a>
       </nav>
 
       <InstallHint />

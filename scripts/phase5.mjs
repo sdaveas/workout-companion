@@ -1,5 +1,5 @@
 import { chromium } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const BASE = 'http://localhost:5184';
 const fixture = await readFile('src/fixtures/workout-b.json', 'utf8');
@@ -61,10 +61,12 @@ check(a11y.unnamed === 0, 'every button and link has an accessible name');
 check(a11y.main === 1 && a11y.lang === 'en', 'one main landmark, lang set');
 
 // import while online
-await page.goto(`${APP}#/programs/paste`);
-await page.fill('#json', fixture);
-await page.waitForSelector('text=Preview');
-await page.click('button:has-text("Save program")');
+const fixturePath = '/tmp/wc-fixture.json';
+await writeFile(fixturePath, fixture, 'utf8');
+await page.goto(`${APP}#/settings`);
+await page.setInputFiles('#backup-file', fixturePath);
+await page.waitForSelector('text=Imported');
+await page.goto(`${APP}#/programs`);
 await page.waitForSelector('text=Saved (1)');
 
 // go offline: cold reload, start and complete a set

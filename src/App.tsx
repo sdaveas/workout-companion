@@ -4,6 +4,7 @@ import { ActiveWorkout } from './screens/ActiveWorkout';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { Programs } from './screens/Programs';
+import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
 import { usePrograms } from './store/programsStore';
 import { useSession } from './store/sessionStore';
@@ -27,6 +28,7 @@ export function App() {
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
       {route.name === 'history' && <History />}
+      {route.name === 'settings' && <Settings />}
       {(route.name === 'home' || route.name === '') && <Home />}
     </div>
   );

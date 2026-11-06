@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
 const BASE = 'http://localhost:5183';
@@ -61,10 +62,12 @@ async function completeOneSet() {
 }
 
 // import + start
-await page.goto(`${BASE}/#/programs/paste`);
-await page.fill('#json', fixture);
-await page.waitForSelector('text=Preview');
-await page.click('button:has-text("Save program")');
+const fixturePath = '/tmp/wc-fixture.json';
+await writeFile(fixturePath, fixture, 'utf8');
+await page.goto(`${BASE}/#/settings`);
+await page.setInputFiles('#backup-file', fixturePath);
+await page.waitForSelector('text=Imported');
+await page.goto(`${BASE}/#/programs`);
 await page.waitForSelector('text=Saved (1)');
 await page.goto(`${BASE}/#/`);
 await page.getByRole('button', { name: /^Start/ }).click();

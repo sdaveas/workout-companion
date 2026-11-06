@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
 const BASE = process.env.BASE ?? 'http://localhost:5183';
@@ -44,12 +45,20 @@ const ex = (id, name, sets = 1, rest = 0) => ({
   rest_seconds: rest,
 });
 
+let seedCount = 0;
+async function tmpFile(text) {
+  seedCount += 1;
+  const path = `/tmp/wc-seed-${process.pid}-${seedCount}.json`;
+  await writeFile(path, text, 'utf8');
+  return path;
+}
+
+/** Seeds a program through the same import a user would use. */
 async function saveProgram(page, json) {
-  await page.goto(`${BASE}/#/programs/paste`);
-  await page.fill('#json', json);
-  await page.waitForSelector('text=Preview');
-  await page.getByRole('button', { name: 'Save program' }).click();
-  await page.waitForSelector('text=added.');
+  const path = await tmpFile(json);
+  await page.goto(`${BASE}/#/settings`);
+  await page.setInputFiles('#backup-file', path);
+  await page.waitForSelector('text=Imported');
 }
 
 /** Taps through a workout until it stops cycling. Returns the number of sets completed. */
@@ -251,20 +260,29 @@ const auditScreen = async (page, screen) => {
 // ---------------------------------------------------------------- scenario 4
 {
   const { context, page } = await fresh();
-  await page.goto(`${BASE}/#/programs/paste`);
-  await page.fill('#json', '{"schema_version":1}');
-  const issuesText = await page.textContent('section:has-text("Invalid program")');
-  expect(/exercises/.test(issuesText), 'invalid JSON path is named in the paste pane');
-  await page.fill('#json', program('tiny', 'Tiny', 'monday', [ex('a', 'Alpha')]));
-  await page.waitForSelector('text=Preview');
-  await page.getByRole('button', { name: 'Save program' }).click();
-  await page.waitForSelector('text=added.');
-  await page.fill('#json', program('tiny', 'Tiny again', 'monday', [ex('a', 'Alpha')]));
-  await page.getByRole('button', { name: 'Save program' }).click();
-  await page.waitForSelector('text=already exists');
-  await page.getByRole('button', { name: 'Replace it' }).click();
-  await page.waitForSelector('text=updated.');
-  expect(true, 'duplicate id offers Replace and succeeds');
+
+  // a broken file is reported and nothing is written
+  await page.goto(`${BASE}/#/settings`);
+  await page.setInputFiles('#backup-file', await tmpFile('{"schema_version":1}'));
+  await page.waitForSelector('text=neither a workout program');
+  expect(true, 'a broken file is reported on Settings');
+  await page.goto(`${BASE}/#/programs`);
+  await page.waitForSelector('text=Nothing saved yet');
+  expect(true, 'a rejected file imports nothing');
+
+  await saveProgram(page, program('tiny', 'Tiny', 'monday', [ex('a', 'Alpha')]));
+  await page.goto(`${BASE}/#/programs`);
+  await page.waitForSelector('text=Saved (1)');
+  expect(true, 'a program file imports');
+
+  // same id again: updated in place, not duplicated
+  await saveProgram(page, program('tiny', 'Tiny again', 'monday', [ex('a', 'Alpha')]));
+  await page.goto(`${BASE}/#/programs`);
+  await page.waitForSelector('text=Tiny again');
+  expect(
+    (await page.textContent('body')).includes('Saved (1)'),
+    'a re-import updates by id instead of duplicating',
+  );
 
   // edit through the builder, then start it
   await page.getByRole('button', { name: 'Edit' }).first().click();
@@ -445,6 +463,49 @@ const auditScreen = async (page, screen) => {
   expect(await page.getByLabel('elapsed time').isVisible(), 'Start begins the timed workout');
   expect(errors.length === 0, `no console errors (${errors.join(' | ') || 'none'})`);
   await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 10
+{
+  const a = await fresh();
+  await saveProgram(a.page, program('bk-1', 'Backup One', 'monday', [ex('a', 'Alpha')]));
+  await saveProgram(a.page, program('bk-2', 'Backup Two', null, [ex('b', 'Beta')]));
+  await a.page.goto(`${BASE}/#/`);
+  await a.page.getByRole('button', { name: /Backup Two/ }).click();
+  await beginFromPreview(a.page);
+  await drive(a.page);
+  await a.page.waitForSelector('text=Session complete');
+  await a.page.getByRole('button', { name: 'Done' }).click();
+
+  await a.page.goto(`${BASE}/#/settings`);
+  const [download] = await Promise.all([
+    a.page.waitForEvent('download'),
+    a.page.getByRole('button', { name: 'Export backup' }).click(),
+  ]);
+  expect(
+    download.suggestedFilename() === 'workout-companion-backup.json',
+    `backup filename (${download.suggestedFilename()})`,
+  );
+  const backup = await download.path();
+
+  // a second phone: nothing installed, then one import
+  const b = await fresh();
+  await b.page.goto(`${BASE}/#/settings`);
+  await b.page.setInputFiles('#backup-file', backup);
+  await b.page.waitForSelector('text=Imported');
+  await b.page.goto(`${BASE}/#/programs`);
+  await b.page.waitForSelector('text=Saved (2)');
+  expect(true, 'both programs arrive from the backup');
+  await b.page.goto(`${BASE}/#/history`);
+  await b.page.waitForSelector('text=Backup Two');
+  expect(true, 'the session history arrives with the backup');
+  await b.page.goto(`${BASE}/#/`);
+  await b.page.getByRole('button', { name: /Backup Two/ }).click();
+  await beginFromPreview(b.page);
+  expect(true, 'an imported program is startable');
+  await auditScreen(b.page, 'settings/after-import');
+  await b.context.close();
+  await a.context.close();
 }
 
 await browser.close();

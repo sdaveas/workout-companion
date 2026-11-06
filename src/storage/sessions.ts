@@ -81,6 +81,15 @@ export async function loadHistory(): Promise<SessionRow[]> {
   return rows.sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0));
 }
 
+/** Every stored session, including abandoned ones. Used by the backup export. */
+export function loadAllSessions(): Promise<SessionRow[]> {
+  return db.sessions.toArray();
+}
+
+export function countSessions(): Promise<number> {
+  return db.sessions.count();
+}
+
 /**
  * Removes one stored session. Used from History when a row was a mistake (or a test run).
  * Pointers that named it are cleared too, so the app cannot resume a session that is gone.

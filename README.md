@@ -7,12 +7,16 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
 Status: all five phases done — import, engine, UI, recovery, PWA. See
-`docs/phase-status.md`. Programs can be pasted as JSON or built with the in-app form
-(Programs → **Build it**).
+`docs/phase-status.md`. Programs are built with the in-app form (Programs) or imported
+from a program JSON / backup file (Settings → **Import a file**).
 
 Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
 localStorage mirror of the active session. No account, no server, no sync. A fresh profile
-starts empty: Home sends you to Programs → **Build it**.
+starts empty: Home sends you to Programs.
+
+Backup: Settings → **Export backup** writes one JSON with every program and every session;
+**Import a file** merges by id (new items added, matching ones updated, nothing deleted) and
+also accepts a single program JSON. Design: `docs/designs/backup-and-settings.md`.
 
 ## Agent bridge (MCP)
 
@@ -30,7 +34,7 @@ Tools: `list_programs`, `get_program`, `validate_program`, `create_program`,
 Validation runs the app's own importer, so the MCP cannot accept what the app rejects.
 
 In dev, Programs shows **Sync from data/programs**: imports every file listed in
-`index.json` through the same path as a manual paste (replace by id).
+`index.json` through the same importer the builder uses (replace by id).
 
 ```bash
 npm install
