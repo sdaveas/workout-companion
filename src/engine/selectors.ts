@@ -41,12 +41,19 @@ export function getExerciseProgress(s: WorkoutState): { done: number; total: num
 
 export function getWorkoutProgress(s: WorkoutState): {
   done: number;
+  skipped: number;
   total: number;
   ratio: number;
 } {
   const all = s.exerciseRecords.flatMap((r) => r.sets);
   const done = all.filter((x) => x.completed).length;
-  return { done, total: all.length, ratio: all.length === 0 ? 0 : done / all.length };
+  const skipped = all.filter((x) => x.skipped).length;
+  return {
+    done,
+    skipped,
+    total: all.length,
+    ratio: all.length === 0 ? 0 : done / all.length,
+  };
 }
 
 export function getRemainingRestSeconds(s: WorkoutState, now: number): number {

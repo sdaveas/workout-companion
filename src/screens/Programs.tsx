@@ -232,7 +232,7 @@ export function Programs() {
                       setEditing(p);
                       setMode('build');
                     }}
-                    className="h-9 rounded-lg border border-line px-3 text-xs"
+                    className="h-11 rounded-lg border border-line px-3 text-xs"
                   >
                     Edit
                   </button>
@@ -243,7 +243,7 @@ export function Programs() {
                         void remove(p.id);
                       }
                     }}
-                    className="h-9 rounded-lg border border-line px-3 text-xs text-danger"
+                    className="h-11 rounded-lg border border-line px-3 text-xs text-danger"
                   >
                     Delete
                   </button>

@@ -56,17 +56,33 @@ export function ActiveWorkout() {
               {formatClock(elapsedMs(state, now))}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setEnding((v) => !v)}
-            aria-expanded={ending}
-            className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
-          >
-            End
-          </button>
+          <div className="flex gap-2">
+            {state.undoStack.length > 0 && (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'UNDO' })}
+                className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
+              >
+                Undo
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setEnding((v) => !v)}
+              aria-expanded={ending}
+              className="h-11 rounded-xl border border-line px-4 text-sm text-muted"
+            >
+              End
+            </button>
+          </div>
         </div>
         <div className="mt-3">
-          <ProgressBar value={progress.ratio} label={`${progress.done} of ${progress.total} sets`} />
+          <ProgressBar
+            value={progress.ratio}
+            label={`${progress.done} of ${progress.total} sets${
+              progress.skipped > 0 ? `, ${progress.skipped} skipped` : ''
+            }`}
+          />
         </div>
         {ending && (
           <div className="mt-3 flex gap-2 rounded-xl border border-line bg-surface p-3">
