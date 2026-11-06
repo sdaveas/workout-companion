@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "id": "workout-a",
+  "name": "Workout A",
+  "description": "Full body strength training",
+  "schedule": { "day": "monday" },
+  "estimated_duration_minutes": 35,
+  "exercises": [
+    {
+      "id": "push-ups",
+      "name": "Push-ups",
+      "sets": 3,
+      "reps": { "min": 6, "max": 10 },
+      "rest_seconds": 90,
+      "instructions": [
+        "Keep your body straight",
+        "Lower your chest towards the floor",
+        "Push up without arching your back"
+      ],
+      "muscle_groups": ["chest", "triceps", "shoulders"]
+    },
+    {
+      "id": "dumbbell-row",
+      "name": "Dumbbell Row",
+      "sets": 3,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg" },
+      "rest_seconds": 90,
+      "instructions": [
+        "Support yourself on a bench with one hand",
+        "Pull the dumbbell towards your hip",
+        "Lower slowly under control"
+      ],
+      "muscle_groups": ["back", "biceps"]
+    },
+    {
+      "id": "shoulder-press",
+      "name": "Shoulder Press",
+      "sets": 2,
+      "reps": { "min": 8, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg", "per_hand": true },
+      "rest_seconds": 60,
+      "instructions": [
+        "Start with the dumbbells at shoulder height",
+        "Press up until your arms are straight",
+        "Lower under control"
+      ],
+      "muscle_groups": ["shoulders", "triceps"]
+    },
+    {
+      "id": "biceps-curl",
+      "name": "Biceps Curls",
+      "sets": 2,
+      "reps": { "min": 10, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg", "per_hand": true },
+      "rest_seconds": 60,
+      "instructions": [
+        "Keep your elbows close to your body",
+        "Curl up without swinging",
+        "Lower slowly"
+      ],
+      "muscle_groups": ["biceps"]
+    },
+    {
+      "id": "romanian-deadlift",
+      "name": "Romanian Deadlift",
+      "sets": 3,
+      "reps": { "min": 12, "max": 12 },
+      "weight": { "value": 5.8, "unit": "kg", "per_hand": true },
+      "rest_seconds": 90,
+      "instructions": [
+        "Stand tall with the dumbbells in front of your thighs",
+        "Push your hips back and lower with a flat back",
+        "Stop when you feel a stretch in your hamstrings, then stand"
+      ],
+      "muscle_groups": ["hamstrings", "glutes"]
+    },
+    {
+      "id": "plank",
+      "name": "Plank (30 sec)",
+      "sets": 3,
+      "reps": { "min": 30, "max": 30 },
+      "rest_seconds": 60,
+      "instructions": [
+        "Forearms on the floor, elbows under your shoulders",
+        "Squeeze your glutes and keep your body in one line",
+        "Hold for 30 seconds — log the 30 when done"
+      ],
+      "muscle_groups": ["core"]
+    }
+  ]
+}

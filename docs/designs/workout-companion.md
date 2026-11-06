@@ -743,6 +743,14 @@ images are still JSON-only, which is why the paste tab stays the default. Not re
 a full editor would duplicate the schema in UI state for fields the workout screen barely
 uses.
 
+**2026-11-06 — post-phase-5: file-backed MCP (`data/`, not a socket).** Agents write
+programs to `data/programs/<id>.json`; the app writes history to
+`data/history/workout-history.json` (History → **Export**), which the MCP reads. The server
+imports `parseProgram`, so it cannot accept a program the app rejects, and it resolves its
+data root from its own path (`WC_DATA_DIR` overrides it for tests). No live bridge and no
+database: the app never writes `data/programs`, so there is no two-writer conflict. Full
+design and rejected alternatives: `docs/designs/agent-bridge.md`.
+
 ---
 
 ## 3. Alternatives

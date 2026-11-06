@@ -1,0 +1,7 @@
+{
+  "updatedAt": 1762416000000,
+  "programs": [
+    { "id": "workout-a", "name": "Workout A", "scheduleDay": "monday", "exerciseCount": 6 },
+    { "id": "workout-b", "name": "Workout B", "scheduleDay": "saturday", "exerciseCount": 6 }
+  ]
+}

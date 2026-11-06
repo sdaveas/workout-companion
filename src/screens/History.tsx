@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useSession } from '../store/sessionStore';
+import { useNow } from '../hooks/useNow';
 import { summarize } from '../engine/summary';
+import { downloadJson, historyExport } from '../lib/exportHistory';
 import { formatDate, formatDuration } from '../lib/format';
 
 export function History() {
   const history = useSession((s) => s.history);
   const loadHistory = useSession((s) => s.loadHistory);
   const [loaded, setLoaded] = useState(false);
+  const now = useNow(60_000);
 
   useEffect(() => {
     void loadHistory().then(() => setLoaded(true));
@@ -19,7 +22,17 @@ export function History() {
           ← Home
         </a>
         <h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>
-        <span className="w-12" />
+        {history.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => downloadJson('workout-history.json', historyExport(history, now))}
+            className="h-11 rounded-lg border border-line px-3 text-xs"
+          >
+            Export
+          </button>
+        ) : (
+          <span className="w-12" />
+        )}
       </header>
 
       {loaded && history.length === 0 && (

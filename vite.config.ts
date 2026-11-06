@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // GitHub Pages serves a project site from /<repo>/. CI sets BASE; dev and local builds stay at /.
+  base: process.env.BASE ?? '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -14,16 +16,16 @@ export default defineConfig({
         name: 'Workout Companion',
         short_name: 'Workout',
         description: 'Offline-first workout companion: import a program, follow it set by set.',
-        start_url: '/',
-        scope: '/',
+        start_url: '.',
+        scope: '.',
         display: 'standalone',
         background_color: '#0b0b0d',
         theme_color: '#0b0b0d',
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           {
-            src: '/icons/icon-512.png',
+            src: 'icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -49,6 +51,6 @@ export default defineConfig({
   ],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'mcp/**/*.test.ts'],
   },
 });

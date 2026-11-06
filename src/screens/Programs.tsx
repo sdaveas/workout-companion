@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Program } from '../engine/types';
 import { usePrograms } from '../store/programsStore';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
+import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 
 function weightLabel(e: Program['exercises'][number]): string {
   if (e.weightKg == null) return 'bodyweight';
@@ -53,6 +54,8 @@ export function Programs() {
       </div>
 
       {mode === 'build' && <ProgramBuilder onDone={() => setMode('paste')} />}
+
+      <SyncFromDisk />
 
       {mode === 'paste' && (
         <section className="mt-6">
