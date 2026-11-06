@@ -6,14 +6,20 @@ import { Home } from './screens/Home';
 import { Programs } from './screens/Programs';
 import { Summary } from './screens/Summary';
 import { usePrograms } from './store/programsStore';
+import { useSession } from './store/sessionStore';
 
 export function App() {
   const route = useHashRoute();
   const load = usePrograms((s) => s.load);
+  const recover = useSession((s) => s.recover);
+  const restoring = useSession((s) => s.restoring);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    void recover();
+  }, [load, recover]);
+
+  if (restoring) return <div className="min-h-dvh bg-ink" />;
 
   return (
     <div className="min-h-dvh bg-ink text-[15px]">

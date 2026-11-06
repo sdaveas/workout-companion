@@ -46,11 +46,12 @@ export function RestTimer({ state, now }: { state: WorkoutState; now: number }) 
             <Button onClick={() => dispatch({ type: 'ADJUST_REST', seconds: 15 })}>+15s</Button>
           </div>
           <div className="mt-2 grid w-full grid-cols-2 gap-2">
-            <Button variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              onClick={() => dispatch({ type: 'RESTART_REST' })}
+            >
               Restart rest
-            </Button>
-            <Button variant="ghost" onClick={() => dispatch({ type: 'SKIP_REST' })}>
-              Skip rest
             </Button>
           </div>
         </>

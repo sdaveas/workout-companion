@@ -4,7 +4,8 @@ import { newSessionId } from '../engine/ids';
 import { reduce } from '../engine/reduce';
 import type { SessionRow } from '../storage/db';
 import { getProgram } from '../storage/programs';
-import { loadHistory, loadSession, saveSession } from '../storage/sessions';
+import { loadHistory, loadSession, saveSession, clearSetting, writeSnapshot } from '../storage/sessions';
+import { recoverSession } from '../storage/recovery';
 import type { WorkoutAction, WorkoutEvent, WorkoutState } from '../engine/types';
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
@@ -14,10 +15,12 @@ interface SessionStore {
   error: string | null;
   history: SessionRow[];
   busy: boolean;
+  restoring: boolean;
 
   beginWorkout: (programId: string) => Promise<void>;
   dispatch: (action: WorkoutAction) => void;
   editStored: (sessionId: string, action: WorkoutAction) => Promise<WorkoutState | null>;
+  recover: () => Promise<void>;
   loadHistory: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
@@ -28,6 +31,7 @@ export const useSession = create<SessionStore>((set, get) => ({
   error: null,
   history: [],
   busy: false,
+  restoring: true,
 
   async beginWorkout(programId) {
     set({ busy: true });
@@ -55,6 +59,7 @@ export const useSession = create<SessionStore>((set, get) => ({
     }
 
     set({ state: next, error: null });
+    writeSnapshot(next);
     void saveSession(next).catch((err) => set({ error: `Not saving: ${message(err)}` }));
   },
 
@@ -70,6 +75,32 @@ export const useSession = create<SessionStore>((set, get) => ({
     } catch (err) {
       set({ error: message(err) });
       return null;
+    }
+  },
+
+  /** Startup: pick up the active session, if any. Never overwrites one. */
+  async recover() {
+    if (get().state) {
+      set({ restoring: false });
+      return;
+    }
+    try {
+      const found = await recoverSession();
+      if (found.kind === 'restored') {
+        set({ state: found.row.state, error: null, restoring: false });
+        return;
+      }
+      if (found.kind === 'stale') {
+        await clearSetting('activeSessionId');
+      }
+      if (found.kind === 'corrupt') {
+        set({
+          error: `A saved session could not be recovered (${found.reason}). It is still in storage; starting a workout begins a new session.`,
+        });
+      }
+      set({ restoring: false });
+    } catch (err) {
+      set({ error: `Could not open saved sessions: ${message(err)}`, restoring: false });
     }
   },
 

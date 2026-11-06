@@ -711,6 +711,18 @@ and every state transition still gets its `now` from the store. Removing it woul
 threading a "tick" event through the store on a 250 ms timer, which is more machinery for
 no correctness gain.
 
+**2026-11-06 — localStorage mirror in front of IndexedDB.** §2.12 made the Dexie row the
+only copy. IndexedDB writes are asynchronous and queued, so a tap followed within a few
+milliseconds by a reload or a killed tab could lose that transition even though the UI had
+already applied it (observed at the phase-4 gate: skip-rest then reload restored the
+resting state). `writeSnapshot` now mirrors the live state to `localStorage` synchronously
+on every transition, and `recoverSession` prefers the mirror when its `updatedAt` is newer
+than the row's, then writes it back to Dexie. Dexie remains the durable copy and the
+history/summary source; the mirror exists only for the active session and is removed on
+`completed`/`abandoned`. Not revisited: localStorage is ~5 MB and the state is a few KB,
+so quota is not a concern, and storing nothing but the active session keeps the copy
+surface small.
+
 ---
 
 ## 3. Alternatives

@@ -6,7 +6,7 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `docs/designs/workout-companion.md` — design (how, and what was rejected).
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
-Status: phases 1–3 done (JSON import, pure engine, full workout UI). Current phase: 4 (recovery).
+Status: phases 1–4 done (import, engine, UI, recovery). Current phase: 4 (recovery) — gated.
 See `docs/phase-status.md`.
 
 ```bash

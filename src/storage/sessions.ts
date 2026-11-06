@@ -3,6 +3,34 @@ import type { WorkoutState } from '../engine/types';
 
 let queue: Promise<unknown> = Promise.resolve();
 
+const SNAPSHOT = 'wc:activeSnapshot';
+
+/**
+ * Synchronous mirror of the live state. IndexedDB writes are async, so a tap
+ * followed by an immediate reload/kill can outrun the queued write; this closes
+ * that gap. Dexie stays the durable copy.
+ */
+export function writeSnapshot(state: WorkoutState): void {
+  try {
+    if (state.status === 'ready' || state.status === 'completed' || state.status === 'abandoned') {
+      localStorage.removeItem(SNAPSHOT);
+      return;
+    }
+    localStorage.setItem(SNAPSHOT, JSON.stringify(state));
+  } catch {
+    // Private mode or quota: the async write still runs.
+  }
+}
+
+export function readSnapshot(): WorkoutState | null {
+  try {
+    const raw = localStorage.getItem(SNAPSHOT);
+    return raw ? (JSON.parse(raw) as WorkoutState) : null;
+  } catch {
+    return null;
+  }
+}
+
 function enqueue<T>(job: () => Promise<T>): Promise<T> {
   const next = queue.then(job, job);
   queue = next.catch(() => undefined);
@@ -32,6 +60,7 @@ export function saveSession(state: WorkoutState): Promise<void> {
       await db.sessions.put(row);
       if (state.status === 'completed' || state.status === 'abandoned') {
         await db.settings.delete('activeSessionId');
+        writeSnapshot(state);
         if (state.status === 'completed') {
           await db.settings.put({ key: 'lastSessionId', value: row.id });
         }
