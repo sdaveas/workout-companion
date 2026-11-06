@@ -1,12 +1,12 @@
 # Phase status
 
-`current: phase 3 (not started)` · protocol below is the phase gate.
+`current: phase 4 (not started)` · protocol below is the phase gate.
 
 | Phase | Status | Evidence | Commit |
 |---|---|---|---|
 | 1 Foundation | done | 17 tests, typecheck, build, Playwright smoke (error path, preview, save, reload, duplicate id) | `10a70d5` |
 | 2 Engine | done | 86 tests, typecheck, build, `grep Date.now` = 1 (id fallback only), `engine/` imports no React | `426c8dd` |
-| 3 Interface | not started | — | — |
+| 3 Interface | done | 86 tests, typecheck, build, Playwright full run; manual: start→finish Workout B in the UI (16/16 sets), summary 16 of 16, RPE 7 + note saved, history lists it, summary reopens from IndexedDB with RPE intact, zero console errors | `7ab54ea` |
 | 4 Recovery | not started | — | — |
 | 5 PWA / polish | not started | — | — |
 
@@ -21,8 +21,9 @@
    For phases 3–5 one clause is manual and must be recorded here verbatim, e.g.
    `manual: start→finish Workout B in preview; reload mid-rest at set 4 → Resume showed 7s`.
    A green triad alone is **not** a completed phase once the UI exists.
-3. **Clock guard**: `grep -rn "Date.now" src` must hit only `engine/ids.ts` and
-   `store/sessionStore.ts`. Zero hits in `screens/` — the store stamps `now`, nothing else.
+3. **Clock guard**: `grep -rn "Date.now" src` must hit only `engine/ids.ts`,
+   `hooks/useNow.ts` (display-only repaint tick, §2.18) and `store/sessionStore.ts`.
+   Zero hits in `screens/` — the store stamps `now`, nothing else.
 4. **Record**: update the table above and the README `Status:` line. Nothing else.
 5. **Commit + tag**: one commit named `phase N: <name>` whose body carries the gate evidence
    (test count, typecheck/build, manual result); `git tag phase-N`. The table update rides

@@ -115,4 +115,8 @@ export type WorkoutEvent =
   | { type: 'SET_NOTES'; now: number; notes: string }
   | { type: 'ABANDON'; now: number };
 
-export type WorkoutAction = Omit<WorkoutEvent, 'now'>;
+export type WorkoutAction = WorkoutEvent extends infer E
+  ? E extends { now: number }
+    ? Omit<E, 'now'>
+    : never
+  : never;

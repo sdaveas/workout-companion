@@ -696,6 +696,21 @@ payloads (negative reps, `setNumber` that was never recorded, RPE 11) are a diff
 failure from a bad state, and the UI shows them differently (dismissible banner vs. the
 state is simply not wrong). Both live in `engine/errors.ts`.
 
+**2026-11-06 — `schedule.ts` takes the active session as an argument.** §2.11 returned
+`{ kind: 'resume' }` and carried `lastSession` on `done_today`. `nextUp(programs, sessions,
+now, activeSession?)` takes the active session explicitly, so the function stays a pure
+function of its inputs and Home passes the store's state; `done_today` carries only the
+program (Home links the last session separately from history). `weekView` returns one entry
+per weekday with a `programs[]` list, because §2.11 already required two programs on the
+same weekday to both appear.
+
+**2026-11-06 — `hooks/useNow.ts` reads the clock.** The clock guard allows `Date.now` in
+`engine/ids.ts` and `store/sessionStore.ts` only; `useNow` adds a third, display-only hit.
+It is a repaint tick: it returns a number used for rendering and never feeds the reducer,
+and every state transition still gets its `now` from the store. Removing it would mean
+threading a "tick" event through the store on a 250 ms timer, which is more machinery for
+no correctness gain.
+
 ---
 
 ## 3. Alternatives

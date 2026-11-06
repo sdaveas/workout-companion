@@ -1,29 +1,211 @@
+import { useEffect, useState } from 'react';
+import { navigate } from '../hooks/useHashRoute';
+import { useNow } from '../hooks/useNow';
 import { usePrograms } from '../store/programsStore';
+import { useSession } from '../store/sessionStore';
+import { nextUp, weekView } from '../engine/schedule';
+import { getWorkoutProgress } from '../engine/selectors';
+import { summarize } from '../engine/summary';
+import { elapsedMs } from '../engine/time';
+import { formatDate, formatDuration } from '../lib/format';
+import { Banner } from '../components/ui/Banner';
+import { Button } from '../components/ui/Button';
 
 export function Home() {
   const programs = usePrograms((s) => s.programs);
+  const state = useSession((s) => s.state);
+  const history = useSession((s) => s.history);
+  const loadHistory = useSession((s) => s.loadHistory);
+  const beginWorkout = useSession((s) => s.beginWorkout);
+  const error = useSession((s) => s.error);
+  const clearError = useSession((s) => s.clearError);
+  const [starting, setStarting] = useState<string | null>(null);
+  const now = useNow(60_000);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
+  const active = state && state.status !== 'completed' && state.status !== 'abandoned' ? state : null;
+  const sessions = history.map((h) => ({ programId: h.programId, finishedAt: h.finishedAt }));
+  const next = nextUp(programs, sessions, now, active ? { programId: active.programId } : null);
+  const week = weekView(programs, sessions, now);
+  const last = history[0] ?? null;
+  const lastSummary = last ? summarize(last.state, last.finishedAt ?? last.state.updatedAt) : null;
+
+  async function start(programId: string) {
+    setStarting(programId);
+    await beginWorkout(programId);
+    setStarting(null);
+    const started = useSession.getState().state;
+    if (started && started.status !== 'ready') navigate('#/session');
+  }
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <p className="text-xs uppercase tracking-[0.2em] text-muted">Workout Companion</p>
       <h1 className="mt-3 text-3xl font-semibold">Ready to train</h1>
 
-      <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
-        <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
-        <p className="mt-2 text-2xl font-semibold">
-          {programs.length === 0 ? 'None yet' : `${programs.length} imported`}
-        </p>
+      {error && <Banner message={error} onDismiss={clearError} />}
+
+      {active && (
+        <section className="mt-8 rounded-2xl border border-accent/50 bg-surface p-5">
+          <p className="text-xs uppercase tracking-widest text-accent">In progress</p>
+          <h2 className="mt-2 text-2xl font-semibold">{active.program.name}</h2>
+          <p className="mt-1 text-sm text-muted">
+            {getWorkoutProgress(active).done} of {getWorkoutProgress(active).total} sets ·{' '}
+            {formatDuration(elapsedMs(active, now))} elapsed
+          </p>
+          <Button
+            variant="primary"
+            className="mt-4 h-14 w-full text-base"
+            onClick={() => navigate('#/session')}
+          >
+            Resume workout
+          </Button>
+        </section>
+      )}
+
+      {!active && next.kind === 'today' && (
+        <section className="mt-8 rounded-2xl border border-accent/50 bg-surface p-5">
+          <p className="text-xs uppercase tracking-widest text-accent">Today</p>
+          <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
+          <p className="mt-1 text-sm text-muted">
+            {next.program.exercises.length} exercises
+            {next.program.estimatedDurationMinutes
+              ? ` · ~${next.program.estimatedDurationMinutes} min`
+              : ''}
+          </p>
+          <Button
+            variant="primary"
+            className="mt-4 h-14 w-full text-base"
+            disabled={starting != null}
+            onClick={() => void start(next.program.id)}
+          >
+            {starting ? 'Starting…' : 'Start workout'}
+          </Button>
+        </section>
+      )}
+
+      {!active && next.kind === 'upcoming' && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
+          <p className="text-xs uppercase tracking-widest text-muted">
+            Next · {next.weekday}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
+          <p className="mt-1 text-sm text-muted">
+            {next.program.exercises.length} exercises
+            {next.program.estimatedDurationMinutes
+              ? ` · ~${next.program.estimatedDurationMinutes} min`
+              : ''}
+          </p>
+          <Button
+            className="mt-4 h-14 w-full"
+            disabled={starting != null}
+            onClick={() => void start(next.program.id)}
+          >
+            {starting ? 'Starting…' : 'Start anyway'}
+          </Button>
+        </section>
+      )}
+
+      {!active && next.kind === 'done_today' && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
+          <p className="text-xs uppercase tracking-widest text-accent">✓ Done for today</p>
+          <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
+          <p className="mt-1 text-sm text-muted">Logged. Extras are optional.</p>
+          <Button
+            className="mt-4 h-14 w-full"
+            disabled={starting != null}
+            onClick={() => void start(next.program.id)}
+          >
+            {starting ? 'Starting…' : 'Do it again'}
+          </Button>
+        </section>
+      )}
+
+      {!active && next.kind === 'none' && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface p-5">
+          <p className="text-xs uppercase tracking-widest text-muted">Get started</p>
+          <p className="mt-2 text-sm text-muted">
+            {programs.length === 0
+              ? 'Import a workout program to begin.'
+              : 'No program is scheduled. Start one from your list.'}
+          </p>
+          <a
+            href="#/programs"
+            className="mt-4 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+          >
+            Manage programs
+          </a>
+        </section>
+      )}
+
+      {programs.length > 0 && (
+        <section className="mt-8">
+          <p className="text-xs uppercase tracking-widest text-muted">This week</p>
+          <ul className="mt-3 space-y-1">
+            {week.map((day) => {
+              const today = new Date(now).toDateString() === new Date(day.date).toDateString();
+              return (
+                <li
+                  key={day.weekday}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                    today ? 'bg-surface' : ''
+                  }`}
+                >
+                  <span className={`text-sm capitalize ${today ? 'text-white' : 'text-muted'}`}>
+                    {day.weekday}
+                  </span>
+                  <span className="text-sm">
+                    {day.programs.length === 0 ? (
+                      <span className="text-muted">Rest</span>
+                    ) : (
+                      day.programs.map(({ program, done }) => (
+                        <span key={program.id} className="ml-2">
+                          {program.name}
+                          {done && <span className="text-accent"> ✓ done</span>}
+                        </span>
+                      ))
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {last && (
+        <section className="mt-8">
+          <p className="text-xs uppercase tracking-widest text-muted">Last session</p>
+          <a
+            href={`#/summary/${last.id}`}
+            className="mt-3 block rounded-xl border border-line bg-surface px-4 py-4"
+          >
+            <p className="font-medium">{last.programName}</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {formatDate(last.finishedAt)} · {formatDuration(lastSummary?.durationMs ?? 0)} ·{' '}
+              {lastSummary?.setsCompleted ?? 0} sets
+            </p>
+          </a>
+        </section>
+      )}
+
+      <nav className="mt-8 flex gap-3">
+        <a
+          href="#/history"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
+        >
+          History
+        </a>
         <a
           href="#/programs"
-          className="mt-5 flex h-14 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface text-sm"
         >
-          Manage programs
+          Programs
         </a>
-      </section>
-
-      <p className="mt-6 text-sm text-muted">
-        Phase 1: import, validate and store a program. The workout engine lands next.
-      </p>
+      </nav>
     </main>
   );
 }
