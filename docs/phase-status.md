@@ -21,7 +21,7 @@
    For phases 3–5 one clause is manual and must be recorded here verbatim, e.g.
    `manual: start→finish Workout B in preview; reload mid-rest at set 4 → Resume showed 7s`.
    A green triad alone is **not** a completed phase once the UI exists.
-3. **Clock guard**: `grep -rn "Date.now" src` must hit only `engine/ids.ts`,
+3. **Clock guard**: `grep -rn -F "Date.now" src` must hit only `engine/ids.ts`,
    `hooks/useNow.ts` (display-only repaint tick, §2.18) and `store/sessionStore.ts`.
    Zero hits in `screens/` — the store stamps `now`, nothing else.
 4. **Record**: update the table above and the README `Status:` line. Nothing else.

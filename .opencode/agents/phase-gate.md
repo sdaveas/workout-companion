@@ -28,8 +28,9 @@ Then run the gate:
 - Every clause of that phase's *Done when* row. For phases 3–5 one clause is manual
   and cannot be proven by tests; if the recorded evidence for it is missing or vague
   ("works", "verified"), the phase fails.
-- Clock guard: `grep -rn "Date.now" src` must hit only `engine/ids.ts` and
-  `store/sessionStore.ts`. Any hit in `screens/` is blocking.
+- Clock guard: `grep -rn -F "Date.now" src` must hit only `engine/ids.ts`,
+  `hooks/useNow.ts` (display-only tick, §2.18) and `store/sessionStore.ts`. Any hit in
+  `screens/` is blocking.
 - Doc truth: does `docs/phase-status.md` and the README `Status:` line describe HEAD?
   A stale status line is a real finding, not cosmetic.
 - Deviations discovered during the phase must appear in design §2.18. A behaviour that
