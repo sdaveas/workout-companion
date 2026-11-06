@@ -13,7 +13,7 @@ export interface SessionRow {
 }
 
 export interface SettingRow {
-  key: 'activeSessionId' | 'lastSessionId';
+  key: 'activeSessionId' | 'lastSessionId' | 'seeded';
   value: string;
 }
 

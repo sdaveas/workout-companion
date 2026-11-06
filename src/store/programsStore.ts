@@ -7,6 +7,7 @@ import {
   listPrograms,
   saveProgram,
 } from '../storage/programs';
+import { seedIfEmpty } from '../storage/seed';
 import { prefetchImages } from '../lib/images';
 
 interface ProgramsStore {
@@ -39,6 +40,7 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
   ...empty,
 
   async load() {
+    await seedIfEmpty();
     set({ programs: await listPrograms(), loaded: true });
   },
 

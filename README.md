@@ -10,6 +10,11 @@ Status: all five phases done — import, engine, UI, recovery, PWA. See
 `docs/phase-status.md`. Programs can be pasted as JSON or built with the in-app form
 (Programs → **Build it**).
 
+Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
+localStorage mirror of the active session. No account, no server, no sync. A fresh profile
+is seeded once with Workout A and B so the app is never empty; deleting them keeps them
+deleted.
+
 ## Agent bridge (MCP)
 
 Agents edit programs as files in `data/programs/<id>.json`; the app writes history to
