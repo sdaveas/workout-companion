@@ -65,12 +65,12 @@ export function figureSlug(name: string, pattern: MotionPattern | null): string 
 export const SHIPPED_SLUGS = Object.keys(SHIPPED);
 
 /**
- * Easter egg: one biceps visit in three gets the meme instead of the drawing.
+ * Easter egg: one biceps visit in ten gets the meme instead of the drawing.
  * `roll` is 0..1, so the caller can be tested without waiting for luck.
  *
  * The GIF is 1 MB, so it is left out of the service worker's precache and fetched
  * on first use; offline it simply falls back to the drawing.
  */
 export function easterEggFor(slug: string, roll: number): string | null {
-  return slug === 'bicep-curl' && roll < 1 / 3 ? 'easter/biceps.gif' : null;
+  return slug === 'bicep-curl' && roll < 1 / 10 ? 'easter/biceps.gif' : null;
 }
