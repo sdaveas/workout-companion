@@ -111,7 +111,7 @@ export function History() {
                   type="button"
                   aria-label={`Share ${row.programName} from ${formatDate(row.finishedAt)}`}
                   onClick={() => void share(row.programId)}
-                  className="w-11 shrink-0 rounded-xl border border-line bg-surface text-muted"
+                  className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-muted"
                 >
                   <ShareIcon />
                 </button>
