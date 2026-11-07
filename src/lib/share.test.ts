@@ -25,7 +25,7 @@ describe('share link', () => {
 
   it('carries a preview version so a changed card is re-fetched', async () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
-    expect(url.startsWith('https://example.com/app/?v=3#/add/')).toBe(true);
+    expect(url.startsWith('https://example.com/app/?v=4#/add/')).toBe(true);
   });
 
   it('keeps a realistic program link short', async () => {
