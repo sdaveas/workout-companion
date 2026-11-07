@@ -62,8 +62,8 @@ const rest = (await page.textContent('body')).match(/Rest remaining(\d{2}:\d{2})
 check(rest === '02:00' || rest === '01:59', `rest is the 120s from the form (${rest})`);
 
 await page.screenshot({ path: '/tmp/wc-builder.png', fullPage: true });
-// editing opens the builder pre-filled and updates in place
-await page.goto(`${BASE}/#/programs/build`);
+// the + on the list opens the builder; Edit opens it pre-filled and updates in place
+await page.goto(`${BASE}/#/programs`);
 await page.getByRole('button', { name: 'Edit' }).first().click();
 await page.waitForSelector('text=Editing');
 check(

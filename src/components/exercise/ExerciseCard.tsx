@@ -2,6 +2,8 @@ import { formatWeight } from '../../lib/format';
 import type { ProgramExercise } from '../../engine/types';
 import { ExerciseDetails } from './ExerciseDetails';
 import { ExerciseImage } from './ExerciseImage';
+import { ExerciseMotion } from './ExerciseMotion';
+import { patternFor } from '../../data/exercises';
 
 export function ExerciseCard({
   exercise,
@@ -26,7 +28,11 @@ export function ExerciseCard({
       <h1 className="mt-2 text-2xl font-semibold leading-tight">{exercise.name}</h1>
 
       <div className="mt-4">
-        <ExerciseImage src={exercise.imageUrl} alt={exercise.name} />
+        {patternFor(exercise.name) ? (
+          <ExerciseMotion pattern={patternFor(exercise.name)} />
+        ) : (
+          <ExerciseImage src={exercise.imageUrl} alt={exercise.name} />
+        )}
       </div>
 
       <div className="mt-4 flex items-baseline justify-between">

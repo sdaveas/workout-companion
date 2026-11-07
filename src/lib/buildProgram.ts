@@ -32,7 +32,7 @@ export const emptyDraft = (): ProgramDraft => ({
   exercises: [emptyExercise()],
 });
 
-const slug = (name: string) =>
+export const slug = (name: string) =>
   name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -90,15 +90,8 @@ export function buildProgramJson(draft: ProgramDraft, id?: string): string {
           name: e.name.trim(),
           sets: e.sets,
           reps: { min: e.repsMin, max: e.repsMax },
-          ...(kg != null
-            ? {
-                weight: {
-                  value: kg,
-                  unit: 'kg',
-                  ...(e.perHand ? { per_hand: true } : {}),
-                },
-              }
-            : {}),
+          ...(e.perHand ? { per_hand: true } : {}),
+          ...(kg != null ? { weight: { value: kg, unit: 'kg' } } : {}),
           rest_seconds: e.restSeconds,
         };
       }),

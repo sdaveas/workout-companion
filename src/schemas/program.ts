@@ -52,6 +52,8 @@ const exerciseSchema = z
     sets: z.number().int().positive('Expected a positive integer.'),
     reps: repsSchema,
     weight: weightSchema.optional(),
+    // A per-hand movement needs no weight of its own (bodyweight, bands, a single dumbbell).
+    per_hand: z.boolean().optional(),
     rest_seconds: z
       .number()
       .int()
@@ -121,7 +123,7 @@ function normalizeExercise(e: z.infer<typeof exerciseSchema>): ProgramExercise {
     sets: e.sets,
     reps: { min: e.reps.min, max: e.reps.max },
     weightKg,
-    perHand: e.weight?.per_hand ?? false,
+    perHand: e.per_hand ?? e.weight?.per_hand ?? false,
     restSeconds: e.rest_seconds,
     instructions: e.instructions ?? [],
     commonMistakes: e.common_mistakes ?? [],

@@ -62,6 +62,69 @@ select {
   outline-offset: 2px;
 }
 
+/* Exercise motion: one joint swings, the rest of the figure holds still.
+   Transform origins are set inline in viewBox units (the SVG default
+   `transform-box: view-box`), so a limb pivots on its joint. */
+.m-swing {
+  transform-box: view-box;
+  animation-duration: 1.9s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.m-push { animation-name: m-push; }
+.m-pull { animation-name: m-pull; }
+.m-curl { animation-name: m-curl; animation-duration: 1.4s; }
+.m-raise { animation-name: m-raise; animation-duration: 2.2s; }
+.m-squat { animation-name: m-squat; animation-duration: 2.4s; }
+.m-thigh { animation-name: m-thigh; animation-duration: 2.4s; }
+.m-shin { animation-name: m-shin; animation-duration: 2.4s; }
+.m-hinge { animation-name: m-hinge; animation-duration: 2.4s; }
+.m-core { animation-name: m-core; animation-duration: 3.2s; }
+.m-idle { animation-name: m-idle; animation-duration: 2.4s; }
+
+@keyframes m-push {
+  from { transform: rotate(-62deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes m-pull {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-55deg); }
+}
+@keyframes m-curl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-140deg); }
+}
+@keyframes m-raise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-88deg); }
+}
+@keyframes m-squat {
+  from { transform: translateY(0); }
+  to { transform: translateY(12px); }
+}
+@keyframes m-thigh {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(16deg); }
+}
+@keyframes m-shin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-18deg); }
+}
+@keyframes m-hinge {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(42deg); }
+}
+@keyframes m-core {
+  from { transform: translateY(-2px); }
+  to { transform: translateY(2px); }
+}
+@keyframes m-idle {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(4px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

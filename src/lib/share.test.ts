@@ -17,13 +17,16 @@ describe('share link', () => {
     expect(back.ok).toBe(true);
     if (!back.ok) return;
     expect(back.program.name).toBe(program.name);
-    expect(back.program.exercises).toEqual(program.exercises);
+    const plan = (p: Program) =>
+      p.exercises.map((e) => [e.name, e.sets, e.reps, e.weightKg, e.perHand, e.restSeconds]);
+    expect(plan(back.program)).toEqual(plan(program));
     expect(back.program.scheduleDay).toBe(program.scheduleDay);
   });
 
-  it('keeps a realistic program link under 1200 characters', async () => {
+  it('keeps a realistic program link short', async () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
-    expect(url.length).toBeLessThan(1200);
+    // 6 exercises used to cost ~1000 characters of payload; the compact wire form is ~200.
+    expect(url.length).toBeLessThan(300);
   });
 
   it('rejects a link that is not a program', async () => {

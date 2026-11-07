@@ -562,7 +562,7 @@ const auditScreen = async (page, screen) => {
   expect(await b.getByText('Leg Day (2)', { exact: true }).isVisible(), 'the copy lands beside the original');
 
   // The builder refuses a duplicate name the same way — and no longer offers to replace.
-  await b.goto(`${BASE}/#/programs`);
+  await b.goto(`${BASE}/#/programs/build`);
   await b.getByPlaceholder('Workout C').fill('Leg Day');
   await b.locator('li').filter({ hasText: 'Exercise 1' }).getByPlaceholder('Goblet Squat').fill('Press');
   await b.getByRole('button', { name: 'Create program' }).click();
@@ -643,6 +643,43 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.waitForSelector('text=Beta');
   expect(true, 'Continue starts the next exercise immediately');
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 14: exercise library
+{
+  const { context, page } = await fresh();
+  await page.goto(`${BASE}/#/programs/build`);
+  await page.getByLabel('Or pick a known one').selectOption('Dumbbell Row');
+  const row = page.locator('li').filter({ hasText: 'Exercise 1' });
+  expect(
+    (await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Dumbbell Row',
+    'the library fills the exercise name',
+  );
+  expect((await row.getByLabel('Sets').inputValue()) === '3', 'the library fills the sets');
+  expect((await row.getByLabel('Rest s').inputValue()) === '90', 'the library fills the rest');
+  expect(await row.getByRole('checkbox').isChecked(), 'the library marks a per-hand movement');
+
+  await page.getByLabel('Or pick a known one').selectOption('Bench Press');
+  const secondRow = page.locator('li').filter({ hasText: 'Exercise 2' });
+  expect(
+    (await secondRow.getByPlaceholder('Goblet Squat').inputValue()) === 'Bench Press',
+    'a second pick appends another exercise',
+  );
+  await auditScreen(page, 'programs/library');
+
+  await page.getByPlaceholder('Workout C').fill('Library Day');
+  await page.getByLabel('Scheduled day').selectOption(todayName);
+  await page.getByRole('button', { name: 'Create program' }).click();
+  await page.waitForSelector('text=Program "Library Day" added');
+
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: /^Start/ }).click();
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.waitForSelector('text=/Complete (left|right) hand/');
+  expect((await page.locator('svg .m-swing').count()) > 0, 'the workout shows an animated figure');
+  expect((await page.locator('.m-pull').count()) === 1, 'Dumbbell Row animates as a pull');
+  await auditScreen(page, 'workout/motion');
   await context.close();
 }
 

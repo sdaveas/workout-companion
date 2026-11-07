@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useHashRoute } from '../hooks/useHashRoute';
 import type { Program } from '../engine/types';
 import { usePrograms } from '../store/programsStore';
 import { formatDay } from '../lib/format';
@@ -20,7 +21,15 @@ export function Programs() {
   const [editing, setEditing] = useState<Program | null>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const route = useHashRoute();
+  // #/programs/build is the builder; #/programs is the list of saved programs.
+  const building = route.param === 'build';
   const others = editing ? programs.filter((p) => p.id !== editing.id) : programs;
+
+  const build = (program?: Program) => {
+    setEditing(program ?? null);
+    window.location.hash = '#/programs/build';
+  };
 
   async function share(program: Program) {
     setShared(null);
@@ -44,20 +53,40 @@ export function Programs() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between">
-        <a href="#/" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
-          ← Home
+        <a
+          href={building ? '#/programs' : '#/'}
+          onClick={() => setEditing(null)}
+          className="flex min-h-11 min-w-11 items-center text-sm text-muted"
+        >
+          {building ? '← Programs' : '← Home'}
         </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">Programs</h1>
-        <span className="w-12" />
+        <h1 className="text-sm font-semibold uppercase tracking-widest">
+          {building ? (editing ? 'Edit program' : 'New program') : 'Programs'}
+        </h1>
+        {building ? (
+          <span className="w-12" />
+        ) : (
+          <a
+            href="#/programs/build"
+            aria-label="Add a program"
+            onClick={() => setEditing(null)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-line text-xl leading-none text-accent"
+          >
+            +
+          </a>
+        )}
       </header>
 
-      <ProgramBuilder
-        key={editing?.id ?? 'new'}
-        initial={editing ?? undefined}
-        onDone={() => setEditing(null)}
-      />
-
-      <SyncFromDisk />
+      {building && (
+        <ProgramBuilder
+          key={editing?.id ?? 'new'}
+          initial={editing ?? undefined}
+          onDone={() => {
+            setEditing(null);
+            window.location.hash = '#/programs';
+          }}
+        />
+      )}
 
       {issues.length > 0 && (
         <section className="mt-5 rounded-xl border border-danger/40 bg-danger/10 p-4">
@@ -72,7 +101,7 @@ export function Programs() {
         </section>
       )}
 
-      {conflict && preview && (
+      {building && conflict && preview && (
         <NameConflict
           taken={conflict}
           // Only the program being edited is not a clash with itself.
@@ -81,7 +110,15 @@ export function Programs() {
           busy={busy}
           onSave={(name) => {
             setBusy(true);
-            void save({ update: editing != null, name }).finally(() => setBusy(false));
+            void save({ update: editing != null, name })
+              .then((ok) => {
+                // land on the list so the new copy is visible straight away
+                if (ok) {
+                  setEditing(null);
+                  window.location.hash = '#/programs';
+                }
+              })
+              .finally(() => setBusy(false));
           }}
         />
       )}
@@ -104,7 +141,7 @@ export function Programs() {
               type="button"
               onClick={() => {
                 clear();
-                setEditing(null);
+                build();
               }}
               className="h-11 flex-1 rounded-lg border border-line text-sm"
             >
@@ -114,6 +151,9 @@ export function Programs() {
         </section>
       )}
 
+      {!building && <SyncFromDisk />}
+
+      {!building && (
       <section className="mt-8">
         <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
         {shared && (
@@ -146,7 +186,7 @@ export function Programs() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditing(p)}
+                    onClick={() => build(p)}
                     className="h-11 rounded-lg border border-line px-3 text-xs"
                   >
                     Edit
@@ -168,6 +208,7 @@ export function Programs() {
           </ul>
         )}
       </section>
+      )}
     </main>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
+import { EXERCISE_LIBRARY, libraryExercise, type MotionPattern } from '../../data/exercises';
 import {
   buildProgramJson,
   draftFromProgram,
@@ -10,6 +11,18 @@ import {
   type DraftExercise,
   type ProgramDraft,
 } from '../../lib/buildProgram';
+
+const PATTERN_LABELS: Record<MotionPattern, string> = {
+  push: 'Push',
+  pull: 'Pull',
+  squat: 'Squat',
+  hinge: 'Hinge',
+  curl: 'Curl',
+  raise: 'Raise',
+  core: 'Core',
+};
+
+const PATTERNS = Object.keys(PATTERN_LABELS) as MotionPattern[];
 
 const DAYS: Array<Weekday | ''> = [
   '',
@@ -74,6 +87,28 @@ export function ProgramBuilder({
       next.splice(i + by, 0, row);
       return { ...d, exercises: next };
     });
+
+  /** A library pick fills a row with name, sets, reps, rest and the per-hand flag. */
+  const addFromLibrary = (name: string) => {
+    const known = libraryExercise(name);
+    if (!known) return;
+    setDraft((d) => ({
+      ...d,
+      // blank rows are never saved, so they would only sit above the new exercise
+      exercises: [
+        ...d.exercises.filter((e) => e.name.trim()),
+        {
+          name: known.name,
+          sets: known.sets,
+          repsMin: known.repsMin,
+          repsMax: known.repsMax,
+          weightKg: '',
+          perHand: known.perHand ?? false,
+          restSeconds: known.restSeconds,
+        },
+      ],
+    }));
+  };
 
   const ready = draft.name.trim().length > 0 && draft.exercises.some((e) => e.name.trim());
 
@@ -225,6 +260,26 @@ export function ProgramBuilder({
       >
         + Add exercise
       </button>
+
+      <label className="mt-2 block">
+        <span className="text-[10px] uppercase tracking-widest text-muted">Or pick a known one</span>
+        <select
+          value=""
+          onChange={(e) => addFromLibrary(e.target.value)}
+          className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="">Choose an exercise…</option>
+          {PATTERNS.map((pattern) => (
+            <optgroup key={pattern} label={PATTERN_LABELS[pattern]}>
+              {EXERCISE_LIBRARY.filter((e) => e.pattern === pattern).map((e) => (
+                <option key={e.name} value={e.name}>
+                  {e.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
 
       <button
         type="button"
