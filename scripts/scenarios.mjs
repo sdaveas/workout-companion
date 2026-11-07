@@ -77,7 +77,7 @@ async function drive(page, limit = 60) {
     };
     if (await step('Start set')) continue;
     if (await step('Skip rest')) continue;
-    if (await step('Complete set')) {
+    if (await step(/^Complete (set|left hand|right hand)$/)) {
       sets += 1;
       continue;
     }
@@ -90,7 +90,7 @@ async function drive(page, limit = 60) {
 /** Home's start button opens a preview screen; the workout itself begins from there. */
 async function beginFromPreview(page) {
   await page.getByRole('button', { name: 'Start', exact: true }).click();
-  await page.waitForSelector('text=Complete set');
+  await page.waitForSelector('text=/Complete (set|left hand|right hand)/');
 }
 
 const todayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][
@@ -577,6 +577,73 @@ const auditScreen = async (page, screen) => {
   await b.waitForSelector('text=Saved (3)');
   expect(true, 'saving under the suggested name keeps every program');
   await receiver.close();
+}
+
+// ---------------------------------------------------------------- scenario 13: per-hand sets
+{
+  const { context, page } = await fresh();
+  const oneArm = { ...ex('a', 'One-arm Row', 2, 90), weight: { value: 10, unit: 'kg', per_hand: true } };
+  await saveProgram(page, program('arms', 'Arms', 'monday', [oneArm]));
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
+
+  expect(await page.getByText('Left hand').first().isVisible(), 'a per-hand set shows a left-hand tick');
+  expect(await page.getByText('Right hand').first().isVisible(), 'a per-hand set shows a right-hand tick');
+  expect(
+    await page.getByRole('button', { name: 'Complete left hand' }).isVisible(),
+    'the button names the hand being worked',
+  );
+
+  await page.getByRole('button', { name: 'Complete left hand' }).click();
+  expect(
+    await page.getByRole('button', { name: 'Complete right hand' }).isVisible(),
+    'the left tick advances to the right hand',
+  );
+  expect(
+    !(await page.getByText('Rest remaining').isVisible().catch(() => false)),
+    'no rest between the two hands',
+  );
+  await auditScreen(page, 'workout/per-hand-left');
+
+  await page.getByRole('button', { name: 'Complete right hand' }).click();
+  await page.waitForSelector('text=Rest remaining');
+  expect(true, 'the break comes after the right hand');
+  await auditScreen(page, 'workout/per-hand-rest');
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 12: rest between exercises
+{
+  const { context, page } = await fresh();
+  await saveProgram(page, program('two-days', 'Two Days', 'monday', [ex('a', 'Alpha', 2, 90), ex('b', 'Beta', 2, 90)]));
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
+
+  await page.getByRole('button', { name: 'Complete set' }).click();
+  await page.waitForSelector('text=Rest remaining');
+  await page.getByRole('button', { name: 'Skip rest' }).click();
+  await page.getByRole('button', { name: 'Complete set' }).click(); // last set of Alpha
+
+  await page.waitForSelector('text=Rest before the next exercise');
+  expect(true, 'finishing an exercise starts a rest before the next one');
+  const clock = (await page.textContent('body')).match(/Rest before the next exercise(\d{2}:\d{2})/)?.[1];
+  expect(clock === '01:30' || clock === '01:29', `the break uses the exercise rest (${clock})`);
+  expect(
+    await page.getByRole('button', { name: 'Continue' }).isVisible(),
+    'Continue stays available during the break',
+  );
+
+  await page.getByRole('button', { name: '+15s' }).click();
+  const bumped = (await page.textContent('body')).match(/Rest before the next exercise(\d{2}:\d{2})/)?.[1];
+  expect(bumped === '01:45' || bumped === '01:44', `the break can be extended (${bumped})`);
+  await auditScreen(page, 'workout/between-exercises');
+
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForSelector('text=Beta');
+  expect(true, 'Continue starts the next exercise immediately');
+  await context.close();
 }
 
 await browser.close();

@@ -19,6 +19,14 @@ export function formatDate(ts: number | null): string {
   });
 }
 
+/** "2 / 6" normally, "2 / 3 · right hand" for a unilateral movement. */
+export function formatSet(side: 'left' | 'right' | null | undefined, setNumber: number, totalSets: number): string {
+  if (!side) return `${setNumber} / ${totalSets}`;
+  const group = Math.ceil(setNumber / 2);
+  const groups = Math.ceil(totalSets / 2);
+  return `${group} / ${groups} · ${side} hand`;
+}
+
 export function formatWeight(kg: number | null, perHand = false): string {
   if (kg == null) return 'Bodyweight';
   return `${kg} kg${perHand ? ' / hand' : ''}`;

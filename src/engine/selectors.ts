@@ -24,13 +24,18 @@ export function getNextExercise(s: WorkoutState): ProgramExercise | null {
 /** The set the user is waiting to do — meaningful while resting. */
 export function getNextSet(
   s: WorkoutState,
-): { exerciseName: string; setNumber: number; totalSets: number } | null {
+): { exerciseName: string; setNumber: number; totalSets: number; side: SetRecord['side'] } | null {
   const record = getCurrentRecord(s);
   const exercise = getCurrentExercise(s);
   if (!record || !exercise) return null;
   const set = record.sets[s.currentSetIndex];
   if (!set) return null;
-  return { exerciseName: exercise.name, setNumber: set.setNumber, totalSets: record.sets.length };
+  return {
+    exerciseName: exercise.name,
+    setNumber: set.setNumber,
+    totalSets: record.sets.length,
+    side: set.side ?? null,
+  };
 }
 
 export function getExerciseProgress(s: WorkoutState): { done: number; total: number } {

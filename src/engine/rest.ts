@@ -3,7 +3,9 @@ import type { WorkoutState } from './types';
 /** Rest remaining in ms. Derived from timestamps — never stored as a countdown. */
 export function remainingMs(s: WorkoutState, now: number): number {
   if (s.status === 'paused' && s.pausedFrom === 'resting') return s.restPausedMs ?? 0;
-  if (s.status !== 'resting' || s.restStartedAt == null) return 0;
+  // exercise_complete carries the break between two exercises.
+  const resting = s.status === 'resting' || s.status === 'exercise_complete';
+  if (!resting || s.restStartedAt == null) return 0;
   // Clamped to the duration: the display can read the clock a tick behind the dispatch,
   // which would otherwise show 02:01 for a two minute rest.
   return Math.max(0, Math.min(s.restStartedAt + s.restDurationMs - now, s.restDurationMs));

@@ -2,11 +2,21 @@ import { useEffect, useRef } from 'react';
 import { useSession } from '../../store/sessionStore';
 import { remainingMs, remainingSeconds } from '../../engine/rest';
 import { getNextSet } from '../../engine/selectors';
-import { formatClock } from '../../lib/format';
+import { formatClock, formatSet } from '../../lib/format';
 import type { WorkoutState } from '../../engine/types';
 import { Button } from '../ui/Button';
 
-export function RestTimer({ state, now }: { state: WorkoutState; now: number }) {
+export function RestTimer({
+  state,
+  now,
+  variant = 'set',
+}: {
+  state: WorkoutState;
+  now: number;
+  /** 'exercise' is the break between two exercises: no Pause, the footer moves on. */
+  variant?: 'set' | 'exercise';
+}) {
+  const between = variant === 'exercise';
   const dispatch = useSession((s) => s.dispatch);
   const alerted = useRef<number | null>(null);
   const remaining = remainingMs(state, now);
@@ -21,7 +31,13 @@ export function RestTimer({ state, now }: { state: WorkoutState; now: number }) 
   return (
     <div className="flex flex-col items-center pt-6 text-center">
       <p className="text-xs uppercase tracking-[0.2em] text-muted">
-        {remaining > 0 ? 'Rest remaining' : 'Rest complete'}
+        {remaining > 0
+          ? between
+            ? 'Rest before the next exercise'
+            : 'Rest remaining'
+          : between
+            ? 'Rest done'
+            : 'Rest complete'}
       </p>
 
       <p
@@ -29,20 +45,20 @@ export function RestTimer({ state, now }: { state: WorkoutState; now: number }) 
         role="status"
         aria-live={remaining > 0 ? 'off' : 'polite'}
       >
-        {remaining > 0 ? formatClock(remaining) : 'Start when ready'}
+        {remaining > 0 ? formatClock(remaining) : between ? 'Continue when ready' : 'Start when ready'}
       </p>
 
-      {next && (
+      {next && !between && (
         <p className="mt-4 text-sm text-muted">
-          Next: {next.exerciseName} · set {next.setNumber} of {next.totalSets}
+          Next: {next.exerciseName} · set {formatSet(next.side, next.setNumber, next.totalSets)}
         </p>
       )}
 
       {remaining > 0 ? (
         <>
-          <div className="mt-6 grid w-full grid-cols-3 gap-2">
+          <div className={`mt-6 grid w-full gap-2 ${between ? 'grid-cols-2' : 'grid-cols-3'}`}>
             <Button onClick={() => dispatch({ type: 'ADJUST_REST', seconds: -15 })}>−15s</Button>
-            <Button onClick={() => dispatch({ type: 'PAUSE' })}>Pause</Button>
+            {!between && <Button onClick={() => dispatch({ type: 'PAUSE' })}>Pause</Button>}
             <Button onClick={() => dispatch({ type: 'ADJUST_REST', seconds: 15 })}>+15s</Button>
           </div>
           <div className="mt-2 grid w-full grid-cols-2 gap-2">

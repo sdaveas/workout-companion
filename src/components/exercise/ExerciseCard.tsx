@@ -9,12 +9,14 @@ export function ExerciseCard({
   total,
   setNumber,
   totalSets,
+  side = null,
 }: {
   exercise: ProgramExercise;
   index: number;
   total: number;
   setNumber: number;
   totalSets: number;
+  side?: 'left' | 'right' | null;
 }) {
   return (
     <section aria-label={exercise.name}>
@@ -30,7 +32,13 @@ export function ExerciseCard({
       <div className="mt-4 flex items-baseline justify-between">
         <span className="text-xs uppercase tracking-widest text-muted">Set</span>
         <span className="text-2xl font-semibold tabular-nums">
-          {setNumber} <span className="text-muted">/ {totalSets}</span>
+          {side ? (
+            `${Math.ceil(setNumber / 2)} / ${Math.ceil(totalSets / 2)}`
+          ) : (
+            <>
+              {setNumber} <span className="text-muted">/ {totalSets}</span>
+            </>
+          )}
         </span>
       </div>
       <div className="mt-2 flex items-baseline justify-between">

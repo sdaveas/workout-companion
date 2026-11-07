@@ -48,6 +48,14 @@ export function ActiveWorkout() {
   const nextExercise = getNextExercise(state);
   const progress = getWorkoutProgress(state);
 
+  // A per-hand set is two rows (left, right). Show them as two ticks on one set.
+  const currentSet = record?.sets[state.currentSetIndex];
+  const currentSide = currentSet?.side ?? null;
+  const handRows =
+    currentSet?.side && record
+      ? record.sets.slice(state.currentSetIndex - (state.currentSetIndex % 2), state.currentSetIndex - (state.currentSetIndex % 2) + 2)
+      : null;
+
   const isReady = state.status === 'ready';
   // A fast double-tap on the preview's Start would land on "Complete set"
   // (same button position) and log a set nobody performed.
@@ -142,6 +150,7 @@ export function ActiveWorkout() {
               total={state.program.exercises.length}
               setNumber={state.currentSetIndex + 1}
               totalSets={record.sets.length}
+              side={record.sets[state.currentSetIndex]?.side ?? null}
             />
             <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
               {state.program.exercises.length} exercises · {progress.total} sets
@@ -160,7 +169,23 @@ export function ActiveWorkout() {
               total={state.program.exercises.length}
               setNumber={state.currentSetIndex + 1}
               totalSets={record.sets.length}
+              side={currentSet?.side ?? null}
             />
+            {handRows && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {handRows.map((hand) => (
+                  <div
+                    key={hand.setNumber}
+                    className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
+                      hand.completed ? 'border-accent text-accent' : 'border-line text-muted'
+                    }`}
+                  >
+                    <span>{hand.side === 'left' ? 'Left hand' : 'Right hand'}</span>
+                    <span>{hand.completed ? '✓ done' : 'to do'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 rounded-2xl border border-line bg-surface px-4 py-2">
               {state.draft && (
                 <SetEntry
@@ -196,6 +221,11 @@ export function ActiveWorkout() {
               {record.sets.filter((x) => x.completed).length} / {record.sets.length} sets completed
               {record.skipped ? ' · exercise skipped' : ''}
             </p>
+            {nextExercise && state.restStartedAt != null && (
+              <div className="mt-4">
+                <RestTimer state={state} now={restNow} variant="exercise" />
+              </div>
+            )}
             <div className="mt-6 rounded-2xl border border-line bg-surface p-5">
               <p className="text-xs uppercase tracking-widest text-muted">
                 {nextExercise ? 'Next exercise' : 'Last exercise done'}
@@ -232,7 +262,7 @@ export function ActiveWorkout() {
                 })
               }
             >
-              Complete set
+              {currentSide ? `Complete ${currentSide} hand` : 'Complete set'}
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="ghost" onClick={() => dispatch({ type: 'SKIP_SET' })}>

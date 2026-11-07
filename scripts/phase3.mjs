@@ -3,6 +3,13 @@ import { chromium } from '@playwright/test';
 
 const BASE = 'http://localhost:5183';
 const fixture = await (await fetch(`${BASE}/src/fixtures/workout-b.json`)).text();
+// per-hand exercises record one row per hand
+const fixtureProgram = JSON.parse(fixture);
+const total = fixtureProgram.exercises.reduce(
+  (n, e) => n + e.sets * (e.weight?.per_hand ? 2 : 1),
+  0,
+);
+const completeSet = /^Complete (set|left hand|right hand)$/;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({
@@ -36,7 +43,7 @@ const start = page.getByRole('button', { name: /^Start/ });
 check(await start.isVisible(), 'home offers a start button');
 await start.click();
 await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
-await page.waitForSelector('text=Complete set');
+await page.waitForSelector(`text=${completeSet}`);
 
 // drive the workout to the end
 let sets = 0;
@@ -53,7 +60,7 @@ for (let i = 0; i < 300; i += 1) {
     await skipRest.click();
     continue;
   }
-  const complete = page.getByRole('button', { name: 'Complete set' });
+  const complete = page.getByRole('button', { name: completeSet });
   if (await complete.isVisible().catch(() => false)) {
     sets += 1;
     await complete.click();
@@ -67,11 +74,14 @@ for (let i = 0; i < 300; i += 1) {
   await page.waitForTimeout(50);
 }
 
-check(sets === 16, `completed ${sets} sets through the UI`);
+check(sets === total, `completed ${sets} of ${total} sets through the UI`);
 check(page.url().includes('#/summary/'), 'finishing routes to the summary');
 await page.waitForSelector('text=Session complete');
 const body = await page.textContent('body');
-check(/16\s*of\s*16/.test(body.replace(/\s+/g, ' ')), 'summary reports 16 of 16 sets');
+check(
+  new RegExp(`${total}\\s*of\\s*${total}`).test(body.replace(/\s+/g, ' ')),
+  `summary reports ${total} of ${total} sets`,
+);
 
 // annotate RPE + notes, then Done → home
 await page.getByRole('button', { name: '7', exact: true }).click();
@@ -84,7 +94,7 @@ await page.waitForSelector('text=Ready to train');
 // history has the session; summary reopens from the DB
 await page.goto(`${BASE}/#/history`);
 await page.waitForSelector('text=Workout B');
-check(await page.getByText('16 sets').isVisible(), 'history lists the finished session');
+check(await page.getByText(`${total} sets`).isVisible(), 'history lists the finished session');
 await page.click('text=Workout B');
 await page.waitForSelector('text=Session complete');
 check(await page.getByRole('button', { name: '7', exact: true }).getAttribute('aria-pressed') === 'true', 'RPE persisted');

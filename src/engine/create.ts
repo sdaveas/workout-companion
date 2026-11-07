@@ -24,8 +24,10 @@ export function createSession(program: Program, now: number, sessionId: string):
       skipped: false,
       skippedAt: null,
       completedAt: null,
-      sets: Array.from({ length: e.sets }, (_, i) => ({
+      // A per-hand exercise is performed twice per set: left, then right.
+      sets: Array.from({ length: e.sets * (e.perHand ? 2 : 1) }, (_, i) => ({
         setNumber: i + 1,
+        side: e.perHand ? ((i % 2 === 0 ? 'left' : 'right') as 'left' | 'right') : null,
         targetReps: { ...e.reps },
         targetWeightKg: e.weightKg,
         actualReps: null,

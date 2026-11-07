@@ -3,6 +3,12 @@ import { chromium } from '@playwright/test';
 
 const BASE = 'http://localhost:5183';
 const fixture = await (await fetch(`${BASE}/src/fixtures/workout-b.json`)).text();
+const fixtureProgram = JSON.parse(fixture);
+const total = fixtureProgram.exercises.reduce(
+  (n, e) => n + e.sets * (e.weight?.per_hand ? 2 : 1),
+  0,
+);
+const completeSet = /^Complete (set|left hand|right hand)$/;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({
@@ -36,7 +42,7 @@ let sets = 0;
 async function settle() {
   for (let i = 0; i < 60; i += 1) {
     if (page.url().includes('#/summary/')) return;
-    if (await visible('Complete set')) return;
+    if (await visible(completeSet)) return;
     if (await visible('Start set')) {
       await page.getByRole('button', { name: 'Start set' }).click();
       continue;
@@ -57,7 +63,7 @@ async function settle() {
 async function completeOneSet() {
   await settle();
   if (page.url().includes('#/summary/')) return;
-  await page.getByRole('button', { name: 'Complete set' }).click();
+  await page.getByRole('button', { name: completeSet }).click();
   sets += 1;
 }
 
@@ -72,7 +78,7 @@ await page.waitForSelector('text=Saved (1)');
 await page.goto(`${BASE}/#/`);
 await page.getByRole('button', { name: /^Start/ }).click();
 await page.getByRole('button', { name: 'Start', exact: true }).click(); // preview
-await page.waitForSelector('text=Complete set');
+await page.waitForSelector(`text=${completeSet}`);
 
 for (let i = 0; i < 2; i += 1) await completeOneSet();
 await settle();
@@ -84,7 +90,7 @@ check(before?.set === 3, `2 sets done, now on set ${before?.set}`);
 // kill the tab mid-set, reload, resume exactly
 await page.reload();
 try {
-  await page.waitForSelector('text=Complete set');
+  await page.waitForSelector(`text=${completeSet}`);
 } catch (err) {
   console.log('AFTER RELOAD:', page.url(), (await body()).slice(0, 300));
   throw err;
@@ -96,10 +102,14 @@ check(afterName === beforeName, `reload restores the same exercise (${afterName}
 check(!(await body()).includes('Ready to train'), 'reload lands on the active session, not Home');
 
 // reload mid-rest, and mid-pause
-await completeOneSet();
-await settle();
-await page.getByRole('button', { name: 'Complete set' }).click();
-sets += 1;
+// a per-hand exercise needs a second tap before the break starts
+for (let i = 0; i < 3 && !(await visible('Skip rest')); i += 1) {
+  await settle();
+  if (page.url().includes('#/summary/')) break;
+  await page.getByRole('button', { name: completeSet }).click();
+  sets += 1;
+  await page.waitForTimeout(60);
+}
 await page.waitForSelector('text=Rest remaining');
 await page.waitForTimeout(2000);
 const rest1 = (await body()).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
@@ -120,10 +130,10 @@ check(
 await page.getByRole('button', { name: 'Skip rest' }).first().click();
 
 // finish the workout after all that reloading
-while (!page.url().includes('#/summary/') && sets < 20) await completeOneSet();
-check(sets === 16, `finished after recovery (${sets}/16 sets)`);
+while (!page.url().includes('#/summary/') && sets < total + 5) await completeOneSet();
+check(sets === total, `finished after recovery (${sets}/${total} sets)`);
 await page.waitForSelector('text=Session complete');
-check(/16\s*of\s*16/.test(await body()), 'summary still reports 16 of 16');
+check(new RegExp(`${total}\\s*of\\s*${total}`).test(await body()), `summary still reports ${total} of ${total}`);
 await page.click('button:has-text("Done")');
 
 // corrupt row: unreadable state must be reported, not deleted

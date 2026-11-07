@@ -43,6 +43,8 @@ export type WorkoutStatus =
 
 export interface SetRecord {
   setNumber: number;
+  /** A unilateral movement records one row per hand; `null` for a normal set. */
+  side?: 'left' | 'right' | null;
   targetReps: { min: number; max: number };
   targetWeightKg: number | null;
   actualReps: number | null;

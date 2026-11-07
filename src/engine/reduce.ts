@@ -85,10 +85,10 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
       return s.status === 'paused' ? resume(s, e) : null;
 
     case 'ADJUST_REST':
-      return inStatus(s, ['resting']) ? adjustRest(s, e) : null;
+      return inStatus(s, ['resting', 'exercise_complete']) ? adjustRest(s, e) : null;
 
     case 'RESTART_REST':
-      return inStatus(s, ['resting']) ? restart(s, e) : null;
+      return inStatus(s, ['resting', 'exercise_complete']) ? restart(s, e) : null;
 
     case 'REST_DONE':
       return s.status === 'resting' && remainingMs(s, e.now) === 0 ? beginSet(s) : null;
@@ -145,7 +145,15 @@ function completeSet(
   const records = s.exerciseRecords.map((r, i) => (i === s.currentExerciseIndex ? { ...r, sets: updatedSets } : r));
   const moreSets = index + 1 < sets.length;
 
+  // Left hand done → the right hand follows immediately; the break comes after both.
+  const betweenHands = sets[index].side === 'left';
+  const rest =
+    exercise.restSeconds > 0 && !betweenHands
+      ? { restStartedAt: e.now, restDurationMs: exercise.restSeconds * 1000, restPausedMs: null, restCount: s.restCount + 1 }
+      : clearedRest();
+
   if (!moreSets) {
+    // The break after the last set of an exercise is the break before the next one.
     return {
       ...s,
       exerciseRecords: records.map((r, i) =>
@@ -154,14 +162,9 @@ function completeSet(
       undoStack: withUndo(s),
       status: 'exercise_complete',
       draft: null,
-      ...clearedRest(),
+      ...rest,
     };
   }
-
-  const rest =
-    exercise.restSeconds > 0
-      ? { restStartedAt: e.now, restDurationMs: exercise.restSeconds * 1000, restPausedMs: null, restCount: s.restCount + 1 }
-      : clearedRest();
 
   return {
     ...s,
@@ -169,7 +172,7 @@ function completeSet(
     undoStack: withUndo(s),
     currentSetIndex: index + 1,
     draft: draftFor(exercise),
-    status: exercise.restSeconds > 0 ? 'resting' : 'exercise_active',
+    status: rest.restStartedAt != null ? 'resting' : 'exercise_active',
     ...rest,
   };
 }

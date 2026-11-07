@@ -79,7 +79,7 @@ describe('set completion', () => {
     );
   });
 
-  it('goes straight to exercise_complete on the last set', () => {
+  it('goes to exercise_complete on the last set and still counts a rest down', () => {
     let s = started();
     for (let i = 0; i < 3; i += 1) {
       s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
@@ -87,6 +87,24 @@ describe('set completion', () => {
     }
     expect(s.status).toBe('exercise_complete');
     expect(s.exerciseRecords[0].completedAt).toBe(T0);
+    // the break before the next exercise belongs to the set that just ended
+    expect(s.restDurationMs).toBe(s.program.exercises[0].restSeconds * 1000);
+    expect(remainingSeconds(s, T0)).toBe(s.program.exercises[0].restSeconds);
+    expect(remainingSeconds(s, T0 + 30_000)).toBe(s.program.exercises[0].restSeconds - 30);
+  });
+
+  it('lets the next-exercise break be adjusted, then clears it on Continue', () => {
+    let s = started();
+    for (let i = 0; i < 3; i += 1) {
+      s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+      if (s.status === 'resting') s = reduce(s, { type: 'SKIP_REST', now: T0 });
+    }
+    const longer = reduce(s, { type: 'ADJUST_REST', now: T0, seconds: 30 });
+    expect(remainingSeconds(longer, T0)).toBe(s.program.exercises[0].restSeconds + 30);
+    const next = reduce(longer, { type: 'NEXT_EXERCISE', now: T0 + 1000 });
+    expect(next.status).toBe('exercise_active');
+    expect(next.restStartedAt).toBeNull();
+    expect(next.currentExerciseIndex).toBe(1);
   });
 
   it('skips rest entirely when rest_seconds is 0', () => {
@@ -194,6 +212,9 @@ describe('pause and resume', () => {
 });
 
 describe('progression', () => {
+  // per-hand exercises record one row per hand
+  const totalSets = () => program.exercises.reduce((n, e) => n + e.sets * (e.perHand ? 2 : 1), 0);
+
   it('advances to the next exercise and resets the set index', () => {
     let s = started();
     for (let i = 0; i < 3; i += 1) {
@@ -213,7 +234,7 @@ describe('progression', () => {
     expect(s.status).toBe('completed');
     expect(s.endedEarly).toBe(false);
     expect(s.finishedAt).not.toBeNull();
-    expect(getWorkoutProgress(s)).toMatchObject({ done: 16, total: 16, ratio: 1 });
+    expect(getWorkoutProgress(s)).toMatchObject({ done: totalSets(), total: totalSets(), ratio: 1 });
   });
 
   it('skips an exercise and records every remaining set as skipped', () => {
@@ -242,7 +263,7 @@ describe('progression', () => {
     expect(s.status).toBe('completed');
     expect(s.endedEarly).toBe(true);
     expect(s.finishedAt).toBe(T0 + 1_000);
-    expect(summarize(s, T0 + 1_000).setsSkipped).toBe(15);
+    expect(summarize(s, T0 + 1_000).setsSkipped).toBe(totalSets() - 1);
   });
 
   it('finishing after the last set is not an early end', () => {
@@ -264,7 +285,7 @@ describe('progression', () => {
     const finished = reduce(s, { type: 'FINISH', now });
     expect(finished.status).toBe('completed');
     expect(finished.endedEarly).toBe(false);
-    expect(summarize(finished, now).setsCompleted).toBe(16);
+    expect(summarize(finished, now).setsCompleted).toBe(totalSets());
   });
 
   it('abandons and refuses everything afterwards', () => {
@@ -273,6 +294,43 @@ describe('progression', () => {
     expect(() => reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null })).toThrow(
       InvalidTransition,
     );
+  });
+});
+
+describe('per-hand sets', () => {
+  const oneArm: Program = {
+    ...program,
+    exercises: [
+      { ...program.exercises[0], id: 'one-arm', name: 'One-arm Row', sets: 2, restSeconds: 60, perHand: true },
+    ],
+  };
+  const startedOneArm = () => reduce(createSession(oneArm, T0, 'sid'), { type: 'START', now: T0 });
+
+  it('records one row per hand and rests only after the right hand', () => {
+    let s = startedOneArm();
+    expect(s.exerciseRecords[0].sets.map((x) => x.side)).toEqual(['left', 'right', 'left', 'right']);
+    expect(getWorkoutProgress(s).total).toBe(4);
+
+    s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+    expect(s.status).toBe('exercise_active');
+    expect(s.currentSetIndex).toBe(1);
+    expect(remainingMs(s, T0)).toBe(0);
+    expect(s.exerciseRecords[0].sets[0]).toMatchObject({ side: 'left', completed: true });
+
+    s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+    expect(s.status).toBe('resting');
+    expect(remainingSeconds(s, T0)).toBe(60);
+  });
+
+  it('rests after the last hand too', () => {
+    let s = startedOneArm();
+    for (let i = 0; i < 4; i += 1) {
+      s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+      if (s.status === 'resting') s = reduce(s, { type: 'SKIP_REST', now: T0 });
+    }
+    expect(s.status).toBe('exercise_complete');
+    expect(s.restDurationMs).toBe(60_000);
+    expect(summarize(s, T0).setsCompleted).toBe(4);
   });
 });
 
