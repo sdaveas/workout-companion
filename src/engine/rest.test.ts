@@ -30,6 +30,8 @@ describe('remainingMs', () => {
     expect(remainingMs(s, T0 + 45_000)).toBe(45_000);
     expect(remainingMs(s, T0 + 90_000)).toBe(0);
     expect(remainingMs(s, T0 + 500_000)).toBe(0);
+    // A clock read from before the rest started must not add time to the rest.
+    expect(remainingMs(s, T0 - 250)).toBe(90_000);
   });
 
   it('rounds up to whole seconds for display', () => {

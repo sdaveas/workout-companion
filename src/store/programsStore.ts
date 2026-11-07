@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Program } from '../engine/types';
 import { describeError, parseProgram, type ProgramIssue } from '../schemas/program';
+import { conflictingProgram, renameProgram } from '../lib/identity';
 import {
   deleteProgram,
   DuplicateProgramId,
@@ -14,14 +15,19 @@ interface ProgramsStore {
   text: string;
   preview: Program | null;
   issues: ProgramIssue[];
-  duplicateId: string | null;
+  /** The name that is already in use, when a save was stopped by it. */
+  conflict: string | null;
   notice: string | null;
   loaded: boolean;
 
   load: () => Promise<void>;
   setText: (text: string) => void;
-  /** true when the program was written; false when validation or a duplicate stopped it. */
-  save: (replace?: boolean) => Promise<boolean>;
+  /**
+   * Writes the preview. `name` retries a stopped save under another name.
+   * `update` is the Edit path: the same id is kept and the stored row is replaced.
+   * Returns true when the program was written.
+   */
+  save: (opts?: { update?: boolean; name?: string }) => Promise<boolean>;
   remove: (id: string) => Promise<void>;
   clear: () => void;
 }
@@ -30,7 +36,7 @@ const empty = {
   text: '',
   preview: null,
   issues: [] as ProgramIssue[],
-  duplicateId: null,
+  conflict: null,
   notice: null,
 };
 
@@ -46,24 +52,45 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
   setText(text) {
     const result = parseProgram(text);
     if (result.ok) {
-      set({ text, preview: result.program, issues: [], duplicateId: null, notice: null });
+      set({ text, preview: result.program, issues: [], conflict: null, notice: null });
     } else {
-      set({ text, preview: null, issues: describeError(result.error), duplicateId: null });
+      set({ text, preview: null, issues: describeError(result.error), conflict: null });
     }
   },
 
-  async save(replace = false) {
+  async save(opts = {}) {
     const { preview } = get();
     if (!preview) return false;
+    const update = opts.update ?? false;
+    const existing = get().programs;
+
+    let target = preview;
+    if (opts.name !== undefined) {
+      const renamed = renameProgram(preview, opts.name, existing, { keepId: update });
+      if (!renamed.ok) {
+        set({ conflict: opts.name.trim(), notice: null });
+        return false;
+      }
+      target = renamed.program;
+    } else {
+      // "Workout B" already saved → the id and the name both clash; ask for a name instead
+      // of overwriting, which is what "Replace it" used to do.
+      const clash = conflictingProgram(preview, existing, update ? preview.id : undefined);
+      if (clash) {
+        set({ conflict: clash.name, notice: null });
+        return false;
+      }
+    }
+
     try {
-      await saveProgram(preview, { replace });
-      prefetchImages(preview);
-      set({ ...empty, notice: `Program "${preview.name}" ${replace ? 'updated' : 'added'}.` });
+      await saveProgram(target, { replace: update });
+      prefetchImages(target);
+      set({ ...empty, notice: `Program "${target.name}" ${update ? 'updated' : 'added'}.` });
       await get().load();
       return true;
     } catch (err) {
       if (err instanceof DuplicateProgramId) {
-        set({ duplicateId: err.id, notice: null });
+        set({ conflict: target.name, notice: null });
       } else {
         set({ notice: null, issues: [{ path: 'storage', message: (err as Error).message }] });
       }

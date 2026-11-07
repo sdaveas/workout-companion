@@ -4,7 +4,9 @@ import type { WorkoutState } from './types';
 export function remainingMs(s: WorkoutState, now: number): number {
   if (s.status === 'paused' && s.pausedFrom === 'resting') return s.restPausedMs ?? 0;
   if (s.status !== 'resting' || s.restStartedAt == null) return 0;
-  return Math.max(0, s.restStartedAt + s.restDurationMs - now);
+  // Clamped to the duration: the display can read the clock a tick behind the dispatch,
+  // which would otherwise show 02:01 for a two minute rest.
+  return Math.max(0, Math.min(s.restStartedAt + s.restDurationMs - now, s.restDurationMs));
 }
 
 export function remainingSeconds(s: WorkoutState, now: number): number {

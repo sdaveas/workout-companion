@@ -30,7 +30,7 @@ export function SyncFromDisk() {
         const file = await fetch(`/data/programs/${entry.id}.json`, { cache: 'no-store' });
         if (!file.ok) continue;
         setText(await file.text());
-        await save(true);
+        await save({ update: true });
         saved += 1;
       }
       setCount(saved);

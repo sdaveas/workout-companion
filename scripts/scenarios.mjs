@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { chromium } from '@playwright/test';
 
 const BASE = process.env.BASE ?? 'http://localhost:5183';
@@ -506,6 +507,76 @@ const auditScreen = async (page, screen) => {
   await auditScreen(b.page, 'settings/after-import');
   await b.context.close();
   await a.context.close();
+}
+
+// ---------------------------------------------------------------- scenario 11: sharing
+{
+  // Phone A shares; phone B receives. Same device would already know the program.
+  const sender = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    permissions: ['clipboard-read', 'clipboard-write'],
+  });
+  const a = await sender.newPage();
+  a.on('dialog', (d) => d.accept());
+  await saveProgram(a, program('leg-day', 'Leg Day', 'monday', [ex('squat', 'Squat')]));
+  await a.goto(`${BASE}/#/programs`);
+  await a.getByRole('button', { name: 'Share' }).first().click();
+  await a.waitForSelector('text=copied');
+  const link = await a.evaluate(() => navigator.clipboard.readText());
+  expect(link.includes('#/add/'), 'sharing copies a link with the program inside it');
+  expect(link.length < 1200, `the link stays short enough to send (${link.length} chars)`);
+  await sender.close();
+
+  const receiver = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const b = await receiver.newPage();
+  b.on('dialog', (d) => d.accept());
+
+  await b.goto(link);
+  await b.getByText('Someone shared this').waitFor();
+  expect(
+    await b.getByRole('button', { name: 'Add to my routines' }).isVisible(),
+    'a shared link asks before adding',
+  );
+  await b.goto(`${BASE}/#/programs`);
+  await b.waitForSelector('text=Nothing saved yet');
+  expect(true, 'opening a shared link does not import on its own');
+
+  await b.goto(link);
+  await b.getByRole('button', { name: 'Add to my routines' }).click();
+  await b.waitForSelector('text=Saved (1)');
+  expect(true, 'adding a shared program saves it');
+
+  // The same link again clashes: ask for another name, never overwrite.
+  await b.goto(link);
+  await b.getByText('You already have a program with this name.').waitFor();
+  const suggested = await b.getByLabel('New name').inputValue();
+  expect(suggested === 'Leg Day (2)', `the clash suggests a free name (${suggested})`);
+  await b.getByRole('button', { name: 'Save with this name' }).click();
+  await b.waitForSelector('text=Saved (2)');
+  expect(await b.getByText('Leg Day (2)', { exact: true }).isVisible(), 'the copy lands beside the original');
+
+  // The builder refuses a duplicate name the same way — and no longer offers to replace.
+  await b.goto(`${BASE}/#/programs`);
+  await b.getByPlaceholder('Workout C').fill('Leg Day');
+  await b.locator('li').filter({ hasText: 'Exercise 1' }).getByPlaceholder('Goblet Squat').fill('Press');
+  await b.getByRole('button', { name: 'Create program' }).click();
+  await b.getByText('A program called').waitFor();
+  expect(
+    (await b.getByRole('button', { name: 'Replace it' }).count()) === 0,
+    'a duplicate name no longer offers to overwrite',
+  );
+  const nextName = await b.getByLabel('New name').inputValue();
+  expect(nextName === 'Leg Day (3)', `the builder suggests the next free name (${nextName})`);
+  await b.getByRole('button', { name: 'Save with this name' }).click();
+  await b.waitForSelector('text=Saved (3)');
+  expect(true, 'saving under the suggested name keeps every program');
+  await receiver.close();
 }
 
 await browser.close();

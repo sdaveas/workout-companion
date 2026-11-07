@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useHashRoute } from './hooks/useHashRoute';
 import { ActiveWorkout } from './screens/ActiveWorkout';
+import { AddShared } from './screens/AddShared';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { Programs } from './screens/Programs';
@@ -25,6 +26,7 @@ export function App() {
   return (
     <div className="min-h-dvh bg-ink text-[15px]">
       {route.name === 'programs' && <Programs />}
+      {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
       {route.name === 'history' && <History />}

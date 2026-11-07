@@ -4,6 +4,9 @@ import { usePrograms } from '../store/programsStore';
 import { formatDay } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
+import { NameConflict } from '../components/programs/NameConflict';
+import { suggestedName } from '../lib/identity';
+import { encodeProgram, shareUrl } from '../lib/share';
 
 export function Programs() {
   const programs = usePrograms((s) => s.programs);
@@ -11,9 +14,32 @@ export function Programs() {
   const clear = usePrograms((s) => s.clear);
   const notice = usePrograms((s) => s.notice);
   const issues = usePrograms((s) => s.issues);
-  const duplicateId = usePrograms((s) => s.duplicateId);
+  const conflict = usePrograms((s) => s.conflict);
+  const preview = usePrograms((s) => s.preview);
   const save = usePrograms((s) => s.save);
   const [editing, setEditing] = useState<Program | null>(null);
+  const [shared, setShared] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const others = editing ? programs.filter((p) => p.id !== editing.id) : programs;
+
+  async function share(program: Program) {
+    setShared(null);
+    try {
+      const url = shareUrl(await encodeProgram(program));
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: program.name, url });
+          return;
+        } catch (err) {
+          if ((err as Error).name === 'AbortError') return;
+        }
+      }
+      await navigator.clipboard.writeText(url);
+      setShared(`Link for “${program.name}” copied.`);
+    } catch (err) {
+      setShared(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -46,19 +72,18 @@ export function Programs() {
         </section>
       )}
 
-      {duplicateId && (
-        <section className="mt-5 rounded-xl border border-line bg-surface p-4">
-          <p className="text-sm">
-            A program with id <span className="font-mono">{duplicateId}</span> already exists.
-          </p>
-          <button
-            type="button"
-            onClick={() => void save(true)}
-            className="mt-3 h-11 w-full rounded-xl bg-accent text-sm font-semibold text-ink"
-          >
-            Replace it
-          </button>
-        </section>
+      {conflict && preview && (
+        <NameConflict
+          taken={conflict}
+          // Only the program being edited is not a clash with itself.
+          existingNames={others.map((p) => p.name)}
+          suggested={suggestedName(preview, others)}
+          busy={busy}
+          onSave={(name) => {
+            setBusy(true);
+            void save({ update: editing != null, name }).finally(() => setBusy(false));
+          }}
+        />
       )}
 
       {notice && (
@@ -91,6 +116,11 @@ export function Programs() {
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
+        {shared && (
+          <p role="status" className="mt-2 text-xs text-accent">
+            {shared}
+          </p>
+        )}
         {programs.length === 0 ? (
           <p className="mt-3 text-sm text-muted">Nothing saved yet.</p>
         ) : (
@@ -98,15 +128,22 @@ export function Programs() {
             {programs.map((p) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3"
+                className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface px-4 py-3"
               >
-                <div>
-                  <p className="font-medium">{p.name}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{p.name}</p>
                   <p className="text-xs text-muted">
                     {p.exercises.length} exercises · {formatDay(p.scheduleDay)}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void share(p)}
+                    className="h-11 rounded-lg border border-line px-3 text-xs"
+                  >
+                    Share
+                  </button>
                   <button
                     type="button"
                     onClick={() => setEditing(p)}

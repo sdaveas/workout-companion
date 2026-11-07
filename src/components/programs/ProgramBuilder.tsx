@@ -81,7 +81,7 @@ export function ProgramBuilder({
     setText(buildProgramJson(draft, initial?.id));
     // Only clear the form when the program was actually written, or the user loses
     // everything they typed on a validation error.
-    if (await save(initial != null)) {
+    if (await save({ update: initial != null })) {
       setDraft(emptyDraft());
       onDone?.();
     }
