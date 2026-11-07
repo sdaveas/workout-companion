@@ -100,11 +100,11 @@ select {
 }
 @keyframes m-squat-body {
   from { transform: translateY(0); }
-  to { transform: translateY(27px); }
+  to { transform: translateY(12px); }
 }
 @keyframes m-squat-legs {
-  from { transform: translateY(0); }
-  to { transform: translateY(10px); }
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.79); }
 }
 @keyframes m-dead-torso {
   from { transform: rotate(0deg); }

@@ -96,17 +96,17 @@ function figure(pattern: MotionPattern | null) {
     case 'squat':
       return (
         <>
+          {/* legs compress towards the floor, so the knees stay on the line and the
+              feet stay planted; the body follows them down by the same 12px */}
+          <g className="m-swing m-squat-legs" style={{ transformOrigin: '115px 146px' }}>
+            <path d="M115 88 L94 112 L80 146" />
+            <path d="M115 88 L139 112 L155 146" />
+          </g>
           <g className="m-swing m-squat-body" style={{ transformOrigin: '115px 72px' }}>
             <Head x={115} y={30} />
             <path d="M115 42 L115 88" />
             <path d="M115 56 L90 75 L75 65" />
             <path d="M115 56 L140 75 L155 65" />
-            <path d="M115 88 L94 112 L80 146" />
-            <path d="M115 88 L139 112 L155 146" />
-          </g>
-          <g className="m-swing m-squat-legs" style={{ transformOrigin: '115px 108px' }}>
-            <path d="M94 112 L115 125 L115 146" />
-            <path d="M139 112 L130 130 L155 146" />
           </g>
         </>
       );
