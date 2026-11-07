@@ -663,7 +663,31 @@ const auditScreen = async (page, screen) => {
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs/build`);
-  await page.getByLabel('Add an exercise').selectOption('Dumbbell Row');
+  // the muscle chips narrow the list before typing
+  await page.getByRole('button', { name: 'Arms', exact: true }).click();
+  expect(
+    (await page.getByRole('button', { name: 'Bicep Curl', exact: true }).count()) === 1,
+    'a muscle filter keeps that muscle',
+  );
+  expect(
+    (await page.getByRole('button', { name: 'Bench Press', exact: true }).count()) === 0,
+    'a muscle filter drops the other muscles',
+  );
+  await page.getByRole('button', { name: 'Arms', exact: true }).click();
+  expect(
+    (await page.getByRole('button', { name: 'Arms', exact: true }).getAttribute('aria-pressed')) ===
+      'false',
+    'tapping the filter again clears it',
+  );
+
+  // and the search is fzf, not exact: bnchprs finds Bench Press
+  await page.getByLabel('Search exercises').fill('bnchprs');
+  expect(
+    (await page.getByRole('button', { name: 'Bench Press', exact: true }).count()) === 1,
+    'a fuzzy search finds the exercise',
+  );
+  await page.getByLabel('Search exercises').fill('dumbbell row');
+  await page.getByRole('button', { name: 'Dumbbell Row', exact: true }).click();
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
   expect(
     (await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Dumbbell Row',
@@ -673,7 +697,8 @@ const auditScreen = async (page, screen) => {
   expect((await row.getByLabel('Rest s').inputValue()) === '90', 'the library fills the rest');
   expect(await row.getByRole('checkbox').isChecked(), 'the library marks a per-hand movement');
 
-  await page.getByLabel('Add an exercise').selectOption('Bench Press');
+  await page.getByLabel('Search exercises').fill('bench');
+  await page.getByRole('button', { name: 'Bench Press', exact: true }).click();
   const secondRow = page.locator('li').filter({ hasText: 'Exercise 2' });
   expect(
     (await secondRow.getByPlaceholder('Goblet Squat').inputValue()) === 'Bench Press',

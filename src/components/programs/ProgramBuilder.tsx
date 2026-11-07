@@ -2,11 +2,8 @@ import { useState } from 'react';
 import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
-import {
-  EXERCISE_LIBRARY,
-  MUSCLE_GROUP_ORDER,
-  libraryExercise,
-} from '../../data/exercises';
+import { libraryExercise } from '../../data/exercises';
+import { ExercisePicker } from './ExercisePicker';
 import {
   buildProgramJson,
   draftFromProgram,
@@ -15,9 +12,6 @@ import {
   type DraftExercise,
   type ProgramDraft,
 } from '../../lib/buildProgram';
-
-/** Select value that starts a blank row instead of filling one in. */
-const NEW_EXERCISE = '__new';
 
 const DAYS: Array<Weekday | ''> = [
   '',
@@ -82,15 +76,6 @@ export function ProgramBuilder({
       next.splice(i + by, 0, row);
       return { ...d, exercises: next };
     });
-
-  /** The picker either appends a blank row for a hand-typed exercise, or fills one from the library. */
-  const addExercise = (value: string) => {
-    if (value === NEW_EXERCISE) {
-      setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }));
-      return;
-    }
-    addFromLibrary(value);
-  };
 
   /** A library pick fills a row with name, sets, reps, rest and the per-hand flag. */
   const addFromLibrary = (name: string) => {
@@ -257,35 +242,10 @@ export function ProgramBuilder({
         ))}
       </ul>
 
-      <label className="mt-4 block">
-        <span className="text-[10px] uppercase tracking-widest text-muted">Add an exercise</span>
-        <select
-          value=""
-          aria-label="Add an exercise"
-          onChange={(e) => addExercise(e.target.value)}
-          className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
-        >
-          <option value="" disabled>
-            Choose an exercise…
-          </option>
-          <option value={NEW_EXERCISE}>+ New exercise (my own)</option>
-          {MUSCLE_GROUP_ORDER.map((group) => {
-            const rows = EXERCISE_LIBRARY.filter((e) => e.group === group).sort((a, b) =>
-              a.name.localeCompare(b.name),
-            );
-            if (rows.length === 0) return null;
-            return (
-              <optgroup key={group} label={group}>
-                {rows.map((e) => (
-                  <option key={e.name} value={e.name}>
-                    {e.name}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
-        </select>
-      </label>
+      <ExercisePicker
+        onPick={addFromLibrary}
+        onNew={() => setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }))}
+      />
 
       <button
         type="button"
