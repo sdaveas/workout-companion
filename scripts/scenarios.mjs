@@ -148,6 +148,8 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('link', { name: 'Build a program' }).click();
   await page.getByPlaceholder('Workout C').fill('Scenario Day');
   await page.getByLabel('Scheduled day').selectOption('monday');
+  expect((await page.locator('li').count()) === 0, 'a new program starts with no exercise rows');
+  await page.getByRole('button', { name: '+ New exercise (my own)' }).click();
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
   await row.getByPlaceholder('Goblet Squat').fill('Squat');
   await row.getByLabel('Rest s').fill('0');
@@ -577,6 +579,7 @@ const auditScreen = async (page, screen) => {
   // The builder refuses a duplicate name the same way — and no longer offers to replace.
   await b.goto(`${BASE}/#/programs/build`);
   await b.getByPlaceholder('Workout C').fill('Leg Day');
+  await b.getByRole('button', { name: '+ New exercise (my own)' }).click();
   await b.locator('li').filter({ hasText: 'Exercise 1' }).getByPlaceholder('Goblet Squat').fill('Press');
   await b.getByRole('button', { name: 'Create program' }).click();
   await b.getByText('A program called').waitFor();

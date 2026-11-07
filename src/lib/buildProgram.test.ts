@@ -3,6 +3,13 @@ import { emptyDraft, emptyExercise, buildProgramJson, draftFromProgram } from '.
 import { parseProgram } from '../schemas/program';
 
 describe('buildProgramJson', () => {
+  it('starts a new program with nothing in it', () => {
+    const draft = emptyDraft();
+    expect(draft.exercises).toEqual([]);
+    // and an empty program is refused rather than saved
+    expect(parseProgram(buildProgramJson({ ...draft, name: 'Empty' })).ok).toBe(false);
+  });
+
   it('produces JSON the importer accepts', () => {
     const draft = emptyDraft();
     draft.name = 'Workout C';

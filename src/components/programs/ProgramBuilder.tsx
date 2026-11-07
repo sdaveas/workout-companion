@@ -116,10 +116,6 @@ export function ProgramBuilder({
       <p className="text-xs uppercase tracking-widest text-accent">
         {initial ? `Editing "${initial.name}"` : 'Build a program'}
       </p>
-      <p className="mt-1 text-sm text-muted">
-        No JSON needed. It is validated by the same importer, then saved.
-      </p>
-
       <div className="mt-4 space-y-3">
         <label className="block">
           <span className="text-[10px] uppercase tracking-widest text-muted">Program name</span>

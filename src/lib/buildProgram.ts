@@ -26,10 +26,11 @@ export const emptyExercise = (): DraftExercise => ({
   restSeconds: 90,
 });
 
+/** A new program starts with nothing in it; the first exercise is the user's to add. */
 export const emptyDraft = (): ProgramDraft => ({
   name: 'My workout',
   day: '',
-  exercises: [emptyExercise()],
+  exercises: [],
 });
 
 export const slug = (name: string) =>

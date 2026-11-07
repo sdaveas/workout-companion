@@ -27,6 +27,8 @@ check(
 );
 await page.getByPlaceholder('Workout C').fill('Builder Day');
 await page.getByLabel('Scheduled day').selectOption('thursday');
+check((await page.locator('li').count()) === 0, 'a new program starts with no exercise rows');
+await page.getByRole('button', { name: '+ New exercise (my own)' }).click();
 
 const first = page.locator('li').filter({ hasText: 'Exercise 1' });
 await first.getByPlaceholder('Goblet Squat').fill('Front Squat');
@@ -81,6 +83,7 @@ check(await page.getByText('Saved (1)').isVisible(), 'no duplicate program was c
 // an invalid program must keep what the user typed
 await page.goto(`${BASE}/#/programs/build`);
 await page.getByLabel('Program name').fill('Keep me');
+await page.getByRole('button', { name: '+ New exercise (my own)' }).click();
 const row = page.locator('li').filter({ hasText: 'Exercise 1' });
 await row.getByPlaceholder('Goblet Squat').fill('Squat');
 await row.getByLabel('Sets').fill('0');
@@ -97,6 +100,7 @@ const solo = await browser.newContext({ viewport: { width: 390, height: 844 }, i
 const soloPage = await solo.newPage();
 await soloPage.goto(`${BASE}/#/programs/build`);
 await soloPage.getByPlaceholder('Workout C').fill('Unscheduled');
+await soloPage.getByRole('button', { name: '+ New exercise (my own)' }).click();
 await soloPage.locator('li').filter({ hasText: 'Exercise 1' }).getByPlaceholder('Goblet Squat').fill('Plank');
 await soloPage.getByRole('button', { name: 'Create program' }).click();
 await soloPage.waitForSelector('text=Program "Unscheduled" added');

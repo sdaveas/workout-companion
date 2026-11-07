@@ -24,6 +24,6 @@ describe('fuzzyScore', () => {
   });
 
   it('prefers the match that starts earlier', () => {
-    expect(fuzzyScore('row', 'Row')).toBeGreaterThan(fuzzyScore('row', 'Bent Over Row'));
+    expect(fuzzyScore('row', 'Row')!).toBeGreaterThan(fuzzyScore('row', 'Bent Over Row')!);
   });
 });
