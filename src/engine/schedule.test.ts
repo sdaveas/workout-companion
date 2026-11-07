@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { nextUp, weekView } from './schedule';
 import type { Program, Weekday } from './types';
 
-const program = (id: string, day: Weekday | null): Program => ({
+const program = (id: string, days: Weekday[]): Program => ({
   id,
   name: id,
   description: null,
-  scheduleDay: day,
+  scheduleDays: days,
   estimatedDurationMinutes: null,
   exercises: [],
   raw: '{}',
@@ -17,7 +17,7 @@ const saturday = new Date(2026, 10, 7, 9, 0, 0).getTime(); // Sat 7 Nov 2026
 const T = (day: number, hour = 9) => new Date(2026, 10, day, hour).getTime();
 
 describe('nextUp', () => {
-  const b = program('workout-b', 'saturday');
+  const b = program('workout-b', ['saturday']);
 
   it('returns today for a program scheduled today', () => {
     expect(nextUp([b], [], saturday)).toEqual({ kind: 'today', program: b });
@@ -38,16 +38,21 @@ describe('nextUp', () => {
   });
 
   it('looks forward for the next scheduled day', () => {
-    expect(nextUp([program('a', 'monday')], [], saturday)).toEqual({
+    expect(nextUp([program('a', ['monday'])], [], saturday)).toEqual({
       kind: 'upcoming',
-      program: program('a', 'monday'),
+      program: program('a', ['monday']),
       weekday: 'monday',
     });
   });
 
   it('wraps within seven days', () => {
-    const result = nextUp([program('fri', 'friday')], [], saturday);
+    const result = nextUp([program('fri', ['friday'])], [], saturday);
     expect(result.kind).toBe('upcoming');
+  });
+
+  it('counts every day of a multi-day program', () => {
+    const twice = program('twice', ['wednesday', 'saturday']);
+    expect(nextUp([twice], [], saturday)).toEqual({ kind: 'today', program: twice });
   });
 
   it('prefers an active session over the schedule', () => {
@@ -55,22 +60,29 @@ describe('nextUp', () => {
   });
 
   it('returns none with no scheduled programs', () => {
-    expect(nextUp([program('x', null)], [], saturday)).toEqual({ kind: 'none' });
+    expect(nextUp([program('x', [])], [], saturday)).toEqual({ kind: 'none' });
   });
 });
 
 describe('weekView', () => {
   it('always returns seven days starting Monday', () => {
-    const week = weekView([program('b', 'saturday')], [], saturday);
+    const week = weekView([program('b', ['saturday'])], [], saturday);
     expect(week).toHaveLength(7);
     expect(week[0].weekday).toBe('monday');
     expect(week[5].weekday).toBe('saturday');
     expect(week[5].programs[0].done).toBe(false);
   });
 
+  it('lists a multi-day program on each of its days', () => {
+    const week = weekView([program('twice', ['monday', 'thursday'])], [], saturday);
+    expect(week[0].programs.map((p) => p.program.id)).toEqual(['twice']);
+    expect(week[3].programs.map((p) => p.program.id)).toEqual(['twice']);
+    expect(week[1].programs).toHaveLength(0);
+  });
+
   it('marks the day done when a session finished that day', () => {
     const week = weekView(
-      [program('workout-b', 'saturday')],
+      [program('workout-b', ['saturday'])],
       [{ programId: 'workout-b', finishedAt: T(7, 11) }],
       saturday,
     );
@@ -80,7 +92,7 @@ describe('weekView', () => {
   it('does not leak a completion into the following week', () => {
     const nextWeek = new Date(2026, 10, 14, 9).getTime(); // Sat 14 Nov
     const week = weekView(
-      [program('b', 'saturday')],
+      [program('b', ['saturday'])],
       [{ programId: 'workout-b', finishedAt: T(7, 11) }],
       nextWeek,
     );

@@ -147,8 +147,11 @@ const auditScreen = async (page, screen) => {
 
   await page.getByRole('link', { name: 'Build a program' }).click();
   await page.getByPlaceholder('Workout C').fill('Scenario Day');
-  await page.getByLabel('Scheduled day').selectOption('monday');
-  expect((await page.locator('li').count()) === 0, 'a new program starts with no exercise rows');
+  await page.getByRole('group', { name: 'Scheduled day' }).getByRole('button', { name: 'Mon' }).click();
+  expect(
+    (await page.getByText('Exercise 1', { exact: true }).count()) === 0,
+    'a new program starts with no exercise rows',
+  );
   await page.getByRole('button', { name: '+ New exercise (my own)' }).click();
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
   await row.getByPlaceholder('Goblet Squat').fill('Squat');
@@ -170,11 +173,30 @@ const auditScreen = async (page, screen) => {
   expect(completed === 3, `completed the programmed sets (${completed})`);
   expect(page.url().includes('#/summary/'), 'finishing opens the summary');
   await auditScreen(page, 'summary');
+  expect(
+    await page.getByText('Share this workout?').isVisible(),
+    'a finished workout offers to share the program',
+  );
+  await page.getByLabel(/ask again/).check();
+  expect(
+    (await page.evaluate(() => localStorage.getItem('wc:noSharePrompt'))) === '1',
+    '“don’t ask again” is remembered for the next workout',
+  );
+  await page.getByRole('button', { name: 'Not now' }).click();
+  expect(
+    (await page.getByText('Share this workout?').count()) === 0,
+    'dismissing the share offer puts it away',
+  );
+
   await page.getByRole('button', { name: 'Done' }).click();
   await page.waitForSelector('text=Ready to train');
 
   await page.goto(`${BASE}/#/history`);
   await page.waitForSelector('text=Scenario Day');
+  expect(
+    (await page.getByRole('button', { name: /^Share Scenario Day/ }).count()) === 1,
+    'each history row carries its own share button',
+  );
   await auditScreen(page, 'history');
 
   // Export must produce the file the MCP reads
@@ -268,6 +290,11 @@ const auditScreen = async (page, screen) => {
 
   // a broken file is reported and nothing is written
   await page.goto(`${BASE}/#/settings`);
+  expect(
+    (await page.getByText('Manage programs').count()) === 0 &&
+      (await page.getByText('Session history').count()) === 0,
+    'Settings sends you nowhere else: no duplicate program/history links',
+  );
   await page.setInputFiles('#backup-file', await tmpFile('{"schema_version":1}'));
   await page.waitForSelector('text=neither a workout program');
   expect(true, 'a broken file is reported on Settings');
@@ -666,6 +693,18 @@ const auditScreen = async (page, screen) => {
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs/build`);
+  // the whole library is in a scrollable window, not the first 20
+  await page.getByLabel('Search exercises').waitFor();
+  const list = page.getByRole('list', { name: 'Exercises' });
+  expect(
+    (await list.getByRole('listitem').count()) > 100,
+    'the list holds the whole library',
+  );
+  expect(
+    await list.evaluate((el) => el.scrollHeight > el.clientHeight),
+    'the list is a scrollable window',
+  );
+
   // the muscle chips narrow the list before typing
   await page.getByRole('button', { name: 'Arms', exact: true }).click();
   expect(
@@ -689,6 +728,18 @@ const auditScreen = async (page, screen) => {
     (await page.getByRole('button', { name: 'Bench Press', exact: true }).count()) === 1,
     'a fuzzy search finds the exercise',
   );
+
+  // the ⓘ opens a how-to sheet: figures, muscles, prescription, execution
+  const sheet = page.getByRole('dialog');
+  await page.getByRole('button', { name: 'How to do Bench Press', exact: true }).click();
+  await sheet.waitFor();
+  const sheetText = (await sheet.textContent()).replace(/\s+/g, ' ');
+  expect(sheetText.includes('Chest'), 'the sheet names the muscles');
+  expect(/02:30|2:30/.test(sheetText), 'the sheet shows the default prescription');
+  expect(sheetText.includes('shoulder blades'), 'the sheet shows hand-written execution');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  expect((await sheet.count()) === 0, 'the sheet closes');
+
   await page.getByLabel('Search exercises').fill('dumbbell row');
   await page.getByRole('button', { name: 'Dumbbell Row', exact: true }).click();
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
@@ -710,7 +761,10 @@ const auditScreen = async (page, screen) => {
   await auditScreen(page, 'programs/library');
 
   await page.getByPlaceholder('Workout C').fill('Library Day');
-  await page.getByLabel('Scheduled day').selectOption(todayName);
+  await page
+    .getByRole('group', { name: 'Scheduled day' })
+    .getByRole('button', { name: todayName[0].toUpperCase() + todayName.slice(1, 3) })
+    .click();
   await page.getByRole('button', { name: 'Create program' }).click();
   await page.waitForSelector('text=Program "Library Day" added');
 

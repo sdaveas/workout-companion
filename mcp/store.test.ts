@@ -46,7 +46,7 @@ describe('program store', () => {
     expect(result).toEqual({ ok: true, id: 'workout-z' });
 
     expect(await listPrograms(root)).toEqual([
-      { id: 'workout-z', name: 'Workout Z', scheduleDay: 'friday', exerciseCount: 1 },
+      { id: 'workout-z', name: 'Workout Z', scheduleDays: ['friday'], exerciseCount: 1 },
     ]);
     const index = JSON.parse(await readFile(path.join(root, 'programs', 'index.json'), 'utf8'));
     expect(index.programs[0].id).toBe('workout-z');

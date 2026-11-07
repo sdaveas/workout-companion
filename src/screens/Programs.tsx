@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useHashRoute } from '../hooks/useHashRoute';
 import type { Program } from '../engine/types';
 import { usePrograms } from '../store/programsStore';
-import { formatDay } from '../lib/format';
+import { formatDays } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 import { NameConflict } from '../components/programs/NameConflict';
 import { suggestedName } from '../lib/identity';
-import { encodeProgram, shareUrl } from '../lib/share';
+import { shareProgram } from '../lib/shareProgram';
 
 export function Programs() {
   const programs = usePrograms((s) => s.programs);
@@ -34,17 +34,8 @@ export function Programs() {
   async function share(program: Program) {
     setShared(null);
     try {
-      const url = shareUrl(await encodeProgram(program));
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: program.name, url });
-          return;
-        } catch (err) {
-          if ((err as Error).name === 'AbortError') return;
-        }
-      }
-      await navigator.clipboard.writeText(url);
-      setShared(`Link for “${program.name}” copied.`);
+      const note = await shareProgram(program);
+      if (note) setShared(note);
     } catch (err) {
       setShared(err instanceof Error ? err.message : String(err));
     }
@@ -173,7 +164,7 @@ export function Programs() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="text-xs text-muted">
-                    {p.exercises.length} exercises · {formatDay(p.scheduleDay)}
+                    {p.exercises.length} exercises · {formatDays(p.scheduleDays)}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">

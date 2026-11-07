@@ -1,3 +1,6 @@
+import type { Weekday } from '../engine/types';
+import { WEEK_ORDER } from '../engine/schedule';
+
 export function formatClock(ms: number): string {
   const total = Math.floor(Math.max(0, ms) / 1000);
   const m = Math.floor(total / 60);
@@ -36,4 +39,12 @@ export function formatWeight(kg: number | null, perHand = false): string {
 export function formatDay(day: string | null): string {
   if (!day) return 'unscheduled';
   return day[0].toUpperCase() + day.slice(1);
+}
+
+/** The week a program is trained on: "Mon, Thu", "every day", or no fixed day at all. */
+export function formatDays(days: Weekday[]): string {
+  if (days.length === 0) return 'any day';
+  const ordered = WEEK_ORDER.filter((d) => days.includes(d));
+  if (ordered.length === 7) return 'every day';
+  return ordered.map((d) => d.slice(0, 3)).join(', ');
 }

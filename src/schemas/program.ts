@@ -80,7 +80,13 @@ const programSchema = z.strictObject({
   id: z.string().min(1, 'Program id is required.'),
   name: z.string().min(1, 'Program name is required.'),
   description: z.string().optional(),
-  schedule: z.strictObject({ day: z.enum(WEEKDAYS) }).optional(),
+  schedule: z
+    .strictObject({
+      // One day was the only option in v1; new files carry the whole week.
+      day: z.enum(WEEKDAYS).optional(),
+      days: z.array(z.enum(WEEKDAYS)).max(7).optional(),
+    })
+    .optional(),
   estimated_duration_minutes: z.number().int().positive().optional(),
   exercises: z
     .array(exerciseSchema)
@@ -178,7 +184,12 @@ export function parseProgram(text: string): ParseResult {
       id: d.id,
       name: d.name,
       description: d.description ?? null,
-      scheduleDay: d.schedule?.day ?? null,
+      scheduleDays: [
+        ...new Set([
+          ...(d.schedule?.days ?? []),
+          ...(d.schedule?.day ? [d.schedule.day] : []),
+        ]),
+      ],
       estimatedDurationMinutes: d.estimated_duration_minutes ?? null,
       exercises: d.exercises.map(normalizeExercise),
       raw: text,

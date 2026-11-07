@@ -12,7 +12,7 @@ const program: Program = {
   id: 'p',
   name: 'P',
   description: null,
-  scheduleDay: null,
+  scheduleDays: [],
   estimatedDurationMinutes: null,
   raw: '{}',
   exercises: [

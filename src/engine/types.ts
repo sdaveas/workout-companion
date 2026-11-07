@@ -26,7 +26,8 @@ export interface Program {
   id: string;
   name: string;
   description: string | null;
-  scheduleDay: Weekday | null;
+  /** Empty means "no fixed day": a one-off routine. */
+  scheduleDays: Weekday[];
   estimatedDurationMinutes: number | null;
   exercises: ProgramExercise[];
   raw: string;

@@ -133,14 +133,7 @@ export function Settings() {
         </p>
       )}
 
-      <a href="#/programs" className="mt-6 flex h-11 items-center justify-center text-xs text-muted underline">
-        Manage programs
-      </a>
-      <a href="#/history" className="mt-1 flex h-11 items-center justify-center text-xs text-muted underline">
-        Session history
-      </a>
-
-      <a href="#/credits" className="mt-1 flex h-11 items-center justify-center text-xs text-muted underline">
+      <a href="#/credits" className="mt-6 flex h-11 items-center justify-center text-xs text-muted underline">
         Credits
       </a>
     </main>

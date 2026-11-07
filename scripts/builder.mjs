@@ -26,8 +26,11 @@ check(
   'default program name is "My workout"',
 );
 await page.getByPlaceholder('Workout C').fill('Builder Day');
-await page.getByLabel('Scheduled day').selectOption('thursday');
-check((await page.locator('li').count()) === 0, 'a new program starts with no exercise rows');
+await page.getByRole('group', { name: 'Scheduled day' }).getByRole('button', { name: 'Thu' }).click();
+check(
+  (await page.getByText('Exercise 1', { exact: true }).count()) === 0,
+  'a new program starts with no exercise rows',
+);
 await page.getByRole('button', { name: '+ New exercise (my own)' }).click();
 
 const first = page.locator('li').filter({ hasText: 'Exercise 1' });

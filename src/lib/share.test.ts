@@ -20,7 +20,7 @@ describe('share link', () => {
     const plan = (p: Program) =>
       p.exercises.map((e) => [e.name, e.sets, e.reps, e.weightKg, e.perHand, e.restSeconds]);
     expect(plan(back.program)).toEqual(plan(program));
-    expect(back.program.scheduleDay).toBe(program.scheduleDay);
+    expect(back.program.scheduleDays).toEqual([]); // the receiver picks the week
   });
 
   it('carries a preview version so a changed card is re-fetched', async () => {

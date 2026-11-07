@@ -12,7 +12,8 @@ export interface DraftExercise {
 
 export interface ProgramDraft {
   name: string;
-  day: Weekday | '';
+  /** Empty = no fixed day; the program stays a one-off. */
+  days: Weekday[];
   exercises: DraftExercise[];
 }
 
@@ -29,7 +30,7 @@ export const emptyExercise = (): DraftExercise => ({
 /** A new program starts with nothing in it; the first exercise is the user's to add. */
 export const emptyDraft = (): ProgramDraft => ({
   name: 'My workout',
-  day: '',
+  days: [],
   exercises: [],
 });
 
@@ -62,7 +63,7 @@ function parseWeight(raw: string): number | string | null {
 export function draftFromProgram(program: Program): ProgramDraft {
   return {
     name: program.name,
-    day: program.scheduleDay ?? '',
+    days: program.scheduleDays,
     exercises: program.exercises.map((e) => ({
       name: e.name,
       sets: e.sets,
@@ -81,7 +82,7 @@ export function buildProgramJson(draft: ProgramDraft, id?: string): string {
     // Keep the existing id when updating, even if the name changed.
     id: id ?? slug(draft.name),
     name: draft.name.trim(),
-    ...(draft.day ? { schedule: { day: draft.day } } : {}),
+    ...(draft.days.length > 0 ? { schedule: { days: draft.days } } : {}),
     exercises: draft.exercises
       .filter((e) => e.name.trim())
       .map((e, i) => {

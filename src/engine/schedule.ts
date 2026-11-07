@@ -52,8 +52,8 @@ export function nextUp(
     sessions.filter((s) => (s.finishedAt ?? 0) >= today).map((s) => s.programId),
   );
 
-  const scheduled = programs.filter((p) => p.scheduleDay != null);
-  const todayPrograms = scheduled.filter((p) => p.scheduleDay === weekdayName(now));
+  const scheduled = programs.filter((p) => p.scheduleDays.length > 0);
+  const todayPrograms = scheduled.filter((p) => p.scheduleDays.includes(weekdayName(now)));
 
   const pendingToday = todayPrograms.find((p) => !doneToday.has(p.id));
   if (pendingToday) return { kind: 'today', program: pendingToday };
@@ -64,7 +64,7 @@ export function nextUp(
 
   for (let offset = 1; offset <= 7; offset += 1) {
     const day = WEEK_ORDER[(WEEK_ORDER.indexOf(weekdayName(now)) + offset) % 7];
-    const program = scheduled.find((p) => p.scheduleDay === day);
+    const program = scheduled.find((p) => p.scheduleDays.includes(day));
     if (program) return { kind: 'upcoming', program, weekday: day };
   }
 
@@ -91,7 +91,7 @@ export function weekView(
       weekday,
       date,
       programs: programs
-        .filter((p) => p.scheduleDay === weekday)
+        .filter((p) => p.scheduleDays.includes(weekday))
         .map((program) => ({
           program,
           done: sessions.some(

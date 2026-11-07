@@ -9,7 +9,7 @@ const program = (over: Partial<Program> = {}): Program => ({
   id: 'workout-a',
   name: 'Workout A',
   description: null,
-  scheduleDay: 'monday',
+  scheduleDays: ['monday'],
   estimatedDurationMinutes: 40,
   exercises: [],
   raw: '{}',

@@ -7,7 +7,7 @@ import { nextUp, weekView } from '../engine/schedule';
 import { getWorkoutProgress } from '../engine/selectors';
 import { summarize } from '../engine/summary';
 import { elapsedMs } from '../engine/time';
-import { formatDate, formatDay, formatDuration } from '../lib/format';
+import { formatDate, formatDay, formatDays, formatDuration } from '../lib/format';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
@@ -183,7 +183,7 @@ export function Home() {
                 >
                   <span className="truncate">{p.name}</span>
                   <span className="ml-3 shrink-0 text-xs text-muted">
-                    {p.scheduleDay ? p.scheduleDay : 'any day'}
+                    {formatDays(p.scheduleDays)}
                   </span>
                 </Button>
               </li>

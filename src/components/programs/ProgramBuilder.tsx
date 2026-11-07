@@ -13,8 +13,7 @@ import {
   type ProgramDraft,
 } from '../../lib/buildProgram';
 
-const DAYS: Array<Weekday | ''> = [
-  '',
+const DAYS: Weekday[] = [
   'monday',
   'tuesday',
   'wednesday',
@@ -127,20 +126,34 @@ export function ProgramBuilder({
           />
         </label>
 
-        <label className="block">
-          <span className="text-[10px] uppercase tracking-widest text-muted">Scheduled day</span>
-          <select
-            value={draft.day}
-            onChange={(e) => patch({ day: e.target.value as Weekday | '' })}
-            className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
-          >
-            {DAYS.map((d) => (
-              <option key={d || 'none'} value={d}>
-                {d === '' ? 'No fixed day' : formatDay(d)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="block">
+          <span className="text-[10px] uppercase tracking-widest text-muted">Days</span>
+          <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Scheduled day">
+            {DAYS.map((d) => {
+              const on = draft.days.includes(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    patch({
+                      days: on ? draft.days.filter((x) => x !== d) : [...draft.days, d],
+                    })
+                  }
+                  className={`min-h-11 rounded-full border px-3 text-xs ${
+                    on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
+                  }`}
+                >
+                  {formatDay(d).slice(0, 3)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-[11px] text-muted">
+            {draft.days.length === 0 ? 'Any day — no fixed routine.' : 'Tap again to remove a day.'}
+          </p>
+        </div>
       </div>
 
       <ul className="mt-5 space-y-4">

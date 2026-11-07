@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Program } from '../engine/types';
+import type { Program, Weekday } from '../engine/types';
 import { describeError } from '../schemas/program';
 import { usePrograms } from '../store/programsStore';
 import { conflictingProgram, renameProgram, suggestedName } from '../lib/identity';
@@ -8,12 +8,79 @@ import { saveProgram } from '../storage/programs';
 import { formatDay } from '../lib/format';
 import { NameConflict } from '../components/programs/NameConflict';
 
+const DAYS: Weekday[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
+
 type Loaded =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
   | { kind: 'ready'; program: Program };
 
-/** `#/add/<payload>` — a whole program inside the link. Nothing is written until the user says so. */
+/**
+ * The days live in the program's own JSON, so a backup or a re-export carries them.
+ * `raw` is what a backup writes, so patching only the object would lose the schedule.
+ */
+function withDays(program: Program, days: Weekday[]): Program {
+  const raw = JSON.parse(program.raw) as Record<string, unknown>;
+  if (days.length > 0) raw.schedule = { days };
+  else delete raw.schedule;
+  return { ...program, scheduleDays: days, raw: JSON.stringify(raw) };
+}
+
+function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[]) => void }) {
+  return (
+    <div className="mt-4">
+      <p className="text-[10px] uppercase tracking-widest text-muted">Train it</p>
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Train it">
+        <button
+          type="button"
+          aria-pressed={days.length === 0}
+          onClick={() => onChange([])}
+          className={`min-h-11 rounded-full border px-3 text-xs ${
+            days.length === 0
+              ? 'border-accent bg-accent font-semibold text-ink'
+              : 'border-line text-muted'
+          }`}
+        >
+          One-off
+        </button>
+        {DAYS.map((d) => {
+          const on = days.includes(d);
+          return (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])}
+              className={`min-h-11 rounded-full border px-3 text-xs ${
+                on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
+              }`}
+            >
+              {formatDay(d).slice(0, 3)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1 text-[11px] text-muted">
+        {days.length === 0
+          ? 'One-off: it waits in your list until you start it.'
+          : 'Home shows it every week on the days you picked.'}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * `#/add/<payload>` — a whole program inside the link. Nothing is written until the
+ * user says so, and the week is theirs to choose: links never carry a schedule.
+ */
 export function AddShared({ payload }: { payload: string }) {
   const programs = usePrograms((s) => s.programs);
   const loaded = usePrograms((s) => s.loaded);
@@ -21,6 +88,7 @@ export function AddShared({ payload }: { payload: string }) {
   const [state, setState] = useState<Loaded>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [days, setDays] = useState<Weekday[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +121,7 @@ export function AddShared({ payload }: { payload: string }) {
         }
         target = renamed.program;
       }
-      await saveProgram(target);
+      await saveProgram(withDays(target, days));
       await load();
       usePrograms.setState({ notice: `Added “${target.name}” to your routines.` });
       location.hash = '#/programs';
@@ -102,8 +170,8 @@ export function AddShared({ payload }: { payload: string }) {
           <p className="text-xs uppercase tracking-widest text-accent">Someone shared this</p>
           <p className="mt-2 text-lg font-semibold">{state.program.name}</p>
           <p className="mt-1 text-sm text-muted">
-            {state.program.exercises.length} exercise{state.program.exercises.length === 1 ? '' : 's'} ·{' '}
-            {formatDay(state.program.scheduleDay)}
+            {state.program.exercises.length} exercise
+            {state.program.exercises.length === 1 ? '' : 's'}
           </p>
           {state.program.description && (
             <p className="mt-2 text-sm text-muted">{state.program.description}</p>
@@ -118,6 +186,7 @@ export function AddShared({ payload }: { payload: string }) {
               </li>
             ))}
           </ul>
+          <DayPicker days={days} onChange={setDays} />
           <button
             type="button"
             disabled={busy}
@@ -139,10 +208,11 @@ export function AddShared({ payload }: { payload: string }) {
             <p className="text-lg font-semibold">{state.program.name}</p>
             <p className="mt-1 text-sm text-muted">
               {state.program.exercises.length} exercise
-              {state.program.exercises.length === 1 ? '' : 's'} · {formatDay(state.program.scheduleDay)}
+              {state.program.exercises.length === 1 ? '' : 's'}
             </p>
             <p className="mt-2 text-sm">You already have a program with this name.</p>
           </section>
+          <DayPicker days={days} onChange={setDays} />
           <NameConflict
             taken={clash.name}
             existingNames={programs.map((p) => p.name)}

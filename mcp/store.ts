@@ -7,7 +7,7 @@ import type { SessionSummary } from '../src/engine/summary';
 export interface StoredProgram {
   id: string;
   name: string;
-  scheduleDay: string | null;
+  scheduleDays: string[];
   exerciseCount: number;
 }
 
@@ -80,7 +80,7 @@ export async function listPrograms(root: string): Promise<StoredProgram[]> {
     out.push({
       id: parsed.program.id,
       name: parsed.program.name,
-      scheduleDay: parsed.program.scheduleDay,
+      scheduleDays: parsed.program.scheduleDays,
       exerciseCount: parsed.program.exercises.length,
     });
   }

@@ -8,8 +8,9 @@ export const SHARE_PATH = '#/add/';
 
 /**
  * Links are read on a phone, so the payload carries the training plan only:
- * name, day, and each exercise's name, sets, reps, weight, per-hand flag and rest.
- * Photos, instructions and notes stay with the sender — they were most of the bytes.
+ * name and each exercise's name, sets, reps, weight, per-hand flag and rest.
+ * Photos, instructions, notes and the schedule stay with the sender — they were
+ * most of the bytes, and the receiver schedules the program for their own week.
  * The exercise name is sent as an index into the built-in library when we know it.
  */
 const VERSION = '1';
@@ -29,7 +30,9 @@ const nameCode = (name: string): number | string => {
 function toWire(program: Program): [string, string, WireExercise[]] {
   return [
     program.name,
-    program.scheduleDay ?? '',
+    // The week is the receiver's call: a solo lifter and a Monday/Wednesday/Friday
+    // lifter get the same link, and the link never schedules anything for them.
+    '',
     program.exercises.map((e) => [
       nameCode(e.name),
       e.sets,

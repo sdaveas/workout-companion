@@ -7,8 +7,20 @@ import { summarize } from '../engine/summary';
 import type { WorkoutAction } from '../engine/types';
 import { formatClock, formatDate } from '../lib/format';
 import { planProgramUpdate } from '../lib/programUpdate';
+import { shareProgram } from '../lib/shareProgram';
 import { usePrograms } from '../store/programsStore';
 import { Button } from '../components/ui/Button';
+
+/** "Don't ask again" on the share prompt after a workout. */
+const SHARE_PROMPT_KEY = 'wc:noSharePrompt';
+
+const promptOff = () => {
+  try {
+    return localStorage.getItem(SHARE_PROMPT_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
@@ -34,6 +46,11 @@ export function Summary() {
   const setText = usePrograms((s) => s.setText);
   const saveProgram = usePrograms((s) => s.save);
   const [updateState, setUpdateState] = useState<'idle' | 'busy' | 'applied' | 'dismissed'>('idle');
+  const [shareState, setShareState] = useState<'idle' | 'done' | 'dismissed'>('idle');
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  const [askOff, setAskOff] = useState(promptOff);
+  // Read once: ticking the box only affects the next workout, so this panel stays put.
+  const [promptMuted] = useState(promptOff);
 
   useEffect(() => {
     if (!param) return;
@@ -54,6 +71,25 @@ export function Summary() {
     liveJustFinished && source?.status === 'completed' && storedProgram
       ? planProgramUpdate(source, storedProgram)
       : null;
+
+  // The share offer belongs to the workout that just ended, not to old summaries.
+  const showShare =
+    live != null &&
+    live.sessionId === param &&
+    source?.status === 'completed' &&
+    storedProgram != null &&
+    !promptMuted &&
+    shareState === 'idle';
+
+  async function shareIt() {
+    if (!storedProgram) return;
+    try {
+      setShareNote(await shareProgram(storedProgram));
+    } catch (err) {
+      setShareNote(err instanceof Error ? err.message : String(err));
+    }
+    setShareState('done');
+  }
 
   async function applyUpdate() {
     if (!update) return;
@@ -183,6 +219,47 @@ export function Summary() {
       {updateState === 'applied' && (
         <p role="status" className="mt-4 text-sm text-accent">
           Program updated with today's numbers.
+        </p>
+      )}
+
+      {showShare && (
+        <section className="mt-6 rounded-2xl border border-line bg-surface p-4">
+          <p className="text-xs uppercase tracking-widest text-muted">Share this workout?</p>
+          <p className="mt-2 text-sm text-muted">
+            Send “{storedProgram?.name}” as a link. Whoever opens it sees the plan and picks
+            their own days.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Button variant="primary" className="h-12 flex-1" onClick={() => void shareIt()}>
+              Share
+            </Button>
+            <Button className="h-12 flex-1" onClick={() => setShareState('dismissed')}>
+              Not now
+            </Button>
+          </div>
+          <label className="mt-3 flex min-h-11 items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              checked={askOff}
+              onChange={(e) => {
+                setAskOff(e.target.checked);
+                try {
+                  if (e.target.checked) localStorage.setItem(SHARE_PROMPT_KEY, '1');
+                  else localStorage.removeItem(SHARE_PROMPT_KEY);
+                } catch {
+                  // a browser that blocks storage just asks again next time
+                }
+              }}
+              className="h-5 w-5 shrink-0 appearance-none rounded border border-line bg-field accent-accent checked:border-accent checked:bg-accent"
+            />
+            Don’t ask again
+          </label>
+        </section>
+      )}
+
+      {shareNote && (
+        <p role="status" className="mt-4 text-sm text-accent">
+          {shareNote}
         </p>
       )}
 

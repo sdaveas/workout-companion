@@ -17,12 +17,31 @@ const issuesOf = (text: string) => {
 };
 
 describe('parseProgram', () => {
+  it('reads a multi-day schedule, and still reads a single-day file', () => {
+    const file = JSON.parse(fixture) as Record<string, unknown>;
+
+    const multi = parseProgram(JSON.stringify({ ...file, schedule: { days: ['monday', 'thursday'] } }));
+    if (!multi.ok) throw new Error('expected ok');
+    expect(multi.program.scheduleDays).toEqual(['monday', 'thursday']);
+
+    const legacy = parseProgram(JSON.stringify({ ...file, schedule: { day: 'monday' } }));
+    if (!legacy.ok) throw new Error('expected ok');
+    expect(legacy.program.scheduleDays).toEqual(['monday']);
+
+    // A file that carries both is read once per day, in order.
+    const both = parseProgram(
+      JSON.stringify({ ...file, schedule: { day: 'monday', days: ['monday', 'thursday'] } }),
+    );
+    if (!both.ok) throw new Error('expected ok');
+    expect(both.program.scheduleDays).toEqual(['monday', 'thursday']);
+  });
+
   it('parses the Workout B fixture', () => {
     const r = parseProgram(fixture);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.program.name).toBe('Workout B');
-    expect(r.program.scheduleDay).toBe('saturday');
+    expect(r.program.scheduleDays).toEqual(['saturday']);
     expect(r.program.exercises).toHaveLength(6);
     expect(r.program.exercises.reduce((n, e) => n + e.sets, 0)).toBe(16);
     expect(r.program.exercises[1].weightKg).toBe(5.8);

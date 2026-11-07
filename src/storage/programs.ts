@@ -1,10 +1,19 @@
 import { db } from './db';
-import type { Program } from '../engine/types';
+import type { Program, Weekday } from '../engine/types';
 
 export class DuplicateProgramId extends Error {
   constructor(public readonly id: string) {
     super(`A program with id "${id}" already exists.`);
   }
+}
+
+/** Programs saved before a workout could hold more than one day carry a single `scheduleDay`. */
+type StoredProgram = Program & { scheduleDay?: Weekday | null; scheduleDays?: Weekday[] };
+
+function withDays(row: StoredProgram): Program {
+  if (Array.isArray(row.scheduleDays)) return row;
+  const { scheduleDay, ...rest } = row;
+  return { ...rest, scheduleDays: scheduleDay ? [scheduleDay] : [] };
 }
 
 export async function saveProgram(program: Program, opts: { replace?: boolean } = {}) {
@@ -15,14 +24,16 @@ export async function saveProgram(program: Program, opts: { replace?: boolean } 
   });
 }
 
-export function listPrograms(): Promise<Program[]> {
-  return db.programs.toArray();
+export async function listPrograms(): Promise<Program[]> {
+  const rows = (await db.programs.toArray()) as StoredProgram[];
+  return rows.map(withDays);
 }
 
-export function getProgram(id: string): Promise<Program | undefined> {
-  return db.programs.get(id);
+export async function getProgram(id: string): Promise<Program | undefined> {
+  const row = (await db.programs.get(id)) as StoredProgram | undefined;
+  return row && withDays(row);
 }
 
-export function deleteProgram(id: string): Promise<void> {
-  return db.programs.delete(id);
+export async function deleteProgram(id: string): Promise<void> {
+  await db.programs.delete(id);
 }
