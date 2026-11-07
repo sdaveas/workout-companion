@@ -16,10 +16,8 @@ import {
   type ProgramDraft,
 } from '../../lib/buildProgram';
 
-function matchesPick(name: string, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  return q.length === 0 || name.toLowerCase().includes(q);
-}
+/** Select value that starts a blank row instead of filling one in. */
+const NEW_EXERCISE = '__new';
 
 const DAYS: Array<Weekday | ''> = [
   '',
@@ -71,7 +69,6 @@ export function ProgramBuilder({
   const [draft, setDraft] = useState<ProgramDraft>(() =>
     initial ? draftFromProgram(initial) : emptyDraft(),
   );
-  const [pickQuery, setPickQuery] = useState('');
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -85,6 +82,15 @@ export function ProgramBuilder({
       next.splice(i + by, 0, row);
       return { ...d, exercises: next };
     });
+
+  /** The picker either appends a blank row for a hand-typed exercise, or fills one from the library. */
+  const addExercise = (value: string) => {
+    if (value === NEW_EXERCISE) {
+      setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }));
+      return;
+    }
+    addFromLibrary(value);
+  };
 
   /** A library pick fills a row with name, sets, reps, rest and the per-hand flag. */
   const addFromLibrary = (name: string) => {
@@ -251,38 +257,22 @@ export function ProgramBuilder({
         ))}
       </ul>
 
-      <button
-        type="button"
-        onClick={() => setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }))}
-        className="mt-3 h-12 w-full rounded-xl border border-dashed border-line text-sm text-muted"
-      >
-        + Add exercise
-      </button>
-
-      <div className="mt-2">
-        <label className="block">
-          <span className="text-[10px] uppercase tracking-widest text-muted">Or pick a known one</span>
-          <input
-            value={pickQuery}
-            onChange={(e) => setPickQuery(e.target.value)}
-            placeholder="Search: bench, curl, squat…"
-            className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
-          />
-        </label>
+      <label className="mt-4 block">
+        <span className="text-[10px] uppercase tracking-widest text-muted">Add an exercise</span>
         <select
           value=""
-          aria-label="Known exercises"
-          onChange={(e) => {
-            addFromLibrary(e.target.value);
-            setPickQuery('');
-          }}
-          className="mt-2 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
+          aria-label="Add an exercise"
+          onChange={(e) => addExercise(e.target.value)}
+          className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
         >
-          <option value="">Choose an exercise…</option>
+          <option value="" disabled>
+            Choose an exercise…
+          </option>
+          <option value={NEW_EXERCISE}>+ New exercise (my own)</option>
           {MUSCLE_GROUP_ORDER.map((group) => {
-            const rows = EXERCISE_LIBRARY.filter(
-              (e) => e.group === group && matchesPick(e.name, pickQuery),
-            ).sort((a, b) => a.name.localeCompare(b.name));
+            const rows = EXERCISE_LIBRARY.filter((e) => e.group === group).sort((a, b) =>
+              a.name.localeCompare(b.name),
+            );
             if (rows.length === 0) return null;
             return (
               <optgroup key={group} label={group}>
@@ -295,7 +285,7 @@ export function ProgramBuilder({
             );
           })}
         </select>
-      </div>
+      </label>
 
       <button
         type="button"

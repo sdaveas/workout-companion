@@ -36,7 +36,7 @@ await first.getByLabel('Reps max').fill('5');
 await first.getByLabel('Weight kg').fill('60');
 await first.getByLabel('Rest s').fill('120');
 
-await page.getByRole('button', { name: '+ Add exercise' }).click();
+await page.getByLabel('Add an exercise').selectOption('__new');
 const second = page.locator('li').filter({ hasText: 'Exercise 2' });
 await second.getByPlaceholder('Goblet Squat').fill('Inverted Row');
 

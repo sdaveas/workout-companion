@@ -141,17 +141,27 @@ export function Settings() {
       </a>
 
       <p className="mt-6 px-4 text-center text-[11px] leading-relaxed text-muted">
-        Exercise illustrations by{' '}
+        Exercise illustrations by Bryl Lim and Everkinetic, CC BY-SA 4.0. Recoloured for this app.
+      </p>
+
+      <div className="flex items-center justify-center text-[11px] text-muted">
         <a
-          href="https://github.com/bryllim/workout-guide"
-          className="underline"
+          href="https://github.com/sdaveas/workout-companion"
           target="_blank"
           rel="noreferrer"
+          className="flex min-h-11 items-center px-3 underline"
         >
-          Bryl Lim
-        </a>{' '}
-        and Everkinetic, CC BY-SA 4.0. Recoloured for this app.
-      </p>
+          GitHub
+        </a>
+        <a
+          href="https://buymeacoffee.com/br3gan"
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-h-11 items-center px-3 underline"
+        >
+          Buy me a coffee
+        </a>
+      </div>
     </main>
   );
 }

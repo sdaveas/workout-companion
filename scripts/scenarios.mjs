@@ -118,10 +118,12 @@ const auditScreen = async (page, screen) => {
           h: Math.round(b.height),
           // an input inside a 44px label is tapped through the label
           throughLabel: Boolean(label && label.height >= 44),
+          hidden: el.classList.contains('sr-only'),
         };
       })
-      .filter((x) => x.h > 0 && (x.h < 44 || x.w < 44) && !x.throughLabel)
-      .map(({ throughLabel, ...rest }) => rest);
+      // sr-only controls are 1×1 on purpose; their label is the real target
+      .filter((x) => x.h > 0 && (x.h < 44 || x.w < 44) && !x.throughLabel && !x.hidden)
+      .map(({ throughLabel, hidden, ...rest }) => rest);
     const unlabeled = [...document.querySelectorAll('button, a[href]')].filter(
       (el) => !(el.getAttribute('aria-label') ?? el.textContent ?? '').trim(),
     ).length;
@@ -504,6 +506,14 @@ const auditScreen = async (page, screen) => {
   await b.page.getByRole('button', { name: /Backup Two/ }).click();
   await beginFromPreview(b.page);
   expect(true, 'an imported program is startable');
+  await b.page.goto(`${BASE}/#/settings`);
+  const gh = b.page.getByRole('link', { name: 'GitHub' });
+  const bmac = b.page.getByRole('link', { name: 'Buy me a coffee' });
+  expect(
+    (await gh.getAttribute('href')) === 'https://github.com/sdaveas/workout-companion' &&
+      (await bmac.getAttribute('href')) === 'https://buymeacoffee.com/br3gan',
+    'settings links to the source and the tip jar',
+  );
   await auditScreen(b.page, 'settings/after-import');
   await b.context.close();
   await a.context.close();
@@ -650,7 +660,7 @@ const auditScreen = async (page, screen) => {
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs/build`);
-  await page.getByLabel('Known exercises').selectOption('Dumbbell Row');
+  await page.getByLabel('Add an exercise').selectOption('Dumbbell Row');
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
   expect(
     (await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Dumbbell Row',
@@ -660,9 +670,7 @@ const auditScreen = async (page, screen) => {
   expect((await row.getByLabel('Rest s').inputValue()) === '90', 'the library fills the rest');
   expect(await row.getByRole('checkbox').isChecked(), 'the library marks a per-hand movement');
 
-  // the search box narrows the list before picking
-  await page.getByPlaceholder('Search: bench, curl, squat…').fill('bench press');
-  await page.getByLabel('Known exercises').selectOption('Bench Press');
+  await page.getByLabel('Add an exercise').selectOption('Bench Press');
   const secondRow = page.locator('li').filter({ hasText: 'Exercise 2' });
   expect(
     (await secondRow.getByPlaceholder('Goblet Squat').inputValue()) === 'Bench Press',
