@@ -1,125 +1,98 @@
 /**
- * Aligns the two poses of each exercise illustration.
+ * Puts the two poses of each exercise illustration on the same scale.
  *
- * The source drawings were traced one frame at a time, so a pair can be drawn at
- * slightly different scales or offsets — a curl where the body grows 10% between
- * poses reads as a zoom, not a rep. This finds, per pair, the scale + shift of the
- * second pose that best matches the first (a coarse search over renders), and bakes
- * it into the SVG as a transform. Only applied when it clearly helps.
+ * The source drawings (bryllim/workout-guide, CC BY-SA) were traced one frame at
+ * a time, and the second pose is often drawn bigger than the first — a curl whose
+ * body grows 10% between poses reads as a zoom, not a rep. Automatic fitting was
+ * tried and rejected: every 2D metric (pixel overlap, ink area, chamfer) rewards
+ * shrinking, because a smaller drawing always sits closer to the big one. So the
+ * numbers are measured and written by hand, in the table below.
+ *
+ * Each value scales pose 2 (`<slug>-1.svg`) about a fixed point on the floor line,
+ * so the feet stay put and only the size changes. 1 means "leave it alone".
  *
  * Run: node scripts/align-art.mjs [--write]
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { chromium } from '@playwright/test';
 
 const DIR = 'public/exercises';
 const WRITE = process.argv.includes('--write');
-const SIZE = 512;
-const DOWN = 4; // compare at 128×128
 
-const slugs = [
-  ...new Set(readdirSync(DIR).filter((f) => f.endsWith('.svg')).map((f) => f.replace(/-[01]\.svg$/, ''))),
-].sort();
+// ponytail: one anchor for every drawing. The art is one 512×512 family, so a
+// shared floor line is accurate to a few px; per-pair anchors buy nothing visible
+// and need a browser to measure.
+const AX = 256;
+const AY = 492;
 
-const browser = await chromium.launch();
-const page = await browser.newPage();
-await page.setContent('<body></body>');
+/**
+ * How big pose 2 is relative to pose 1, per exercise. Values under 1 shrink it.
+ * Measured from the art (head width at the top of the silhouette, cross-checked
+ * against a side-by-side sheet); pairs whose two poses barely differ are 1.
+ */
+const SCALE = {
+  'back-extension': 1,
+  'bench-press': 0.93,
+  'bicep-curl': 0.91,
+  'bulgarian-split-squat': 0.9,
+  'calf-raise': 1,
+  crunch: 0.9,
+  deadlift: 1,
+  'face-pull': 1,
+  'front-raise': 0.9,
+  'goblet-squat': 1.1,
+  'hammer-curl': 0.91,
+  'hanging-leg-raise': 0.98,
+  'hip-thrust': 0.93,
+  'incline-bench-press': 1,
+  'kettlebell-swing': 1,
+  'lat-pulldown': 0.97,
+  'lateral-raise': 1,
+  'leg-press': 1,
+  'one-arm-dumbbell-row': 1,
+  'overhead-press': 1,
+  'overhead-tricep-extension': 1,
+  plank: 0.97,
+  'pull-up': 1,
+  'push-up': 1,
+  'romanian-deadlift': 1,
+  'seated-row': 0.91,
+  'side-plank': 1,
+  squat: 1,
+  'tricep-pushdown': 1,
+  'walking-lunge': 0.9,
+};
 
-const plan = await page.evaluate(
-  async ({ slugs, dirFiles, size, down }) => {
-    const load = async (markup) => {
-      const img = new Image();
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(markup)));
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = size / down;
-      c.height = size / down;
-      const g = c.getContext('2d');
-      g.drawImage(img, 0, 0, c.width, c.height);
-      return g.getImageData(0, 0, c.width, c.height).data;
-    };
+const MARK = '<g data-align="1"';
+const UNWRAP = new RegExp(`${MARK}[^>]*>([\\s\\S]*?)</g>`, 'g');
 
-    // mean absolute difference over pixels where either drawing has ink
-    const score = (a, b, s, dx, dy) => {
-      const n = size / down;
-      const c = size / 2 / down;
-      let err = 0;
-      let ink = 0;
-      for (let y = 0; y < n; y++) {
-        for (let x = 0; x < n; x++) {
-          const sx = Math.round(c + (x - c) / s - dx / down);
-          const sy = Math.round(c + (y - c) / s - dy / down);
-          const va = a[(y * n + x) * 4 + 3];
-          const vb = sx >= 0 && sy >= 0 && sx < n && sy < n ? b[(sy * n + sx) * 4 + 3] : 0;
-          if (va || vb) {
-            ink++;
-            err += Math.abs(va - vb);
-          }
-        }
-      }
-      return ink ? err / ink : 255;
-    };
+const slugs = [...new Set(readdirSync(DIR).filter((f) => f.endsWith('-1.svg')).map((f) => f.replace(/-1\.svg$/, '')))].sort();
 
-    const out = [];
-    for (const slug of slugs) {
-      const a = await load(dirFiles[slug][0]);
-      const b = await load(dirFiles[slug][1]);
-      const base = score(a, b, 1, 0, 0);
-      let best = { s: 1, dx: 0, dy: 0, err: base };
-      for (let s = 0.9; s <= 1.1001; s += 0.02) {
-        for (let dx = -60; dx <= 60; dx += 6) {
-          for (let dy = -60; dy <= 60; dy += 6) {
-            const err = score(a, b, s, dx, dy);
-            if (err < best.err) best = { s: +s.toFixed(2), dx, dy, err };
-          }
-        }
-      }
-      // refine around the winner
-      for (let s = best.s - 0.02; s <= best.s + 0.021; s += 0.01) {
-        for (let dx = best.dx - 6; dx <= best.dx + 6; dx += 2) {
-          for (let dy = best.dy - 6; dy <= best.dy + 6; dy += 2) {
-            const err = score(a, b, s, dx, dy);
-            if (err < best.err) best = { s: +s.toFixed(2), dx, dy, err };
-          }
-        }
-      }
-      out.push({ slug, base: Math.round(base), ...best, err: Math.round(best.err), gain: 1 - best.err / base });
-    }
-    return out;
-  },
-  {
-    slugs,
-    dirFiles: Object.fromEntries(
-      slugs.map((s) => [`${s}`, [`${s}-0.svg`, `${s}-1.svg`].map((f) => readFileSync(`${DIR}/${f}`, 'utf8'))]),
-    ),
-    size: SIZE,
-    down: DOWN,
-  },
-);
-
-await browser.close();
-
-for (const p of plan) {
-  console.log(
-    `${p.slug.padEnd(28)} scale ${p.s}  shift ${String(p.dx).padStart(4)},${String(p.dy).padStart(4)}` +
-      `  err ${String(p.base).padStart(3)} -> ${String(p.err).padStart(3)}  (-${Math.round(p.gain * 100)}%)`,
-  );
-}
-
-if (WRITE) {
-  const c = SIZE / 2;
-  for (const p of plan) {
-    if (p.gain < 0.12 || (p.s === 1 && p.dx === 0 && p.dy === 0)) continue;
-    const tx = p.dx + c - p.s * c;
-    const ty = p.dy + c - p.s * c;
-    const transform = `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${p.s})`;
-    const file = `${DIR}/${p.slug}-1.svg`;
-    const svg = readFileSync(file, 'utf8');
-    if (svg.includes('<g transform')) continue;
-    // the files are a single self-closing <path>; wrap it so the pose is transformed
-    const patched = svg.replace(/(<path\b[^>]*\/>)/, `<g transform="${transform}">$1</g>`);
-    if (patched === svg) throw new Error(`could not wrap path in ${file}`);
-    writeFileSync(file, patched);
+let changed = 0;
+const missing = [];
+for (const slug of slugs) {
+  const s = SCALE[slug];
+  if (s === undefined) {
+    missing.push(slug);
+    continue;
   }
-  console.log('wrote transforms');
+  const file = `${DIR}/${slug}-1.svg`;
+  const before = readFileSync(file, 'utf8');
+  // Unwrap whatever we wrote last time first, so re-running never compounds.
+  const bare = before.replace(UNWRAP, '$1');
+  const after =
+    s === 1
+      ? bare
+      : bare.replace(
+          /(<path\b[^>]*\/>)/,
+          `${MARK} transform="translate(${AX} ${AY}) scale(${s}) translate(${-AX} ${-AY})">$1</g>`,
+        );
+  if (after === bare && s !== 1) throw new Error(`could not wrap path in ${file}`);
+  if (after !== before) {
+    if (WRITE) writeFileSync(file, after);
+    changed++;
+    console.log(`${slug.padEnd(28)} ${s === 1 ? 'reset to 1' : `scale ${s}`}`);
+  }
 }
+
+if (missing.length) console.log(`no table entry (left as is): ${missing.join(', ')}`);
+console.log(WRITE ? `wrote ${changed} file(s)` : `${changed} file(s) would change — re-run with --write`);
