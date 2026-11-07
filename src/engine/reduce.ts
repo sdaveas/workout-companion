@@ -282,15 +282,30 @@ function resume(s: WorkoutState, e: { now: number }): WorkoutState {
   return { ...base, status: 'exercise_active', pausedFrom: null };
 }
 
+/**
+ * Remember the rest the user actually took, so the summary can offer to keep it.
+ * Only sane values: a rest rebased to nothing is not a preference.
+ */
+function rememberRest(s: WorkoutState, restDurationMs: number): WorkoutState {
+  if (!Number.isFinite(restDurationMs) || restDurationMs <= 0) return s;
+  const restUsed = [...(s.restUsed ?? s.program.exercises.map((e) => e.restSeconds))];
+  const seconds = Math.round(restDurationMs / 1000);
+  if (restUsed[s.currentExerciseIndex] === seconds) return s;
+  restUsed[s.currentExerciseIndex] = seconds;
+  return { ...s, restUsed };
+}
+
 function adjustRest(
   s: WorkoutState,
   e: Extract<WorkoutEvent, { type: 'ADJUST_REST' }>,
 ): WorkoutState {
-  return { ...s, ...rebaseRest(s, e.now, e.seconds) };
+  const rest = rebaseRest(s, e.now, e.seconds);
+  return rememberRest({ ...s, ...rest }, rest.restDurationMs);
 }
 
 function restart(s: WorkoutState, e: { now: number }): WorkoutState {
-  return { ...s, ...restartRest(s, e.now, currentExercise(s).restSeconds) };
+  const rest = restartRest(s, e.now, currentExercise(s).restSeconds);
+  return rememberRest({ ...s, ...rest }, rest.restDurationMs);
 }
 
 function beginSet(s: WorkoutState): WorkoutState {

@@ -30,7 +30,7 @@ function Stepper({
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="h-12 w-12 rounded-xl border border-line bg-surface text-xl"
+          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-xl"
         >
           −
         </button>
@@ -39,7 +39,7 @@ function Stepper({
           type="button"
           aria-label={`Increase ${label}`}
           onClick={() => onChange(value + step)}
-          className="h-12 w-12 rounded-xl border border-line bg-surface text-xl"
+          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-xl"
         >
           +
         </button>

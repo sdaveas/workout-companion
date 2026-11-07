@@ -678,8 +678,53 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForSelector('text=/Complete (left|right) hand/');
   expect((await page.locator('svg .m-swing').count()) > 0, 'the workout shows an animated figure');
-  expect((await page.locator('.m-pull').count()) === 1, 'Dumbbell Row animates as a pull');
+  expect((await page.locator('.m-row-arm').count()) === 1, 'Dumbbell Row animates as a pull');
   await auditScreen(page, 'workout/motion');
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 15: keep today's numbers
+{
+  const { context, page } = await fresh();
+  const press = {
+    ...ex('press', 'Bench Press', 1, 60),
+    reps: { min: 8, max: 10 },
+    weight: { value: 20, unit: 'kg' },
+  };
+  const pull = { ...ex('pull', 'Dumbbell Row', 1, 60), reps: { min: 8, max: 10 }, weight: { value: 20, unit: 'kg', per_hand: true } };
+  await saveProgram(page, program('push', 'Push Day', 'monday', [press, pull]));
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: /Start/ }).click();
+  await beginFromPreview(page);
+
+  // two reps short of the prescription, and a longer break than the program says
+  await page.getByRole('button', { name: 'Decrease Reps' }).click();
+  await page.getByRole('button', { name: 'Decrease Reps' }).click();
+  await page.getByRole('button', { name: 'Complete set' }).click();
+  // between exercises the break sits on the "exercise complete" screen
+  await page.waitForSelector('text=Rest before the next exercise');
+  await page.getByRole('button', { name: '+15s' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Complete left hand' }).click();
+  await page.getByRole('button', { name: 'Complete right hand' }).click();
+  await page.getByRole('button', { name: 'Finish workout' }).click();
+
+  await page.waitForSelector('text=Session complete');
+  expect(await page.getByText("Keep today's numbers?").isVisible(), 'the summary offers to keep the session');
+  const panel = (await page.textContent('body')).replace(/\s+/g, ' ');
+  expect(/60s rest → 75s rest/.test(panel), `the longer break is offered (${panel.match(/60s rest[^,]*/)?.[0]})`);
+  expect(/8–10 reps → 6 reps/.test(panel), 'the missed reps are offered');
+  await auditScreen(page, 'summary/update-offer');
+
+  await page.getByRole('button', { name: 'Update the program' }).click();
+  await page.waitForSelector("text=Program updated with today's numbers.");
+  expect(true, 'the program is updated on request');
+
+  await page.goto(`${BASE}/#/programs`);
+  await page.getByRole('button', { name: 'Edit' }).first().click();
+  const row = page.locator('li').filter({ hasText: 'Exercise 1' });
+  expect((await row.getByLabel('Reps min').inputValue()) === '6', 'the new reps stuck');
+  expect((await row.getByLabel('Rest s').inputValue()) === '75', 'the new rest stuck');
   await context.close();
 }
 

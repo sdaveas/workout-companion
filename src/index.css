@@ -67,58 +67,68 @@ select {
    `transform-box: view-box`), so a limb pivots on its joint. */
 .m-swing {
   transform-box: view-box;
-  animation-duration: 1.9s;
+  animation-duration: 2s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-direction: alternate;
 }
 
-.m-push { animation-name: m-push; }
-.m-pull { animation-name: m-pull; }
-.m-curl { animation-name: m-curl; animation-duration: 1.4s; }
-.m-raise { animation-name: m-raise; animation-duration: 2.2s; }
-.m-squat { animation-name: m-squat; animation-duration: 2.4s; }
-.m-thigh { animation-name: m-thigh; animation-duration: 2.4s; }
-.m-shin { animation-name: m-shin; animation-duration: 2.4s; }
-.m-hinge { animation-name: m-hinge; animation-duration: 2.4s; }
-.m-core { animation-name: m-core; animation-duration: 3.2s; }
+.m-press-arm { animation-name: m-press-arm; }
+.m-press-bar { animation-name: m-press-bar; }
+.m-row-arm { animation-name: m-row-arm; animation-duration: 1.9s; }
+.m-squat-body { animation-name: m-squat-body; animation-duration: 2.2s; }
+.m-squat-legs { animation-name: m-squat-legs; animation-duration: 2.2s; }
+.m-dead-torso { animation-name: m-dead-torso; animation-duration: 2.2s; }
+.m-dead-legs { animation-name: m-dead-legs; animation-duration: 2.2s; }
+.m-dead-bar { animation-name: m-dead-bar; animation-duration: 2.2s; }
+.m-curl-forearm { animation-name: m-curl-forearm; animation-duration: 1.8s; }
+.m-raise-arm { animation-name: m-raise-arm; }
+.m-plank { animation-name: m-plank; animation-duration: 2.2s; }
 .m-idle { animation-name: m-idle; animation-duration: 2.4s; }
 
-@keyframes m-push {
-  from { transform: rotate(-62deg); }
-  to { transform: rotate(0deg); }
+@keyframes m-press-arm {
+  from { transform: rotate(-10deg); }
+  to { transform: rotate(-35deg); }
 }
-@keyframes m-pull {
+@keyframes m-press-bar {
+  from { transform: translateY(25px); }
+  to { transform: translateY(-5px); }
+}
+@keyframes m-row-arm {
   from { transform: rotate(0deg); }
-  to { transform: rotate(-55deg); }
+  to { transform: rotate(55deg); }
 }
-@keyframes m-curl {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-140deg); }
-}
-@keyframes m-raise {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-88deg); }
-}
-@keyframes m-squat {
+@keyframes m-squat-body {
   from { transform: translateY(0); }
-  to { transform: translateY(12px); }
+  to { transform: translateY(27px); }
 }
-@keyframes m-thigh {
+@keyframes m-squat-legs {
+  from { transform: translateY(0); }
+  to { transform: translateY(10px); }
+}
+@keyframes m-dead-torso {
   from { transform: rotate(0deg); }
-  to { transform: rotate(16deg); }
+  to { transform: rotate(38deg); }
 }
-@keyframes m-shin {
+@keyframes m-dead-legs {
   from { transform: rotate(0deg); }
-  to { transform: rotate(-18deg); }
+  to { transform: rotate(-9deg); }
 }
-@keyframes m-hinge {
+@keyframes m-dead-bar {
+  from { transform: translateY(0); }
+  to { transform: translateY(30px); }
+}
+@keyframes m-curl-forearm {
   from { transform: rotate(0deg); }
-  to { transform: rotate(42deg); }
+  to { transform: rotate(-150deg); }
 }
-@keyframes m-core {
-  from { transform: translateY(-2px); }
-  to { transform: translateY(2px); }
+@keyframes m-raise-arm {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-80deg); }
+}
+@keyframes m-plank {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2px); }
 }
 @keyframes m-idle {
   from { transform: translateY(-4px); }

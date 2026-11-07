@@ -79,6 +79,8 @@ export interface WorkoutState {
   restDurationMs: number;
   restPausedMs: number | null;
   restCount: number;
+  /** Seconds of rest the user last chose per exercise, when it differs from the program's. */
+  restUsed?: number[];
   exerciseRecords: ExerciseRecord[];
   undoStack: UndoEntry[];
   draft: { reps: number; weightKg: number | null } | null;

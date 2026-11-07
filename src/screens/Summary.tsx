@@ -6,6 +6,8 @@ import type { SessionRow } from '../storage/db';
 import { summarize } from '../engine/summary';
 import type { WorkoutAction } from '../engine/types';
 import { formatClock, formatDate } from '../lib/format';
+import { planProgramUpdate } from '../lib/programUpdate';
+import { usePrograms } from '../store/programsStore';
 import { Button } from '../components/ui/Button';
 
 function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
@@ -28,6 +30,10 @@ export function Summary() {
   const reset = useSession((s) => s.reset);
   const [row, setRow] = useState<SessionRow | null>(null);
   const [notes, setNotes] = useState('');
+  const programs = usePrograms((s) => s.programs);
+  const setText = usePrograms((s) => s.setText);
+  const saveProgram = usePrograms((s) => s.save);
+  const [updateState, setUpdateState] = useState<'idle' | 'busy' | 'applied' | 'dismissed'>('idle');
 
   useEffect(() => {
     if (!param) return;
@@ -40,6 +46,22 @@ export function Summary() {
 
   const source = live?.sessionId === param ? live : (row?.state ?? null);
   const summary = source ? summarize(source, source.finishedAt ?? source.updatedAt) : null;
+
+  // Only the session that just ended offers to rewrite the program it came from.
+  const liveJustFinished = live != null && live.sessionId === param && updateState === 'idle';
+  const storedProgram = source ? (programs.find((p) => p.id === source.programId) ?? null) : null;
+  const update =
+    liveJustFinished && source?.status === 'completed' && storedProgram
+      ? planProgramUpdate(source, storedProgram)
+      : null;
+
+  async function applyUpdate() {
+    if (!update) return;
+    setUpdateState('busy');
+    setText(update.json);
+    const ok = await saveProgram({ update: true });
+    setUpdateState(ok ? 'applied' : 'dismissed');
+  }
 
   useEffect(() => {
     setNotes(source?.notes ?? '');
@@ -128,6 +150,41 @@ export function Summary() {
           })}
         </ul>
       </section>
+
+      {update && (
+        <section className="mt-6 rounded-2xl border border-accent/50 bg-surface p-4">
+          <p className="text-xs uppercase tracking-widest text-accent">Keep today's numbers?</p>
+          <p className="mt-2 text-sm text-muted">
+            Update “{update.name}” with what you actually did:
+          </p>
+          <ul className="mt-3 space-y-1 text-sm">
+            {update.lines.map((line) => (
+              <li key={line} className="leading-snug">
+                {line}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 space-y-2">
+            <Button
+              variant="primary"
+              className="h-12 w-full"
+              disabled={updateState === 'busy'}
+              onClick={() => void applyUpdate()}
+            >
+              Update the program
+            </Button>
+            <Button className="w-full" onClick={() => setUpdateState('dismissed')}>
+              Keep it as it was
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {updateState === 'applied' && (
+        <p role="status" className="mt-4 text-sm text-accent">
+          Program updated with today's numbers.
+        </p>
+      )}
 
       <section className="mt-6">
         <p className="text-xs uppercase tracking-widest text-muted">How hard was it?</p>
