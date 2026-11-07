@@ -114,8 +114,8 @@ describe('exercise illustrations', () => {
 
 describe('biceps easter egg', () => {
   it('shows up for a third of biceps visits and never elsewhere', () => {
-    expect(easterEggFor('bicep-curl', 0)).toBe('easter/biceps.png');
-    expect(easterEggFor('bicep-curl', 0.32)).toBe('easter/biceps.png');
+    expect(easterEggFor('bicep-curl', 0)).toBe('easter/biceps.gif');
+    expect(easterEggFor('bicep-curl', 0.32)).toBe('easter/biceps.gif');
     expect(easterEggFor('bicep-curl', 0.34)).toBeNull();
     expect(easterEggFor('hammer-curl', 0.1)).toBeNull();
     expect(easterEggFor('bench-press', 0.1)).toBeNull();
