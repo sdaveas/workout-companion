@@ -1,17 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   EXERCISE_LIBRARY,
   MUSCLE_GROUP_ORDER,
+  PATTERN_CUE,
+  type LibraryExercise,
   type MuscleGroup,
 } from '../../data/exercises';
+import { ownFigure } from '../../data/exerciseFigures';
 import { fuzzyScore } from '../../lib/fuzzy';
-
-const VISIBLE = 20;
+import { formatClock } from '../../lib/format';
+import { ExerciseMotion } from '../exercise/ExerciseMotion';
 
 /**
  * The exercise picker: type to filter fzf-style, tap muscle groups to narrow, tap
  * a row to add it. A native <select> cannot do either, and 280 options in a wheel
  * was the thing that made this screen unusable.
+ *
+ * The ⓘ on each row opens a sheet with the figure, what it works, the default
+ * prescription and two lines on how to move — a native <dialog>, so Escape and
+ * focus handling come from the browser.
  */
 export function ExercisePicker({
   onPick,
@@ -22,11 +29,20 @@ export function ExercisePicker({
 }) {
   const [query, setQuery] = useState('');
   const [groups, setGroups] = useState<MuscleGroup[]>([]);
+  const [preview, setPreview] = useState<LibraryExercise | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const el = dialog.current;
+    if (!el) return;
+    if (preview && !el.open) el.showModal();
+    if (!preview && el.open) el.close();
+  }, [preview]);
 
   const rows = useMemo(() => {
     const matches = EXERCISE_LIBRARY.filter((e) => groups.length === 0 || groups.includes(e.group))
       .map((e) => ({ exercise: e, score: fuzzyScore(query, e.name) }))
-      .filter((r): r is { exercise: (typeof EXERCISE_LIBRARY)[number]; score: number } => r.score !== null);
+      .filter((r): r is { exercise: LibraryExercise; score: number } => r.score !== null);
 
     matches.sort(
       (a, b) => b.score - a.score || a.exercise.name.localeCompare(b.exercise.name),
@@ -36,6 +52,12 @@ export function ExercisePicker({
 
   const toggle = (group: MuscleGroup) =>
     setGroups((g) => (g.includes(group) ? g.filter((x) => x !== group) : [...g, group]));
+
+  const add = (name: string) => {
+    onPick(name);
+    setQuery('');
+    setPreview(null);
+  };
 
   return (
     <div className="mt-4">
@@ -76,32 +98,39 @@ export function ExercisePicker({
           Nothing matches “{query.trim()}”. Add it as your own →
         </p>
       ) : (
-        <ul className="mt-3 max-h-80 divide-y divide-line overflow-y-auto rounded-xl border border-line">
-          {rows.slice(0, VISIBLE).map((e) => (
-            <li key={e.name}>
+        <ul
+          aria-label="Exercises"
+          className="mt-3 max-h-[min(85vh,960px)] divide-y divide-line overflow-y-auto rounded-xl border border-line"
+        >
+          {rows.map((e) => (
+            <li key={e.name} className="flex items-stretch bg-surface">
               <button
                 type="button"
                 aria-label={e.name}
-                onClick={() => {
-                  onPick(e.name);
-                  setQuery('');
-                }}
-                className="flex min-h-11 w-full items-center justify-between gap-3 bg-surface px-3 py-2 text-left text-sm"
+                onClick={() => add(e.name)}
+                className="flex min-h-11 flex-1 items-center justify-between gap-3 py-2 pl-3 text-left text-sm"
               >
                 <span>{e.name}</span>
                 <span aria-hidden className="shrink-0 text-[11px] text-muted">
                   {e.muscle}
                 </span>
               </button>
+              <button
+                type="button"
+                aria-label={`How to do ${e.name}`}
+                onClick={() => setPreview(e)}
+                className="my-1 mr-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted"
+              >
+                <span
+                  aria-hidden
+                  className="grid h-6 w-6 place-items-center rounded-full border border-current text-[11px] font-semibold"
+                >
+                  i
+                </span>
+              </button>
             </li>
           ))}
         </ul>
-      )}
-
-      {rows.length > VISIBLE && (
-        <p className="mt-1 text-center text-[11px] text-muted">
-          {rows.length - VISIBLE} more — keep typing or pick a muscle group
-        </p>
       )}
 
       <button
@@ -111,6 +140,70 @@ export function ExercisePicker({
       >
         + New exercise (my own)
       </button>
+
+      <dialog
+        ref={dialog}
+        aria-label={preview ? `How to do ${preview.name}` : 'Exercise'}
+        onClose={() => setPreview(null)}
+        onCancel={() => setPreview(null)}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setPreview(null);
+        }}
+        className="m-0 mt-auto max-h-[85vh] w-full max-w-none overflow-y-auto rounded-t-2xl border-t border-line bg-surface p-4 pb-6 text-[#f5f6f7]"
+      >
+        {preview && (
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">{preview.name}</h2>
+                <p className="text-xs text-muted">
+                  {[preview.muscle, ...preview.also].filter(Boolean).join(' · ')}
+                  {preview.equipment && ` — ${preview.equipment}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setPreview(null)}
+                className="-mr-1 -mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-xl text-muted"
+              >
+                ×
+              </button>
+            </div>
+
+            {ownFigure(preview.name) && (
+              <div className="mx-auto mt-3 max-w-[220px]">
+                <ExerciseMotion slug={ownFigure(preview.name)!} />
+              </div>
+            )}
+
+            <p className="mt-3 text-xs uppercase tracking-widest text-muted">
+              {preview.sets} × {preview.repsMin}
+              {preview.repsMax > preview.repsMin ? `–${preview.repsMax}` : ''}
+              {' · '}
+              {formatClock(preview.restSeconds * 1000)} rest
+              {preview.perHand && ' · each side'}
+            </p>
+
+            <h3 className="mt-4 text-[10px] uppercase tracking-widest text-muted">
+              {preview.howto ? 'How to do it' : `Basic ${preview.pattern ?? 'movement'} pattern`}
+            </h3>
+            <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">
+              {(preview.howto ?? (preview.pattern ? PATTERN_CUE[preview.pattern] : [])).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ol>
+
+            <button
+              type="button"
+              onClick={() => add(preview.name)}
+              className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink"
+            >
+              Add {preview.name}
+            </button>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

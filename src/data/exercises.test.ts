@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EXERCISE_LIBRARY,
   MUSCLE_GROUP_ORDER,
+  PATTERN_CUE,
   libraryExercise,
   muscleSummary,
   patternFor,
@@ -94,6 +95,33 @@ describe('exercise library', () => {
   it('knows which library movements are unilateral', () => {
     expect(libraryExercise('Dumbbell Row')?.perHand).toBe(true);
     expect(libraryExercise('Bench Press')?.perHand).toBeUndefined();
+  });
+});
+
+describe('execution cues', () => {
+  it('has two lines for every lift the built-in programs use', () => {
+    for (const name of [
+      'Bench Press',
+      'Push-up',
+      'Dumbbell Row',
+      'Pull-up',
+      'Back Squat',
+      'Deadlift',
+      'Bicep Curl',
+      'Lateral Raise',
+      'Plank',
+      'Crunch',
+    ]) {
+      expect(libraryExercise(name)?.howto, name).toHaveLength(2);
+    }
+  });
+
+  it('falls back to a pattern cue for everything else', () => {
+    expect(libraryExercise('Arnold Press')?.howto).toBeUndefined();
+    expect(libraryExercise('Arnold Press')?.pattern).toBe('push');
+    for (const pattern of Object.keys(PATTERN_CUE)) {
+      expect(PATTERN_CUE[pattern as keyof typeof PATTERN_CUE]).toHaveLength(2);
+    }
   });
 });
 

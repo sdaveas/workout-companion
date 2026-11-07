@@ -40,6 +40,8 @@ export interface LibraryExercise {
   repsMax: number;
   restSeconds: number;
   perHand?: boolean;
+  /** Two lines of how to move, hand-written. Absent means "use the pattern cue". */
+  howto?: string[];
 }
 
 interface Curated {
@@ -206,6 +208,57 @@ const CURATED: Curated[] = [
   { name: 'Crunch', slug: 'crunch', pattern: 'core', sets: 3, repsMin: 12, repsMax: 20, restSeconds: 60 },
 ];
 
+/**
+ * Two lines of execution for the curated lifts — the ones this app's programs
+ * actually use. Written short on purpose: they are read on a phone, mid-set.
+ */
+const CURATED_HOWTO: Record<string, string[]> = {
+  'Bench Press': ['Feet planted, shoulder blades pulled back and down.', 'Lower the bar to mid-chest, press to straight arms without bouncing.'],
+  'Dumbbell Floor Press': ['Upper arms about 45° from the body, shoulders on the floor.', 'Lower until the triceps touch, pause, press up.'],
+  'Overhead Press': ['Brace so the ribs stay down; press over mid-foot.', 'Lock out, then lower to the shoulders under control.'],
+  'Push-up': ['Hands under the shoulders, body in one straight line.', 'Lower the chest to a fist off the floor, then push away.'],
+  'Incline Press': ['Bench at about 30°, shoulder blades set, feet planted.', 'Lower to the upper chest, press until the arms are straight.'],
+  'Triceps Pushdown': ['Elbows pinned to the ribs; the upper arms do not move.', 'Straighten the elbows, let the hands rise slowly.'],
+  'Dumbbell Row': ['Hinge over and brace; let the arm hang straight down.', 'Pull the elbow to the hip, pause, lower all the way.'],
+  'Lat Pulldown': ['Grip a little wider than the shoulders, chest tall.', 'Pull the bar to the collarbone, then let the arms straighten.'],
+  'Pull-up': ['Hang with straight arms, then pull the shoulders down first.', 'Chin over the bar, lower to a full hang.'],
+  'Seated Cable Row': ['Sit tall with a slight hinge; let the arms extend.', 'Pull the handle to the belly and squeeze the shoulder blades.'],
+  'Face Pull': ['Rope at face height, elbows high and wide.', 'Pull to the forehead with the knuckles turning up, then release.'],
+  'Back Squat': ['Bar on the traps, feet shoulder-width, big brace.', 'Sit down between the hips to depth, drive the floor away.'],
+  'Goblet Squat': ['Hold the weight at the chest; elbows inside the knees at the bottom.', 'Squat between the knees, chest up, then stand.'],
+  'Leg Press': ['Feet mid-platform; the lower back stays on the pad.', 'Lower until the knees are about 90°, press without slamming lockout.'],
+  'Bulgarian Split Squat': ['Rear foot on a bench; front foot far enough for the knee to travel over it.', 'Lower the back knee straight down, then drive up through the front foot.'],
+  'Lunge': ['Step through; both knees bent at the bottom.', 'Drop the back knee toward the floor, push off the front heel.'],
+  'Calf Raise': ['Balls of the feet on the edge, heels hanging.', 'Rise as high as you can, pause, lower to a full stretch.'],
+  'Deadlift': ['Bar over mid-foot, shins close, flat back, braced.', 'Push the floor away and stand tall; lower along the legs.'],
+  'Romanian Deadlift': ['Knees soft; push the hips back, not down.', 'Stop where the hamstrings pull, then squeeze the glutes to stand.'],
+  'Hip Thrust': ['Upper back on the bench, weight across the hips, ribs down.', 'Drive the hips up until the body is level, pause, lower.'],
+  'Kettlebell Swing': ['Hinge and hike the bell back between the legs.', 'Snap the hips so it floats to chest height; let it swing back.'],
+  'Back Extension': ['Hips on the pad, core braced.', 'Lower with a flat back, rise to one straight line — no arching past it.'],
+  'Bicep Curl': ['Upper arms pinned to the sides.', 'Curl until the forearm is vertical, lower all the way.'],
+  'Hammer Curl': ['Neutral grip, thumbs up, elbows at the sides.', 'Curl without swinging the torso.'],
+  'Lateral Raise': ['Slight forward lean, elbows soft.', 'Raise to shoulder height leading with the elbow, lower slowly.'],
+  'Front Raise': ['Arms straight, thumbs up.', 'Raise to eye level, stop, lower under control.'],
+  'Plank': ['Elbows under the shoulders, body in one line, glutes squeezed.', 'Keep breathing; stop when the hips sag.'],
+  'Side Plank': ['Elbow under the shoulder, feet stacked.', 'Lift the hips until the body is one line, breathe.'],
+  'Hanging Leg Raise': ['Hang and set the shoulders before the legs move.', 'Raise the legs without swinging, lower slowly.'],
+  'Crunch': ['Lower back stays on the floor.', 'Curl the ribs toward the hips and exhale at the top.'],
+};
+
+/**
+ * When there is no hand-written cue, describe the movement pattern instead of
+ * pretending to know the specific lift.
+ */
+export const PATTERN_CUE: Record<MotionPattern, string[]> = {
+  push: ['Press the weight away until the arms are straight.', 'Set the shoulder first, then lower under control.'],
+  pull: ['Pull toward you leading with the elbow.', 'Let it return until the arms are long, without swinging.'],
+  squat: ['Sit down between the hips, chest up, knees over the toes.', 'Stand by driving through the whole foot.'],
+  hinge: ['Push the hips back with a flat back.', 'Stand tall by squeezing the glutes — the hips do the work.'],
+  curl: ['Keep the upper arm still; only the elbow moves.', 'Curl up, lower slowly all the way.'],
+  raise: ['Lift to shoulder height with soft elbows.', 'Lower slowly; do not swing the torso.'],
+  core: ['Brace the abs and keep the ribs down.', 'Move slowly; stop when the lower back takes over.'],
+};
+
 /** [sets, repsMin, repsMax, restSeconds] for a movement with no hand-tuned entry. */
 const PATTERN_DEFAULTS: Record<MotionPattern, [number, number, number, number]> = {
   push: [3, 8, 12, 90],
@@ -304,6 +357,7 @@ function build(): LibraryExercise[] {
     const f = facts(c.name, c.slug);
     return {
       ...c,
+      howto: CURATED_HOWTO[c.name],
       muscle: f?.muscle ?? '',
       also: f?.also ?? [],
       group: groupOf(f?.muscle ?? ''),

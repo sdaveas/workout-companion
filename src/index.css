@@ -62,6 +62,11 @@ select {
   outline-offset: 2px;
 }
 
+/* A native <dialog> backdrop, dimmed so the sheet reads as a layer. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
 /* The illustration is a mask, so it takes the colour of its container. Two poses of
    the same lift then flip like a GIF. Each layer paints only its own lines, so the
    pair cannot be stacked — both would show through. They take turns instead, and

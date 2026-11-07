@@ -61,6 +61,15 @@ export function figureSlug(name: string, pattern: MotionPattern | null): string 
   return pattern ? PATTERN_SLUG[pattern] : null;
 }
 
+/**
+ * The exercise's own art, with no pattern fallback. Used where showing a
+ * different lift's drawing would be a lie — e.g. the picker's info sheet.
+ */
+export function ownFigure(name: string): string | null {
+  const slug = libraryExercise(name)?.slug;
+  return slug && SHIPPED[slug] ? slug : null;
+}
+
 /** Exported for the test that keeps this list honest against public/exercises. */
 export const SHIPPED_SLUGS = Object.keys(SHIPPED);
 
