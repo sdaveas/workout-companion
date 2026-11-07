@@ -23,6 +23,11 @@ describe('share link', () => {
     expect(back.program.scheduleDay).toBe(program.scheduleDay);
   });
 
+  it('carries a preview version so a changed card is re-fetched', async () => {
+    const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
+    expect(url.startsWith('https://example.com/app/?v=2#/add/')).toBe(true);
+  });
+
   it('keeps a realistic program link short', async () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
     // 6 exercises used to cost ~1000 characters of payload; the compact wire form is ~200.
