@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
+import { easterEggFor } from '../../data/exerciseFigures';
 
 /**
  * Two poses of the same lift, taking turns on a loop. The art is line-only, so it
@@ -21,6 +22,19 @@ const mask = (url: string): CSSProperties => ({
 
 export function ExerciseMotion({ slug }: { slug: string }) {
   const base = `exercises/${slug}`;
+  const [egg, setEgg] = useState(() => easterEggFor(slug, Math.random()));
+
+  if (egg) {
+    return (
+      <img
+        src={egg}
+        alt=""
+        onError={() => setEgg(null)}
+        className="aspect-[3/2] w-full rounded-2xl border border-line object-cover"
+      />
+    );
+  }
+
   return (
     <div
       aria-hidden

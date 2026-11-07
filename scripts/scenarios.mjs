@@ -506,15 +506,18 @@ const auditScreen = async (page, screen) => {
   await b.page.getByRole('button', { name: /Backup Two/ }).click();
   await beginFromPreview(b.page);
   expect(true, 'an imported program is startable');
-  await b.page.goto(`${BASE}/#/settings`);
-  const gh = b.page.getByRole('link', { name: 'GitHub' });
-  const bmac = b.page.getByRole('link', { name: 'Buy me a coffee' });
-  expect(
-    (await gh.getAttribute('href')) === 'https://github.com/sdaveas/workout-companion' &&
-      (await bmac.getAttribute('href')) === 'https://buymeacoffee.com/br3gan',
-    'settings links to the source and the tip jar',
-  );
   await auditScreen(b.page, 'settings/after-import');
+  await b.page.goto(`${BASE}/#/credits`);
+  await b.page.waitForSelector('text=Credits');
+  const href = async (name) => b.page.getByRole('link', { name }).getAttribute('href');
+  expect(
+    (await href('Source on GitHub')) === 'https://github.com/sdaveas/workout-companion' &&
+      (await href('Buy me a coffee')) === 'https://buymeacoffee.com/br3gan' &&
+      (await href('Everkinetic')) === 'https://github.com/everkinetic/data' &&
+      (await href('Bryl Lim — Workout Guide')) === 'https://github.com/bryllim/workout-guide',
+    'credits link to the sources and the tip jar',
+  );
+  await auditScreen(b.page, 'credits');
   await b.context.close();
   await a.context.close();
 }

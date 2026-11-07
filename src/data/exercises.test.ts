@@ -7,7 +7,7 @@ import {
   muscleSummary,
   patternFor,
 } from './exercises';
-import { SHIPPED_SLUGS } from './exerciseFigures';
+import { SHIPPED_SLUGS, easterEggFor } from './exerciseFigures';
 
 describe('exercise library', () => {
   it('has unique names and usable defaults', () => {
@@ -109,5 +109,15 @@ describe('exercise illustrations', () => {
       expect(files, slug).toContain(`${slug}-0.svg`);
       expect(files, slug).toContain(`${slug}-1.svg`);
     }
+  });
+});
+
+describe('biceps easter egg', () => {
+  it('shows up for a third of biceps visits and never elsewhere', () => {
+    expect(easterEggFor('bicep-curl', 0)).toBe('easter/biceps.png');
+    expect(easterEggFor('bicep-curl', 0.32)).toBe('easter/biceps.png');
+    expect(easterEggFor('bicep-curl', 0.34)).toBeNull();
+    expect(easterEggFor('hammer-curl', 0.1)).toBeNull();
+    expect(easterEggFor('bench-press', 0.1)).toBeNull();
   });
 });

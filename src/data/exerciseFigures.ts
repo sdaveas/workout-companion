@@ -63,3 +63,11 @@ export function figureSlug(name: string, pattern: MotionPattern | null): string 
 
 /** Exported for the test that keeps this list honest against public/exercises. */
 export const SHIPPED_SLUGS = Object.keys(SHIPPED);
+
+/**
+ * Easter egg: one biceps visit in three gets the meme instead of the drawing.
+ * `roll` is 0..1, so the caller can be tested without waiting for luck.
+ */
+export function easterEggFor(slug: string, roll: number): string | null {
+  return slug === 'bicep-curl' && roll < 1 / 3 ? 'easter/biceps.png' : null;
+}
