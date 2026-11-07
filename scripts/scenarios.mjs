@@ -650,7 +650,7 @@ const auditScreen = async (page, screen) => {
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs/build`);
-  await page.getByLabel('Or pick a known one').selectOption('Dumbbell Row');
+  await page.getByLabel('Known exercises').selectOption('Dumbbell Row');
   const row = page.locator('li').filter({ hasText: 'Exercise 1' });
   expect(
     (await row.getByPlaceholder('Goblet Squat').inputValue()) === 'Dumbbell Row',
@@ -660,7 +660,9 @@ const auditScreen = async (page, screen) => {
   expect((await row.getByLabel('Rest s').inputValue()) === '90', 'the library fills the rest');
   expect(await row.getByRole('checkbox').isChecked(), 'the library marks a per-hand movement');
 
-  await page.getByLabel('Or pick a known one').selectOption('Bench Press');
+  // the search box narrows the list before picking
+  await page.getByPlaceholder('Search: bench, curl, squat…').fill('bench press');
+  await page.getByLabel('Known exercises').selectOption('Bench Press');
   const secondRow = page.locator('li').filter({ hasText: 'Exercise 2' });
   expect(
     (await secondRow.getByPlaceholder('Goblet Squat').inputValue()) === 'Bench Press',
@@ -677,9 +679,11 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: /^Start/ }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForSelector('text=/Complete (left|right) hand/');
-  const figure = await page.locator('.exercise-flip').getAttribute('src');
-  expect(Boolean(figure), 'the workout shows an exercise figure');
-  expect(figure?.includes('dumbbell-row'), 'Dumbbell Row shows the row photos');
+  const figure = (await page.locator('.exercise-flip').getAttribute('style')) ?? '';
+  expect(figure.includes('exercises/'), 'the workout shows an exercise figure');
+  expect(figure.includes('dumbbell-row'), 'Dumbbell Row shows the row poses');
+  const muscles = await page.locator('section[aria-label="Dumbbell Row"] h1 + p').textContent();
+  expect(muscles?.startsWith('Back'), 'the workout names the muscle group it works');
   await auditScreen(page, 'workout/motion');
   await context.close();
 }

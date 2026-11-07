@@ -1,0 +1,8 @@
+Exercise illustrations: Bryl Lim (https://bryllim.com) via
+https://github.com/bryllim/workout-guide, built on pose artwork from
+Everkinetic (https://github.com/everkinetic/data).
+
+Licensed under CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+
+Changes: two of the three frames per exercise are shipped, unmodified apart
+from being drawn through a CSS mask and tinted by the app theme.

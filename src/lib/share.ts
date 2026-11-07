@@ -16,6 +16,11 @@ const VERSION = '1';
 
 type WireExercise = [number | string, number, number, number, number, 0 | 1, number];
 
+/**
+ * A known exercise travels as its position in EXERCISE_LIBRARY, which keeps links
+ * short. Positions are therefore frozen: a library entry never moves, and new ones
+ * are appended. See the "curated entries first" test in data/exercises.test.ts.
+ */
 const nameCode = (name: string): number | string => {
   const i = EXERCISE_LIBRARY.findIndex((e) => e.name.toLowerCase() === name.trim().toLowerCase());
   return i >= 0 ? i : name.trim();

@@ -139,6 +139,19 @@ export function Settings() {
       <a href="#/history" className="mt-1 flex h-11 items-center justify-center text-xs text-muted underline">
         Session history
       </a>
+
+      <p className="mt-6 px-4 text-center text-[11px] leading-relaxed text-muted">
+        Exercise illustrations by{' '}
+        <a
+          href="https://github.com/bryllim/workout-guide"
+          className="underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Bryl Lim
+        </a>{' '}
+        and Everkinetic, CC BY-SA 4.0. Recoloured for this app.
+      </p>
     </main>
   );
 }

@@ -2,7 +2,11 @@ import { useState } from 'react';
 import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
-import { EXERCISE_LIBRARY, libraryExercise, type MotionPattern } from '../../data/exercises';
+import {
+  EXERCISE_LIBRARY,
+  MUSCLE_GROUP_ORDER,
+  libraryExercise,
+} from '../../data/exercises';
 import {
   buildProgramJson,
   draftFromProgram,
@@ -12,17 +16,10 @@ import {
   type ProgramDraft,
 } from '../../lib/buildProgram';
 
-const PATTERN_LABELS: Record<MotionPattern, string> = {
-  push: 'Push',
-  pull: 'Pull',
-  squat: 'Squat',
-  hinge: 'Hinge',
-  curl: 'Curl',
-  raise: 'Raise',
-  core: 'Core',
-};
-
-const PATTERNS = Object.keys(PATTERN_LABELS) as MotionPattern[];
+function matchesPick(name: string, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  return q.length === 0 || name.toLowerCase().includes(q);
+}
 
 const DAYS: Array<Weekday | ''> = [
   '',
@@ -74,6 +71,7 @@ export function ProgramBuilder({
   const [draft, setDraft] = useState<ProgramDraft>(() =>
     initial ? draftFromProgram(initial) : emptyDraft(),
   );
+  const [pickQuery, setPickQuery] = useState('');
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -261,25 +259,43 @@ export function ProgramBuilder({
         + Add exercise
       </button>
 
-      <label className="mt-2 block">
-        <span className="text-[10px] uppercase tracking-widest text-muted">Or pick a known one</span>
+      <div className="mt-2">
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-widest text-muted">Or pick a known one</span>
+          <input
+            value={pickQuery}
+            onChange={(e) => setPickQuery(e.target.value)}
+            placeholder="Search: bench, curl, squat…"
+            className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
+          />
+        </label>
         <select
           value=""
-          onChange={(e) => addFromLibrary(e.target.value)}
-          className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
+          aria-label="Known exercises"
+          onChange={(e) => {
+            addFromLibrary(e.target.value);
+            setPickQuery('');
+          }}
+          className="mt-2 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
         >
           <option value="">Choose an exercise…</option>
-          {PATTERNS.map((pattern) => (
-            <optgroup key={pattern} label={PATTERN_LABELS[pattern]}>
-              {EXERCISE_LIBRARY.filter((e) => e.pattern === pattern).map((e) => (
-                <option key={e.name} value={e.name}>
-                  {e.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
+          {MUSCLE_GROUP_ORDER.map((group) => {
+            const rows = EXERCISE_LIBRARY.filter(
+              (e) => e.group === group && matchesPick(e.name, pickQuery),
+            ).sort((a, b) => a.name.localeCompare(b.name));
+            if (rows.length === 0) return null;
+            return (
+              <optgroup key={group} label={group}>
+                {rows.map((e) => (
+                  <option key={e.name} value={e.name}>
+                    {e.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
-      </label>
+      </div>
 
       <button
         type="button"

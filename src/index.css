@@ -62,7 +62,12 @@ select {
   outline-offset: 2px;
 }
 
-/* Two frames of the same lift, flipped like a GIF. Starts hidden so a user who
+/* The illustration is a mask, so it takes the colour of its container. */
+.exercise-frame {
+  background-color: currentColor;
+}
+
+/* Two poses of the same lift, flipped like a GIF. Starts hidden so a user who
    turned animations off still sees frame 0 rather than frame 1. */
 .exercise-flip {
   opacity: 0;
