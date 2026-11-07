@@ -677,8 +677,9 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: /^Start/ }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForSelector('text=/Complete (left|right) hand/');
-  expect((await page.locator('svg .m-swing').count()) > 0, 'the workout shows an animated figure');
-  expect((await page.locator('.m-row-arm').count()) === 1, 'Dumbbell Row animates as a pull');
+  const figure = await page.locator('.exercise-flip').getAttribute('src');
+  expect(Boolean(figure), 'the workout shows an exercise figure');
+  expect(figure?.includes('dumbbell-row'), 'Dumbbell Row shows the row photos');
   await auditScreen(page, 'workout/motion');
   await context.close();
 }

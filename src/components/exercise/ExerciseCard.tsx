@@ -4,6 +4,7 @@ import { ExerciseDetails } from './ExerciseDetails';
 import { ExerciseImage } from './ExerciseImage';
 import { ExerciseMotion } from './ExerciseMotion';
 import { patternFor } from '../../data/exercises';
+import { figureSlug } from '../../data/exerciseFigures';
 
 export function ExerciseCard({
   exercise,
@@ -20,6 +21,7 @@ export function ExerciseCard({
   totalSets: number;
   side?: 'left' | 'right' | null;
 }) {
+  const slug = figureSlug(exercise.name, patternFor(exercise.name));
   return (
     <section aria-label={exercise.name}>
       <p className="text-xs uppercase tracking-[0.2em] text-muted">
@@ -28,8 +30,8 @@ export function ExerciseCard({
       <h1 className="mt-2 text-2xl font-semibold leading-tight">{exercise.name}</h1>
 
       <div className="mt-4">
-        {patternFor(exercise.name) ? (
-          <ExerciseMotion pattern={patternFor(exercise.name)} />
+        {slug ? (
+          <ExerciseMotion slug={slug} />
         ) : (
           <ExerciseImage src={exercise.imageUrl} alt={exercise.name} />
         )}

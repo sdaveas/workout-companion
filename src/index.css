@@ -62,77 +62,16 @@ select {
   outline-offset: 2px;
 }
 
-/* Exercise motion: one joint swings, the rest of the figure holds still.
-   Transform origins are set inline in viewBox units (the SVG default
-   `transform-box: view-box`), so a limb pivots on its joint. */
-.m-swing {
-  transform-box: view-box;
-  animation-duration: 2s;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
+/* Two frames of the same lift, flipped like a GIF. Starts hidden so a user who
+   turned animations off still sees frame 0 rather than frame 1. */
+.exercise-flip {
+  opacity: 0;
+  animation: exercise-flip 1.6s steps(1, end) infinite;
 }
 
-.m-press-arm { animation-name: m-press-arm; }
-.m-press-bar { animation-name: m-press-bar; }
-.m-row-arm { animation-name: m-row-arm; animation-duration: 1.9s; }
-.m-squat-body { animation-name: m-squat-body; animation-duration: 2.2s; }
-.m-squat-legs { animation-name: m-squat-legs; animation-duration: 2.2s; }
-.m-dead-torso { animation-name: m-dead-torso; animation-duration: 2.2s; }
-.m-dead-legs { animation-name: m-dead-legs; animation-duration: 2.2s; }
-.m-dead-bar { animation-name: m-dead-bar; animation-duration: 2.2s; }
-.m-curl-forearm { animation-name: m-curl-forearm; animation-duration: 1.8s; }
-.m-raise-arm { animation-name: m-raise-arm; }
-.m-plank { animation-name: m-plank; animation-duration: 2.2s; }
-.m-idle { animation-name: m-idle; animation-duration: 2.4s; }
-
-@keyframes m-press-arm {
-  from { transform: rotate(-10deg); }
-  to { transform: rotate(-35deg); }
-}
-@keyframes m-press-bar {
-  from { transform: translateY(25px); }
-  to { transform: translateY(-5px); }
-}
-@keyframes m-row-arm {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(55deg); }
-}
-@keyframes m-squat-body {
-  from { transform: translateY(0); }
-  to { transform: translateY(12px); }
-}
-@keyframes m-squat-legs {
-  from { transform: scaleY(1); }
-  to { transform: scaleY(0.79); }
-}
-@keyframes m-dead-torso {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(38deg); }
-}
-@keyframes m-dead-legs {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-9deg); }
-}
-@keyframes m-dead-bar {
-  from { transform: translateY(0); }
-  to { transform: translateY(30px); }
-}
-@keyframes m-curl-forearm {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-150deg); }
-}
-@keyframes m-raise-arm {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-80deg); }
-}
-@keyframes m-plank {
-  from { transform: translateY(0); }
-  to { transform: translateY(-2px); }
-}
-@keyframes m-idle {
-  from { transform: translateY(-4px); }
-  to { transform: translateY(4px); }
+@keyframes exercise-flip {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
