@@ -826,6 +826,49 @@ const auditScreen = async (page, screen) => {
   await context.close();
 }
 
+// ---------------------------------------------------------------- scenario 16: paste a chat program
+{
+  const { context, page } = await fresh();
+  await page.goto(`${BASE}/#/programs`);
+  await page.getByRole('link', { name: 'Paste a program from ChatGPT' }).click();
+  await page.getByLabel('The program JSON').waitFor();
+  await auditScreen(page, 'paste');
+
+  const answer = `Here you go:\n\n\`\`\`json\n${JSON.stringify({
+    schema_version: 1,
+    id: 'pasted-day',
+    name: 'Pasted Day',
+    schedule: { days: ['monday', 'thursday'] },
+    exercises: [
+      { id: 'squat', name: 'Squat', sets: 3, reps: { min: 5, max: 5 }, rest_seconds: 120 },
+    ],
+  })}\n\`\`\`\n\nGood luck!`;
+  await page.getByLabel('The program JSON').fill(answer);
+  await page.getByRole('button', { name: 'Read it' }).click();
+  expect(
+    await page.getByText('Pasted Day', { exact: true }).isVisible(),
+    'the pasted program is read back',
+  );
+  await page.getByRole('button', { name: 'Add to my routines' }).click();
+  await page.waitForSelector('text=Program "Pasted Day" added');
+  expect(true, 'the pasted program is saved');
+
+  // a second paste of the same thing must land beside it, never over it
+  await page.goto(`${BASE}/#/paste`);
+  await page.getByLabel('The program JSON').fill(answer);
+  await page.getByRole('button', { name: 'Read it' }).click();
+  await page.getByRole('button', { name: 'Add to my routines' }).click();
+  await page.waitForSelector('text=Program "Pasted Day (2)" added');
+  expect(true, 'a repeated paste is saved as a copy');
+
+  await page.goto(`${BASE}/#/paste`);
+  await page.getByLabel('The program JSON').fill('{"schema_version":1,"id":"x","name":"X","exercises":[]}');
+  await page.getByRole('button', { name: 'Read it' }).click();
+  const complaint = await page.getByRole('alert').innerText();
+  expect(complaint.includes('at least one exercise'), `the importer explains the problem (${complaint})`);
+  await context.close();
+}
+
 await browser.close();
 const counts = results.reduce((acc, [k]) => ({ ...acc, [k]: (acc[k] ?? 0) + 1 }), {});
 console.log('\nSUMMARY', JSON.stringify(counts));

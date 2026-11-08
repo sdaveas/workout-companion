@@ -5,6 +5,7 @@ import { AddShared } from './screens/AddShared';
 import { Credits } from './screens/Credits';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
+import { PasteProgram } from './screens/PasteProgram';
 import { Programs } from './screens/Programs';
 import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
@@ -28,6 +29,7 @@ export function App() {
     <div className="min-h-dvh bg-ink text-[15px]">
       {route.name === 'programs' && <Programs />}
       {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
+      {route.name === 'paste' && <PasteProgram />}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
       {route.name === 'history' && <History />}

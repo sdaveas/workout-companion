@@ -142,6 +142,18 @@ export function Programs() {
         </section>
       )}
 
+      {!building && (
+        <a
+          href="#/paste"
+          className="mt-5 flex min-h-11 items-center justify-between rounded-xl border border-dashed border-line px-4 py-3 text-sm"
+        >
+          <span>Paste a program from ChatGPT</span>
+          <span aria-hidden className="text-muted">
+            →
+          </span>
+        </a>
+      )}
+
       {!building && <SyncFromDisk />}
 
       {!building && (
