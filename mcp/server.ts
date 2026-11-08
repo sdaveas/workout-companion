@@ -36,7 +36,7 @@ server.registerTool(
   'list_programs',
   {
     title: 'List programs',
-    description: 'Programs stored in data/programs. Returns id, name, scheduled day, exercise count.',
+    description: 'Programs stored in data/programs. Returns id, name, scheduled days, exercise count.',
     inputSchema: {},
   },
   async () => asText(await listPrograms(dataRoot)),

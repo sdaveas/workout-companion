@@ -57,6 +57,16 @@ check(empty.length === 0, 'archived program leaves the list');
 const kept = await readFile(path.join(data, 'programs', 'archive', 'smoke-day.json'), 'utf8');
 check(JSON.parse(kept).id === 'smoke-day', 'archived file still exists');
 
+// The same program may now run on more than one day of the week.
+const multi = text(await client.callTool({
+  name: 'create_program',
+  arguments: { program: { ...program, id: 'smoke-multi', name: 'Smoke Multi', schedule: { days: ['tuesday', 'thursday'] } } },
+}));
+check(multi.includes('Saved') && multi.includes('smoke-multi'), 'create_program takes a multi-day schedule');
+const rows = JSON.parse(text(await client.callTool({ name: 'list_programs', arguments: {} })));
+const multiRow = rows.find((p) => p.id === 'smoke-multi');
+check(multiRow?.scheduleDays?.join(',') === 'tuesday,thursday', 'list_programs returns both days');
+
 const noHistory = text(await client.callTool({ name: 'list_sessions', arguments: {} }));
 check(noHistory.includes('History → Export'), 'missing history export explains itself');
 
