@@ -1,5 +1,7 @@
 # Workout Companion
 
+https://sdaveas.github.io/workout-companion/
+
 Personal workout execution PWA. Import a program as JSON, run it set by set, offline.
 
 - `docs/spec.md` — product contract (what).
