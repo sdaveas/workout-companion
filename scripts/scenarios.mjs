@@ -834,7 +834,7 @@ const auditScreen = async (page, screen) => {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs`);
   await page.getByRole('link', { name: 'Paste a program from ChatGPT' }).click();
-  await page.getByLabel('The program JSON').waitFor();
+  await page.getByLabel("The coach's answer").waitFor();
   await auditScreen(page, 'paste');
 
   const href = await page.getByRole('link', { name: 'Open ChatGPT' }).getAttribute('href');
@@ -847,7 +847,11 @@ const auditScreen = async (page, screen) => {
   expect(asked.length < 600, `the prompt is short enough to copy (${asked.length} chars)`);
   const coach = await (await page.request.get(`${BASE}/coach.md`)).text();
   expect(coach.includes('Interview complete'), 'the coach file interviews before it writes programs');
-  expect(coach.includes('one json code block per training day'), 'it asks for a block per day');
+  expect(
+    coach.includes('[Open Workout A]('),
+    'it asks for a card whose link opens the program',
+  );
+  expect(coach.includes('approximately 40 minutes'), 'each card says how long the session takes');
   expect(coach.includes('#/p/'), 'it shows how to link a program');
 
   const day = (id, name, d) => program(id, name, d, [ex(`${id}-squat`, 'Squat', 3, 90)]);
@@ -865,7 +869,7 @@ const auditScreen = async (page, screen) => {
     'Open Workout Companion, go to Programs, tap Paste a program.',
   ].join('\n');
 
-  await page.getByLabel('The program JSON').fill(answer);
+  await page.getByLabel("The coach's answer").fill(answer);
   await page.getByRole('button', { name: 'Read it' }).click();
   expect(await page.getByText('3 programs').isVisible(), 'three days read back as three programs');
   await page.getByRole('button', { name: 'Add all 3' }).click();
@@ -875,7 +879,7 @@ const auditScreen = async (page, screen) => {
   // A half-written program is named as the problem; the good ones still import.
   await page.goto(`${BASE}/#/paste`);
   await page
-    .getByLabel('The program JSON')
+    .getByLabel("The coach's answer")
     .fill(
       `\`\`\`json\n${day('day-d', 'Day D', 'saturday')}\n\`\`\`\n\`\`\`json\n{"schema_version":1,"id":"broken","name":"Broken"}\n\`\`\``,
     );
@@ -888,9 +892,28 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=Program "Day D" added');
   expect(true, 'the readable program still goes in');
 
+  // The coach's card: the program rides inside the link, with no block in sight.
+  await page.goto(`${BASE}/#/paste`);
+  const card = [
+    'Interview complete',
+    '',
+    '**Workout A — Monday**',
+    '7 exercises · approximately 40 minutes',
+    `[Open Workout A](${BASE}/#/p/${encodeURIComponent(day('card-day', 'Workout A', 'monday'))})`,
+  ].join('\n');
+  await page.getByLabel("The coach's answer").fill(card);
+  await page.getByRole('button', { name: 'Read it' }).click();
+  expect(
+    await page.getByText('That is a program').isVisible(),
+    'a card whose link carries the program is read back',
+  );
+  await page.getByRole('button', { name: 'Add to my routines' }).click();
+  await page.waitForSelector('text=Program "Workout A" added');
+  expect(true, 'the card imports without a json block');
+
   // The same paste again lands beside it, never over it.
   await page.goto(`${BASE}/#/paste`);
-  await page.getByLabel('The program JSON').fill(day('day-a', 'Day A', 'monday'));
+  await page.getByLabel("The coach's answer").fill(day('day-a', 'Day A', 'monday'));
   await page.getByRole('button', { name: 'Read it' }).click();
   await page.getByRole('button', { name: 'Add to my routines' }).click();
   await page.waitForSelector('text=Program "Day A (2)" added');

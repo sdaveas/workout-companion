@@ -1,4 +1,4 @@
-import { APP_URL } from './programLink';
+import { APP_URL, decodeLinkPayload } from './programLink';
 
 /**
  * Where the prompt sends a chat assistant. Not the Pages copy: ChatGPT will not read
@@ -31,9 +31,31 @@ export function chatUrl(): string {
  * Chat answers arrive wrapped in fences and prose, and a split arrives as several
  * programs. Walk every balanced object, keep the ones that look like a program, and
  * let the importer report what is wrong with the inside of each.
+ *
+ * The coach now hands a program back as a card whose link carries the json, so the
+ * same walk runs over every `#/p/` payload as well. A program that arrives both ways
+ * is kept once.
  */
 export function extractJsonBlocks(text: string): string[] {
-  const blocks: string[] = [];
+  const blocks = new Set<string>();
+  for (const object of programObjects(text)) blocks.add(object);
+
+  const marker = '#/p/';
+  for (let at = text.indexOf(marker); at >= 0; at = text.indexOf(marker, at + marker.length)) {
+    const from = at + marker.length;
+    let to = from;
+    // A payload ends at the link's closing bracket, quotes, or any whitespace.
+    while (to < text.length && !/[\s)\]<>]/.test(text[to])) to += 1;
+    const payload = decodeLinkPayload(text.slice(from, to));
+    for (const object of programObjects(payload)) blocks.add(object);
+  }
+
+  return [...blocks];
+}
+
+/** Balanced {...} objects in the text that look like a program, in order. */
+function programObjects(text: string): string[] {
+  const found: string[] = [];
   let depth = 0;
   let start = -1;
   let inString = false;
@@ -60,12 +82,12 @@ export function extractJsonBlocks(text: string): string[] {
           const parsed = JSON.parse(candidate) as { schema_version?: unknown; exercises?: unknown };
           // Half a program still deserves the importer's complaint, not silence.
           const aims = parsed.schema_version === 1 || Array.isArray(parsed.exercises);
-          if (aims) blocks.push(candidate);
+          if (aims) found.push(candidate);
         } catch {
           // A brace in the prose around the answer: keep scanning.
         }
       }
     }
   }
-  return blocks;
+  return found;
 }

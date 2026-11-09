@@ -134,8 +134,8 @@ export function PasteProgram({ initial }: { initial?: string }) {
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 1</p>
           <h2 className="mt-1 text-lg font-semibold">Talk to a coach</h2>
           <p className="mt-1 text-sm text-muted">
-            ChatGPT asks about your goal, days, equipment and time, then writes one program per
-            training day, already in the app's format.
+            ChatGPT asks about your goal, days, equipment and time, then hands back one tappable
+            link per training day. Each one opens the app with that session ready to add.
           </p>
           <a
             href={url}
@@ -215,13 +215,14 @@ export function PasteProgram({ initial }: { initial?: string }) {
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 2</p>
           <h2 className="mt-1 text-lg font-semibold">Paste the answer</h2>
           <p className="mt-1 text-sm text-muted">
-            Every json block is read as a program, so a three-day week goes in one go.
+            The whole answer: every program in it is read, whether it comes as a card, a link or a
+            json block. A three-day week goes in one go.
           </p>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            aria-label="The program JSON"
-            placeholder={'{\n  "schema_version": 1,\n  …\n}'}
+            aria-label="The coach's answer"
+            placeholder={'**Workout A — Monday**\n7 exercises · approximately 40 minutes\nOpen Workout A: https://…'}
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}

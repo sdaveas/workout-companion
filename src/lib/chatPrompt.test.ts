@@ -46,6 +46,7 @@ describe('the coach file', () => {
 
   it('says how a program gets back into the app', () => {
     expect(coach).toContain('#/p/');
+    expect(coach).toContain('[Open Workout A]');
     expect(coach).toContain('Paste a program');
     expect(coach).toContain('Interview complete');
   });
@@ -87,6 +88,24 @@ describe('extractJsonBlocks', () => {
     const blocks = extractJsonBlocks(answer);
     expect(blocks).toHaveLength(1);
     expect(JSON.parse(blocks[0]).id).toBe('day-a');
+  });
+
+  it('reads a program that exists only inside the coach link', () => {
+    const json = programJson('day-c');
+    const card = `**Workout C — Friday**\n6 exercises · approximately 40 minutes\n[Open Workout C](https://app/#/p/${encodeURIComponent(json)})`;
+    expect(extractJsonBlocks(card)).toEqual([json]);
+  });
+
+  it('reads a payload left unencoded, and stops at the closing bracket', () => {
+    const json = programJson('day-d');
+    expect(extractJsonBlocks(`[Open](https://app/#/p/${json})`)).toEqual([json]);
+    expect(extractJsonBlocks(`<https://app/#/p/${json}>`)).toEqual([json]);
+  });
+
+  it('keeps one copy when the same program arrives as a block and a link', () => {
+    const json = programJson('day-e');
+    const answer = `\`\`\`json\n${json}\n\`\`\`\n[Open](https://app/#/p/${json})`;
+    expect(extractJsonBlocks(answer)).toEqual([json]);
   });
 
   it('gives up when there is no program', () => {
