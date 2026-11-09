@@ -57,6 +57,11 @@ export function PasteProgram({ initial }: { initial?: string }) {
   const [offers, setOffers] = useState<Program[]>(() => (initial ? readPrograms(initial).programs : []));
   const [error, setError] = useState<string | null>(() => (initial ? readPrograms(initial).error : null));
   const [busy, setBusy] = useState(false);
+  // A chat app opens links in its own browser; an installed app has its own storage.
+  const standalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as { standalone?: boolean }).standalone === true);
 
   async function copy() {
     try {
@@ -195,6 +200,13 @@ export function PasteProgram({ initial }: { initial?: string }) {
             )}
           </details>
         </section>
+      )}
+
+      {initial && !standalone && (
+        <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
+          This opened in a browser. A program added here stays in this browser — your home-screen
+          app keeps its own copy. To keep it, paste the answer there instead.
+        </p>
       )}
 
       {initial && error && (

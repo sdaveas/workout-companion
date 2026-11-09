@@ -39,9 +39,9 @@ Then one card per training day, and nothing else. A three-day week is three card
   The app reads anything before the `#` as noise, so extra tracking parameters are fine.
 - Never print the json as a code block, and never print it twice.
 
-After the last card, one line: Tap Open, then Add to my routines.
+After the last card, close with this, and nothing else:
 
-If a link will not open, the app's Programs → Paste a program box reads this whole answer too.
+On a phone: copy this whole answer (long-press → Copy), open Workout Companion, and paste it into Programs → + → Talk to a ChatGPT. A link tapped inside this chat opens a browser copy of the app, where what you add never reaches the installed one.
 
 ## Format — one program
 {"schema_version":1,"id":"upper-a","name":"Upper A","description":"Pressing and pulling, twice a week","schedule":{"days":["monday","thursday"]},"exercises":[{"id":"bench-press","name":"Bench Press","sets":3,"reps":{"min":6,"max":10},"weight":{"value":60,"unit":"kg"},"rest_seconds":150,"instructions":["Feet planted, shoulder blades pulled back."],"muscle_groups":["chest","triceps"]},{"id":"dumbbell-row","name":"One-Arm Dumbbell Row","sets":3,"reps":{"min":8,"max":12},"per_hand":true,"rest_seconds":90}]}

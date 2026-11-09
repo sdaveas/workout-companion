@@ -47,7 +47,8 @@ describe('the coach file', () => {
   it('says how a program gets back into the app', () => {
     expect(coach).toContain('#/p/');
     expect(coach).toContain('[Open Workout A]');
-    expect(coach).toContain('Paste a program');
+    // The reliable route on a phone: the answer travels by clipboard, not by link.
+    expect(coach).toMatch(/paste it into Programs → \+ → Talk to a ChatGPT/);
     expect(coach).toContain('Interview complete');
   });
 
