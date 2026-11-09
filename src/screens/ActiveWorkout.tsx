@@ -7,8 +7,12 @@ import { useSession } from '../store/sessionStore';
 import {
   getCurrentExercise,
   getCurrentRecord,
+  getExerciseBoundaries,
+  getExerciseProgress,
   getNextExercise,
+  getSetBoundaries,
   getWorkoutProgress,
+  getWorkoutSetBoundaries,
 } from '../engine/selectors';
 import { autoRemainingMs, skipAction } from '../engine/auto';
 import { remainingMs } from '../engine/rest';
@@ -91,6 +95,12 @@ export function ActiveWorkout() {
   const record = getCurrentRecord(state);
   const nextExercise = getNextExercise(state);
   const progress = getWorkoutProgress(state);
+  const exerciseProgress = getExerciseProgress(state);
+  const exerciseMarks = getExerciseBoundaries(state);
+  const workoutSetMarks = getWorkoutSetBoundaries(state);
+  const setMarks = getSetBoundaries(state);
+  /** The drawing belongs to a set. On a break it only competes with the clock. */
+  const inSet = state.status === 'exercise_active' || (state.status === 'paused' && !pausedInRest);
   const isReady = state.status === 'ready';
   const currentSet = record?.sets[state.currentSetIndex];
   const side = currentSet?.side ?? null;
@@ -173,58 +183,68 @@ export function ActiveWorkout() {
             : undefined,
         }}
         title={
-          <>
-            <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
-              {state.program.name}
-            </p>
-            {!isReady && (
-              <p className="text-xl font-semibold tabular-nums" aria-label="elapsed time">
-                {formatClock(elapsedMs(state, now))}
-              </p>
-            )}
-          </>
-        }
-        actions={
-          !isReady && (
-            <>
-              {RUNNING.includes(state.status) && (
-                <button
-                  type="button"
-                  aria-pressed={auto}
-                  onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-                  className={`h-11 rounded-xl border px-3 text-sm ${
-                    auto ? 'border-accent text-accent' : 'border-line text-muted'
-                  }`}
-                >
-                  {auto ? 'Auto on' : 'Auto'}
-                </button>
-              )}
-              {state.undoStack.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: 'UNDO' })}
-                  className="h-11 rounded-xl border border-line px-3 text-sm text-muted"
-                >
-                  Undo
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setEnding((v) => !v)}
-                aria-expanded={ending}
-                className="h-11 rounded-xl border border-line px-3 text-sm text-muted"
-              >
-                End
-              </button>
-            </>
-          )
+          <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
+            {state.program.name}
+          </p>
         }
       >
         {!isReady && (
           <>
+            {/* The clock and the controls that act on it belong together. */}
+            <div className="mt-1 flex min-h-11 items-center gap-2">
+              <p className="text-xl font-semibold tabular-nums" aria-label="elapsed time">
+                {formatClock(elapsedMs(state, now))}
+              </p>
+              <div className="ml-auto flex shrink-0 gap-2">
+                {RUNNING.includes(state.status) && (
+                  <button
+                    type="button"
+                    aria-label="Pause"
+                    onClick={() => dispatch({ type: 'PAUSE' })}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
+                  >
+                    <span aria-hidden className="flex gap-1">
+                      <span className="h-4 w-1 bg-current" />
+                      <span className="h-4 w-1 bg-current" />
+                    </span>
+                  </button>
+                )}
+                {RUNNING.includes(state.status) && (
+                  <button
+                    type="button"
+                    aria-pressed={auto}
+                    onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+                    className={`h-11 shrink-0 rounded-xl border px-3 text-sm ${
+                      auto ? 'border-accent text-accent' : 'border-line text-muted'
+                    }`}
+                  >
+                    {auto ? 'Auto on' : 'Auto'}
+                  </button>
+                )}
+                {state.undoStack.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: 'UNDO' })}
+                    className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+                  >
+                    Undo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setEnding((v) => !v)}
+                  aria-expanded={ending}
+                  className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+                >
+                  End
+                </button>
+              </div>
+            </div>
             <div className="mt-2">
               <ProgressBar
                 value={progress.ratio}
+                ticks={workoutSetMarks}
+                marks={exerciseMarks}
                 label={`${progress.done} of ${progress.total} sets${
                   progress.skipped > 0 ? `, ${progress.skipped} skipped` : ''
                 }`}
@@ -247,30 +267,27 @@ export function ActiveWorkout() {
 
       <section
         data-testid="stage"
-        className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-3 pt-4"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-2 pt-3"
       >
         <p className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
 
-        {bigSlot && (
-          <p className={`mt-2 shrink-0 font-semibold tabular-nums ${bigClass}`} role="status">
-            {bigSlot}
-          </p>
-        )}
-        {state.status === 'exercise_active' && !auto && (
-          <p className="shrink-0 text-xs text-muted">reps</p>
-        )}
-
-        <div className="mt-2 flex shrink-0 items-center gap-2">
+        {/* The −15s/+15s pair hugs the clock it moves, so a short screen keeps its rows. */}
+        <div className="mt-1 flex shrink-0 items-center gap-2">
+          {bigSlot && (
+            <p className={`font-semibold tabular-nums ${bigClass}`} role="status">
+              {bigSlot}
+            </p>
+          )}
           {state.status === 'exercise_active' && auto && (
             <>
               <Button
-                className="h-10 px-3"
+                className="ml-auto h-10 px-2.5"
                 onClick={() => dispatch({ type: 'EXTEND_STAGE', seconds: -15 })}
               >
                 −15s
               </Button>
               <Button
-                className="h-10 px-3"
+                className="h-10 px-2.5"
                 onClick={() => dispatch({ type: 'EXTEND_STAGE', seconds: 15 })}
               >
                 +15s
@@ -282,13 +299,13 @@ export function ActiveWorkout() {
             restLeft > 0 && (
               <>
                 <Button
-                  className="h-10 px-3"
+                  className="ml-auto h-10 px-2.5"
                   onClick={() => dispatch({ type: 'ADJUST_REST', seconds: -15 })}
                 >
                   −15s
                 </Button>
                 <Button
-                  className="h-10 px-3"
+                  className="h-10 px-2.5"
                   onClick={() => dispatch({ type: 'ADJUST_REST', seconds: 15 })}
                 >
                   +15s
@@ -296,6 +313,10 @@ export function ActiveWorkout() {
               </>
             )}
         </div>
+
+        {state.status === 'exercise_active' && !auto && (
+          <p className="shrink-0 text-xs text-muted">reps</p>
+        )}
 
         {exercise && (
           <h1 className="mt-2 shrink-0 truncate text-2xl font-semibold leading-tight" title={exercise.name}>
@@ -325,14 +346,24 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {exercise && (
+        {exercise && exerciseProgress.total > 1 && (
+          <div data-testid="exercise-progress" className="mt-1.5 shrink-0">
+            <ProgressBar
+              value={exerciseProgress.done / exerciseProgress.total}
+              ticks={setMarks}
+              label={`This exercise: ${exerciseProgress.done} of ${exerciseProgress.total} sets`}
+            />
+          </div>
+        )}
+
+        {exercise && inSet && (
           <>
             {slug ? (
-              <div className="mt-3 hidden shrink-0 [@media(min-height:700px)]:block">
+              <div className="mt-2 hidden shrink-0 [@media(min-height:700px)]:block">
                 <ExerciseMotion slug={slug} className="h-20 w-full" />
               </div>
             ) : (
-              <div className="mt-3 hidden shrink-0 [@media(min-height:700px)]:block">
+              <div className="mt-2 hidden shrink-0 [@media(min-height:700px)]:block">
                 <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-20 w-full" />
               </div>
             )}
@@ -340,7 +371,7 @@ export function ActiveWorkout() {
         )}
 
         {exercise && state.draft && state.status === 'exercise_active' && (
-          <div data-testid="stepper" className="mt-3 shrink-0 rounded-2xl border border-line bg-surface px-3 py-1">
+          <div data-testid="stepper" className="mt-2 shrink-0 rounded-2xl border border-line bg-surface px-3 py-1">
             <SetEntry
               compact
               exercise={exercise}
@@ -387,7 +418,7 @@ export function ActiveWorkout() {
             >
               {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
             </Button>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="ghost"
                 onClick={() => {
@@ -399,9 +430,6 @@ export function ActiveWorkout() {
               </Button>
               <Button variant="ghost" onClick={() => dispatch({ type: 'SKIP_EXERCISE' })}>
                 Skip exercise
-              </Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: 'PAUSE' })}>
-                Pause
               </Button>
             </div>
           </div>
@@ -422,14 +450,9 @@ export function ActiveWorkout() {
                 Skip rest
               </Button>
             )}
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
-                Restart rest
-              </Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: 'PAUSE' })}>
-                Pause
-              </Button>
-            </div>
+            <Button className="h-11 w-full" variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
+              Restart rest
+            </Button>
           </div>
         )}
 
@@ -452,16 +475,11 @@ export function ActiveWorkout() {
             >
               {nextExercise ? 'Continue' : 'Finish workout'}
             </Button>
-            <div className={`grid gap-2 ${state.restStartedAt != null ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {state.restStartedAt != null && (
-                <Button variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
-                  Restart rest
-                </Button>
-              )}
-              <Button variant="ghost" onClick={() => dispatch({ type: 'PAUSE' })}>
-                Pause
+            {state.restStartedAt != null && (
+              <Button className="h-11 w-full" variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
+                Restart rest
               </Button>
-            </div>
+            )}
           </div>
         )}
       </footer>

@@ -26,10 +26,12 @@ describe('ScreenHeader', () => {
     expect(screen.queryByRole('link')).toBe(null);
   });
 
-  it('runs the exit handler instead of navigating when one is given', () => {
+  it('runs the exit handler without swallowing the link', () => {
     const onSelect = vi.fn();
     render(<ScreenHeader back={{ to: '#/', label: 'Home', onSelect }} />);
-    fireEvent.click(screen.getByRole('link', { name: 'Back to Home' }));
+    const link = screen.getByRole('link', { name: 'Back to Home' });
+    fireEvent.click(link);
     expect(onSelect).toHaveBeenCalledOnce();
+    expect(link.getAttribute('href')).toBe('#/');
   });
 });

@@ -75,6 +75,12 @@ dialog::backdrop {
   background-color: currentColor;
   opacity: 0;
   animation: exercise-flip 1.6s steps(1, end) infinite;
+  /* Phones re-rasterise a masked layer on every opacity change, which shows up as
+     the drawing blinking off twice a second. Promote each pose to its own layer so
+     the mask is painted once and the flip is a compositor-only change. */
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .exercise-frame-base {

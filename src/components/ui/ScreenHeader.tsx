@@ -36,14 +36,10 @@ export function ScreenHeader({
           <a
             href={back.to}
             aria-label={`Back to ${back.label}`}
-            onClick={
-              back.onSelect
-                ? (e) => {
-                    e.preventDefault();
-                    back.onSelect?.();
-                  }
-                : undefined
-            }
+            // The anchor navigates natively; the handler only does the extra work
+            // (dropping an unstarted session). Preventing the default here would
+            // leave the back control dead.
+            onClick={back.onSelect}
             className="flex h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-line px-3 text-sm text-muted"
           >
             <span aria-hidden>←</span>

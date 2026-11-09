@@ -61,6 +61,29 @@ export function getWorkoutProgress(s: WorkoutState): {
   };
 }
 
+/** Fractions of the whole workout where one exercise ends and the next begins. */
+export function getExerciseBoundaries(s: WorkoutState): number[] {
+  const total = s.exerciseRecords.reduce((n, r) => n + r.sets.length, 0);
+  if (total === 0) return [];
+  let seen = 0;
+  return s.exerciseRecords.slice(0, -1).map((r) => {
+    seen += r.sets.length;
+    return seen / total;
+  });
+}
+
+/** Fractions of the whole workout where one set ends and the next begins. */
+export function getWorkoutSetBoundaries(s: WorkoutState): number[] {
+  const total = s.exerciseRecords.reduce((n, r) => n + r.sets.length, 0);
+  return Array.from({ length: Math.max(0, total - 1) }, (_, i) => (i + 1) / total);
+}
+
+/** Fractions of the current exercise where one set ends and the next begins. */
+export function getSetBoundaries(s: WorkoutState): number[] {
+  const sets = getCurrentRecord(s)?.sets.length ?? 0;
+  return Array.from({ length: Math.max(0, sets - 1) }, (_, i) => (i + 1) / sets);
+}
+
 export function getRemainingRestSeconds(s: WorkoutState, now: number): number {
   return remainingSeconds(s, now);
 }
