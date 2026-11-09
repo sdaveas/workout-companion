@@ -894,6 +894,23 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=3 programs added');
   expect(await page.getByText('Saved (3)').isVisible(), 'all three land in the list');
 
+  // One block can hold every day, the way the coach now answers.
+  await page.goto(`${BASE}/#/paste`);
+  await page
+    .getByLabel("The coach's answer")
+    .fill(`\`\`\`json\n[${day('arr-a', 'Arr A', 'monday')},${day('arr-b', 'Arr B', 'tuesday')}]\n\`\`\``);
+  await page.getByRole('button', { name: 'Read it' }).click();
+  expect(await page.getByText('2 programs').isVisible(), 'one array reads back as two days');
+
+  // Several programs can be sent as one backup file.
+  await page.goto(`${BASE}/#/programs`);
+  await page.getByRole('button', { name: 'Select' }).click();
+  await page.getByRole('button', { name: /Day A/ }).click();
+  await page.getByRole('button', { name: /Day B/ }).click();
+  expect(await page.getByRole('button', { name: 'Share 2' }).isEnabled(), 'pick two and share them together');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  expect(await page.getByRole('button', { name: 'Share 2' }).isHidden(), 'cancel leaves the list alone');
+
   // A half-written program is named as the problem; the good ones still import.
   await page.goto(`${BASE}/#/paste`);
   await page

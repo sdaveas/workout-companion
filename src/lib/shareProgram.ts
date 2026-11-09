@@ -1,5 +1,6 @@
 import type { Program, ProgramExercise } from '../engine/types';
 import { encodeProgram, shareUrl } from './share';
+import { buildBackup } from './backup';
 
 /** Rows the message lists before it folds the rest into "and N more". */
 export const MAX_ROWS = 8;
@@ -43,4 +44,30 @@ export async function shareProgram(program: Program): Promise<string | null> {
   }
   await navigator.clipboard.writeText(url);
   return `Link for “${program.name}” copied.`;
+}
+
+/**
+ * One program travels as the compact link. Several travel as a backup file — the
+ * same envelope Settings exports and the Import door reads, so a plan moves phone
+ * to phone with no new format. Where files cannot be shared, the json is copied
+ * and the paste box reads it just as well.
+ */
+export async function sharePrograms(programs: Program[]): Promise<string | null> {
+  if (programs.length === 1) return shareProgram(programs[0]);
+
+  const backup = buildBackup(programs, [], Date.now());
+  const json = JSON.stringify(backup);
+  const names = programs.map((p) => p.name).join(', ');
+  const file = new File([json], 'workout-companion-programs.json', { type: 'application/json' });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: `${programs.length} programs`, text: names });
+      return null;
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return null;
+    }
+  }
+  await navigator.clipboard.writeText(json);
+  return `${programs.length} programs copied. Paste them into a chat, or into Import a program on the other phone.`;
 }

@@ -48,7 +48,8 @@ describe('the coach file', () => {
     // The reliable route on a phone: the answer travels by clipboard, not by link.
     expect(coach).toMatch(/paste it into Programs → \+ → Talk to a ChatGPT/);
     expect(coach).toContain('Interview complete');
-    expect(coach).toMatch(/code block tagged json/);
+    expect(coach).toMatch(/one fenced code block tagged json/);
+    expect(coach).toMatch(/one array/);
     // A link tapped in a chat opens a browser copy of the app, so the coach never
     // hands one out.
     expect(coach).not.toContain('#/p/');
@@ -78,6 +79,11 @@ describe('extractJsonBlocks', () => {
     const blocks = extractJsonBlocks(answer);
     expect(blocks).toHaveLength(2);
     expect(JSON.parse(blocks[1]).id).toBe('day-b');
+  });
+
+  it('reads several programs that share one block, as an array', () => {
+    const answer = `Interview complete\n\n\`\`\`json\n[${programJson('day-a')}, ${programJson('day-b')}]\n\`\`\``;
+    expect(extractJsonBlocks(answer).map((b) => JSON.parse(b).id)).toEqual(['day-a', 'day-b']);
   });
 
   it('keeps a half-written program so the importer can say what is missing', () => {

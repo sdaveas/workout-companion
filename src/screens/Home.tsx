@@ -7,7 +7,7 @@ import { nextUp, weekView } from '../engine/schedule';
 import { getWorkoutProgress } from '../engine/selectors';
 import { summarize } from '../engine/summary';
 import { elapsedMs } from '../engine/time';
-import { formatDate, formatDay, formatDays, formatDuration } from '../lib/format';
+import { exerciseCount, formatDate, formatDay, formatDays, formatDuration } from '../lib/format';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
@@ -77,7 +77,7 @@ export function Home() {
           <p className="text-xs uppercase tracking-widest text-accent">Today</p>
           <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
           <p className="mt-1 text-sm text-muted">
-            {next.program.exercises.length} exercises
+            {exerciseCount(next.program.exercises.length)}
             {next.program.estimatedDurationMinutes
               ? ` · ~${next.program.estimatedDurationMinutes} min`
               : ''}
@@ -100,7 +100,7 @@ export function Home() {
           </p>
           <h2 className="mt-2 text-2xl font-semibold">{next.program.name}</h2>
           <p className="mt-1 text-sm text-muted">
-            {next.program.exercises.length} exercises
+            {exerciseCount(next.program.exercises.length)}
             {next.program.estimatedDurationMinutes
               ? ` · ~${next.program.estimatedDurationMinutes} min`
               : ''}
@@ -159,7 +159,7 @@ export function Home() {
                       onClick={() => void start(p.id)}
                     >
                       <span>{p.name}</span>
-                      <span className="text-xs text-muted">{p.exercises.length} exercises</span>
+                      <span className="text-xs text-muted">{exerciseCount(p.exercises.length)}</span>
                     </Button>
                   </li>
                 ))}

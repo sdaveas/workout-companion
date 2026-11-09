@@ -48,3 +48,8 @@ export function formatDays(days: Weekday[]): string {
   if (ordered.length === 7) return 'every day';
   return ordered.map((d) => d.slice(0, 3)).join(', ');
 }
+
+/** "1 exercise", "3 exercises" — the count is printed on five screens. */
+export function exerciseCount(n: number): string {
+  return `${n} exercise${n === 1 ? '' : 's'}`;
+}

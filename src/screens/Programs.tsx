@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useHashRoute } from '../hooks/useHashRoute';
 import type { Program } from '../engine/types';
 import { usePrograms } from '../store/programsStore';
-import { formatDays } from '../lib/format';
+import { exerciseCount, formatDays } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
 import { AddProgram } from './AddProgram';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 import { NameConflict } from '../components/programs/NameConflict';
 import { suggestedName } from '../lib/identity';
-import { shareProgram } from '../lib/shareProgram';
+import { shareProgram, sharePrograms } from '../lib/shareProgram';
 
 export function Programs() {
   const programs = usePrograms((s) => s.programs);
@@ -22,6 +22,8 @@ export function Programs() {
   const [editing, setEditing] = useState<Program | null>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // null = not choosing; a list of ids = choosing what to send together.
+  const [picked, setPicked] = useState<string[] | null>(null);
   const route = useHashRoute();
   // #/programs/build is the builder, #/programs/new the three ways in,
   // #/programs is the list of saved programs.
@@ -33,6 +35,17 @@ export function Programs() {
     setEditing(program ?? null);
     window.location.hash = '#/programs/build';
   };
+
+  async function shareMany(ids: string[]) {
+    setShared(null);
+    try {
+      const note = await sharePrograms(programs.filter((p) => ids.includes(p.id)));
+      if (note) setShared(note);
+      setPicked(null);
+    } catch (err) {
+      setShared(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   async function share(program: Program) {
     setShared(null);
@@ -60,6 +73,16 @@ export function Programs() {
         {building || adding ? (
           <span className="w-12" />
         ) : (
+          <div className="flex items-center gap-1">
+            {programs.length > 1 && picked === null && (
+              <button
+                type="button"
+                onClick={() => setPicked([])}
+                className="h-11 px-2 text-xs text-muted"
+              >
+                Select
+              </button>
+            )}
           <a
             href="#/programs/new"
             aria-label="Add a program"
@@ -72,6 +95,7 @@ export function Programs() {
           >
             +
           </a>
+          </div>
         )}
       </header>
 
@@ -166,15 +190,45 @@ export function Programs() {
           <p className="mt-3 text-sm text-muted">Nothing saved yet. Tap + to add one.</p>
         ) : (
           <ul className="mt-3 space-y-2">
-            {programs.map((p) => (
+            {programs.map((p) => {
+              const on = picked?.includes(p.id) ?? false;
+              return (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface px-4 py-3"
+                className={`flex items-center justify-between gap-2 rounded-xl border bg-surface px-4 py-3 ${
+                  on ? 'border-accent' : 'border-line'
+                }`}
               >
+                {picked !== null ? (
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() =>
+                      setPicked(on ? picked.filter((x) => x !== p.id) : [...picked, p.id])
+                    }
+                    className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left"
+                  >
+                    <span
+                      aria-hidden
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs ${
+                        on ? 'border-accent bg-accent font-semibold text-ink' : 'border-muted'
+                      }`}
+                    >
+                      {on ? '✓' : ''}
+                    </span>
+                    <span className="min-w-0">
+                      <p className="truncate font-medium">{p.name}</p>
+                      <p className="text-xs text-muted">
+                        {exerciseCount(p.exercises.length)} · {formatDays(p.scheduleDays)}
+                      </p>
+                    </span>
+                  </button>
+                ) : (
+                <>
                 <a href={`#/program/${p.id}`} className="min-w-0 flex-1 py-1">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="text-xs text-muted">
-                    {p.exercises.length} exercises · {formatDays(p.scheduleDays)}
+                    {exerciseCount(p.exercises.length)} · {formatDays(p.scheduleDays)}
                   </p>
                 </a>
                 <div className="flex shrink-0 gap-2">
@@ -204,11 +258,38 @@ export function Programs() {
                     Delete
                   </button>
                 </div>
+                </>
+                )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
+      )}
+
+      {picked !== null && <div aria-hidden className="h-24" />}
+
+      {picked !== null && (
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="mx-auto flex max-w-md gap-2">
+            <button
+              type="button"
+              onClick={() => setPicked(null)}
+              className="h-12 flex-1 rounded-xl border border-line text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={picked.length === 0}
+              onClick={() => void shareMany(picked)}
+              className="h-12 flex-[2] rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+            >
+              {picked.length === 0 ? 'Pick programs' : `Share ${picked.length}`}
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );

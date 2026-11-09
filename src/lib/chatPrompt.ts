@@ -20,7 +20,7 @@ export const COACH_FILE = `${APP_URL}coach.md`;
 export function chatPrompt(): string {
   return `Open ${COACH_URL} and follow it exactly.
 
-Then interview me the way it asks, and when you have enough write "Interview complete" and one card per training day: name, size, then that day's json block. Do not print links.`;
+Then interview me the way it asks, and when you have enough write "Interview complete" and one card per training day, then one json array holding all of them. Do not print links.`;
 }
 
 export function chatUrl(): string {
