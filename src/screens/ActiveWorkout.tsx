@@ -282,7 +282,7 @@ export function ActiveWorkout() {
         {/* The −15s/+15s pair hugs the clock it moves, so a short screen keeps its rows. */}
         <div className="mt-1 flex shrink-0 items-center gap-2">
           {bigSlot && (
-            <p className={`font-semibold tabular-nums ${bigClass}`} role="status">
+            <p data-testid="stage-big" className={`font-semibold tabular-nums ${bigClass}`} role="status">
               {bigSlot}
             </p>
           )}
