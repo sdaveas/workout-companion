@@ -73,16 +73,6 @@ export function Programs() {
         {building || adding ? (
           <span className="w-12" />
         ) : (
-          <div className="flex items-center gap-1">
-            {programs.length > 1 && picked === null && (
-              <button
-                type="button"
-                onClick={() => setPicked([])}
-                className="h-11 px-2 text-xs text-muted"
-              >
-                Select
-              </button>
-            )}
           <a
             href="#/programs/new"
             aria-label="Add a program"
@@ -95,7 +85,6 @@ export function Programs() {
           >
             +
           </a>
-          </div>
         )}
       </header>
 
@@ -180,7 +169,18 @@ export function Programs() {
 
       {!building && !adding && (
       <section className="mt-8">
-        <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
+          {programs.length > 0 && picked === null && (
+            <button
+              type="button"
+              onClick={() => setPicked([])}
+              className="h-11 px-2 text-xs text-accent"
+            >
+              Select
+            </button>
+          )}
+        </div>
         {shared && (
           <p role="status" className="mt-2 text-xs text-accent">
             {shared}

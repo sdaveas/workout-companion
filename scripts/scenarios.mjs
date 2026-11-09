@@ -1037,6 +1037,9 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=Saved (1)');
   expect(true, 'Import a program takes a file straight away');
 
+  // One saved program is already enough to pick from.
+  expect(await page.getByRole('button', { name: 'Select' }).isVisible(), 'Select sits by Saved (n)');
+
   const calm = (await page.getByRole('link', { name: 'Add a program' }).getAttribute('class')) ?? '';
   expect(!calm.includes('bg-accent'), 'the + steps back once something is saved');
 
