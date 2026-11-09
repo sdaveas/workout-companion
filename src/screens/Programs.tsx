@@ -170,7 +170,7 @@ export function Programs() {
         </section>
       )}
 
-      {!building && !adding && <SyncFromDisk />}
+      {!building && !adding && import.meta.env.DEV && <SyncFromDisk />}
 
       {!building && !adding && (
       <section className="mt-8">

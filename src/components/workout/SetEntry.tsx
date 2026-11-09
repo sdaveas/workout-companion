@@ -73,7 +73,7 @@ function CompactStepper({
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="h-9 w-9 shrink-0 rounded-lg border border-line bg-surface text-lg"
+          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-lg"
         >
           −
         </button>
@@ -82,7 +82,7 @@ function CompactStepper({
           type="button"
           aria-label={`Increase ${label}`}
           onClick={() => onChange(value + step)}
-          className="h-9 w-9 shrink-0 rounded-lg border border-line bg-surface text-lg"
+          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-lg"
         >
           +
         </button>

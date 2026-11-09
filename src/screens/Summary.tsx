@@ -157,7 +157,9 @@ export function Summary() {
         <Stat label="Duration" value={formatClock(summary.durationMs)} />
         <Stat label="Sets" value={`${summary.setsCompleted}`} unit={`of ${summary.exercises.reduce((n, e) => n + e.sets.length, 0)}`} />
         <Stat label="Reps" value={String(summary.totalReps)} />
-        <Stat label="Volume" value={String(Math.round(summary.volumeKg))} unit="kg" />
+        {summary.volumeKg > 0 && (
+          <Stat label="Volume" value={String(Math.round(summary.volumeKg))} unit="kg" />
+        )}
       </section>
 
       {summary.setsSkipped > 0 && (
@@ -182,7 +184,9 @@ export function Summary() {
                     {ex.sets
                       .map((s) =>
                         s.completed
-                          ? `${s.actualReps ?? 0}×${s.actualWeightKg ?? 0}`
+                          ? `${s.actualReps ?? 0}${
+                              s.actualWeightKg ? `×${s.actualWeightKg}` : ''
+                            }`
                           : s.skipped
                             ? 'skip'
                             : '—',

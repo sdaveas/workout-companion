@@ -171,7 +171,7 @@ export function ActiveWorkout() {
         : bigNumber;
 
   return (
-    <main className="relative flex h-dvh flex-col overflow-hidden">
+    <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden">
       <ScreenHeader
         back={{
           to: '#/',
@@ -339,7 +339,7 @@ export function ActiveWorkout() {
                 type="button"
                 aria-label="How to do it"
                 onClick={() => setHowTo(true)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line font-serif text-sm italic text-muted"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line font-serif text-base italic text-muted"
               >
                 i
               </button>
