@@ -7,12 +7,10 @@ import { useSession } from '../store/sessionStore';
 import {
   getCurrentExercise,
   getCurrentRecord,
-  getExerciseBoundaries,
   getExerciseProgress,
   getNextExercise,
   getSetBoundaries,
   getWorkoutProgress,
-  getWorkoutSetBoundaries,
 } from '../engine/selectors';
 import { autoRemainingMs, skipAction } from '../engine/auto';
 import { remainingMs } from '../engine/rest';
@@ -96,8 +94,6 @@ export function ActiveWorkout() {
   const nextExercise = getNextExercise(state);
   const progress = getWorkoutProgress(state);
   const exerciseProgress = getExerciseProgress(state);
-  const exerciseMarks = getExerciseBoundaries(state);
-  const workoutSetMarks = getWorkoutSetBoundaries(state);
   const setMarks = getSetBoundaries(state);
   /** The drawing belongs to a set. On a break it only competes with the clock. */
   const inSet = state.status === 'exercise_active' || (state.status === 'paused' && !pausedInRest);
@@ -247,8 +243,14 @@ export function ActiveWorkout() {
             <div className="mt-2">
               <ProgressBar
                 value={progress.ratio}
-                ticks={workoutSetMarks}
-                marks={exerciseMarks}
+                parts={state.exerciseRecords.map((r) => ({
+                  value: r.sets.length === 0 ? 0 : r.sets.filter((set) => set.completed).length / r.sets.length,
+                  weight: r.sets.length,
+                  ticks:
+                    r.sets.length > 1
+                      ? Array.from({ length: r.sets.length - 1 }, (_, i) => (i + 1) / r.sets.length)
+                      : [],
+                }))}
                 label={`${progress.done} of ${progress.total} sets${
                   progress.skipped > 0 ? `, ${progress.skipped} skipped` : ''
                 }`}

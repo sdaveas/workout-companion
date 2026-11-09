@@ -7,11 +7,9 @@ import { remainingMs, remainingSeconds } from './rest';
 import {
   getCurrentExercise,
   getCurrentRecord,
-  getExerciseBoundaries,
   getNextExercise,
   getSetBoundaries,
   getWorkoutProgress,
-  getWorkoutSetBoundaries,
 } from './selectors';
 import { summarize } from './summary';
 import { parseProgram } from '../schemas/program';
@@ -522,22 +520,6 @@ describe('guards', () => {
 });
 
 describe('progress checkpoints', () => {
-  it('splits the whole-workout bar at every exercise and every set', () => {
-    const s = started();
-    const counts = s.exerciseRecords.map((r) => r.sets.length);
-    const total = counts.reduce((a, b) => a + b, 0);
-
-    const exercises = getExerciseBoundaries(s);
-    const sets = getWorkoutSetBoundaries(s);
-
-    expect(exercises).toHaveLength(counts.length - 1);
-    expect(exercises.at(-1)).toBeCloseTo((total - counts[counts.length - 1]) / total);
-    expect(sets).toHaveLength(total - 1);
-    expect(sets[0]).toBeCloseTo(1 / total);
-    expect(sets.at(-1)).toBeCloseTo((total - 1) / total);
-    expect([...sets].sort((a, b) => a - b)).toEqual(sets);
-  });
-
   it('splits the exercise bar at every set of the current exercise', () => {
     const s = started();
     const sets = getCurrentRecord(s)!.sets.length;

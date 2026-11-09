@@ -1,13 +1,46 @@
-interface Props {
+interface Part {
   value: number;
-  label: string;
-  /** Faint notches: one per set. They only show once the fill has reached them. */
   ticks?: number[];
-  /** Strong notches: one per exercise. */
-  marks?: number[];
+  /** Relative width, e.g. how many sets the exercise holds. */
+  weight: number;
 }
 
-export function ProgressBar({ value, label, ticks = [], marks = [] }: Props) {
+function Track({ value, ticks = [], weight }: { value: number; ticks?: number[]; weight?: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
+  return (
+    <div
+      className="relative h-1 overflow-hidden rounded-full bg-line"
+      style={weight == null ? { width: '100%' } : { flexGrow: weight, flexBasis: 0 }}
+    >
+      <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${pct}%` }} />
+      {ticks.map((at) => (
+        <span
+          key={at}
+          aria-hidden
+          data-testid="tick"
+          className="absolute inset-y-0 w-px bg-ink/50"
+          style={{ left: `${at * 100}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * One bar for the whole session. With `parts` it becomes a row of chunks — one per
+ * exercise, sized by its set count — so the gaps mark where each exercise starts.
+ */
+export function ProgressBar({
+  value,
+  label,
+  ticks = [],
+  parts,
+}: {
+  value: number;
+  label: string;
+  ticks?: number[];
+  parts?: Part[];
+}) {
   const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
     <div
@@ -16,27 +49,15 @@ export function ProgressBar({ value, label, ticks = [], marks = [] }: Props) {
       aria-valuemax={100}
       aria-valuenow={pct}
       aria-valuetext={label}
-      className="relative h-1 w-full overflow-hidden rounded-full bg-line"
+      className={parts ? 'flex gap-1' : 'relative h-1 w-full overflow-hidden rounded-full bg-line'}
     >
-      <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${pct}%` }} />
-      {ticks.map((at) => (
-        <span
-          key={`t${at}`}
-          aria-hidden
-          data-testid="tick"
-          className="absolute inset-y-0 w-px bg-ink/50"
-          style={{ left: `${at * 100}%` }}
-        />
-      ))}
-      {marks.map((at) => (
-        <span
-          key={`m${at}`}
-          aria-hidden
-          data-testid="mark"
-          className="absolute inset-y-0 w-px bg-ink"
-          style={{ left: `${at * 100}%` }}
-        />
-      ))}
+      {parts ? (
+        parts.map((part, i) => (
+          <Track key={i} value={part.value} ticks={part.ticks} weight={part.weight} />
+        ))
+      ) : (
+        <Track value={value} ticks={ticks} />
+      )}
     </div>
   );
 }
