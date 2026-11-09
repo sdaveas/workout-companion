@@ -48,11 +48,11 @@ export function Programs() {
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between">
         <a
-          href={building ? '#/programs' : '#/'}
+          href={building && !editing ? '#/programs/new' : adding || building ? '#/programs' : '#/'}
           onClick={() => setEditing(null)}
           className="flex min-h-11 min-w-11 items-center text-sm text-muted"
         >
-          {building || adding ? '← Programs' : '← Home'}
+          {building && !editing ? '← Add a program' : adding || building ? '← Programs' : '← Home'}
         </a>
         <h1 className="text-sm font-semibold uppercase tracking-widest">
           {building ? (editing ? 'Edit program' : 'New program') : adding ? 'Add a program' : 'Programs'}
@@ -141,7 +141,8 @@ export function Programs() {
               type="button"
               onClick={() => {
                 clear();
-                build();
+                setEditing(null);
+                window.location.hash = '#/programs/new';
               }}
               className="h-11 flex-1 rounded-lg border border-line text-sm"
             >

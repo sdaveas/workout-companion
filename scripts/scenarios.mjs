@@ -1014,10 +1014,19 @@ const auditScreen = async (page, screen) => {
   const calm = (await page.getByRole('link', { name: 'Add a program' }).getAttribute('class')) ?? '';
   expect(!calm.includes('bg-accent'), 'the + steps back once something is saved');
 
-  await page.getByRole('link', { name: 'Add a program' }).click();
+  // "Add another" is the same door, not the builder.
+  await page.getByRole('button', { name: 'Add another' }).click();
+  await page.getByRole('link', { name: /Build your own/ }).waitFor();
+  expect(page.url().endsWith('#/programs/new'), '"Add another" opens the three ways in too');
+
   await page.getByRole('link', { name: /Build your own/ }).click();
   await page.waitForSelector('text=New program');
   expect(page.url().endsWith('#/programs/build'), 'Build your own goes to the builder');
+
+  // The builder's way back is the door it came from, not the list.
+  await page.getByRole('link', { name: /Add a program/ }).click();
+  await page.getByRole('link', { name: /Build your own/ }).waitFor();
+  expect(page.url().endsWith('#/programs/new'), 'the builder leads back to the door');
 
   await page.goto(`${BASE}/#/programs/new`);
   await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
