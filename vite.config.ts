@@ -33,7 +33,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2,webmanifest,md}'],
         runtimeCaching: [
           {
             // Exercise images, fetched once on import and then served from the cache.

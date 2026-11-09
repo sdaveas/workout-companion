@@ -840,9 +840,12 @@ const auditScreen = async (page, screen) => {
   const href = await page.getByRole('link', { name: 'Open ChatGPT' }).getAttribute('href');
   expect(href.startsWith('https://chatgpt.com/?q='), 'the coach opens in one tap');
   const asked = decodeURIComponent(href.split('?q=')[1]);
-  expect(asked.includes('Interview complete'), 'the prompt interviews before it writes programs');
-  expect(asked.includes('one json code block per training day'), 'the prompt asks for a block per day');
-  expect(asked.includes('#/p/'), 'the prompt shows how to link a program');
+  expect(asked.includes('/coach.md'), 'the prompt is one line pointing at the coach file');
+  expect(asked.length < 600, `the prompt is short enough to copy (${asked.length} chars)`);
+  const coach = await (await page.request.get(`${BASE}/coach.md`)).text();
+  expect(coach.includes('Interview complete'), 'the coach file interviews before it writes programs');
+  expect(coach.includes('one json code block per training day'), 'it asks for a block per day');
+  expect(coach.includes('#/p/'), 'it shows how to link a program');
 
   const day = (id, name, d) => program(id, name, d, [ex(`${id}-squat`, 'Squat', 3, 90)]);
   const answer = [

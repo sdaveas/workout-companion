@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
-import { chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
+import { COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { usePrograms } from '../store/programsStore';
@@ -52,6 +52,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
   const prompt = useMemo(chatPrompt, []);
   const url = useMemo(chatUrl, []);
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
+  const [copiedFull, setCopiedFull] = useState<'yes' | 'no' | null>(null);
   const [text, setText] = useState(initial ?? '');
   const [offers, setOffers] = useState<Program[]>(() => (initial ? readPrograms(initial).programs : []));
   const [error, setError] = useState<string | null>(() => (initial ? readPrograms(initial).error : null));
@@ -64,6 +65,18 @@ export function PasteProgram({ initial }: { initial?: string }) {
     } catch {
       // No clipboard permission: the prompt is on screen to select by hand.
       setCopied('no');
+    }
+  }
+
+  /** The whole coach, for an assistant that cannot open the link on its own. */
+  async function copyFull() {
+    try {
+      const response = await fetch(COACH_URL);
+      if (!response.ok) throw new Error(String(response.status));
+      await navigator.clipboard.writeText(await response.text());
+      setCopiedFull('yes');
+    } catch {
+      setCopiedFull('no');
     }
   }
 
@@ -157,8 +170,29 @@ export function PasteProgram({ initial }: { initial?: string }) {
               readOnly
               value={prompt}
               aria-label="The prompt to paste into ChatGPT"
-              className="mt-2 h-56 w-full rounded-lg bg-field p-3 font-mono text-base outline-none"
+              className="mt-2 h-32 w-full rounded-lg bg-field p-3 font-mono text-base outline-none"
             />
+            <button
+              type="button"
+              onClick={() => void copyFull()}
+              className="mt-2 h-11 w-full rounded-lg border border-line text-xs font-semibold"
+            >
+              Copy the full instructions instead
+            </button>
+            {copiedFull === 'yes' && (
+              <p role="status" className="mt-2 text-xs text-accent">
+                Copied the whole coach, for an assistant that cannot open links.
+              </p>
+            )}
+            {copiedFull === 'no' && (
+              <p role="status" className="mt-2 text-xs text-danger">
+                Could not fetch them.{' '}
+                <a href={COACH_URL} className="underline">
+                  Open the file
+                </a>{' '}
+                and copy it by hand.
+              </p>
+            )}
           </details>
         </section>
       )}

@@ -1,20 +1,35 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { describeError, parseProgram } from '../schemas/program';
 import { EXERCISE_LIBRARY } from '../data/exercises';
-import { chatPrompt, chatUrl, extractJsonBlocks } from './chatPrompt';
+import { ownFigure } from '../data/exerciseFigures';
+import { COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from './chatPrompt';
+
+/**
+ * The instructions are a file in the repo, not a string in the app: a chat assistant
+ * fetches them, so they must stay true on their own. These tests read the file itself.
+ */
+const coach = readFileSync(new URL('../../public/coach.md', import.meta.url), 'utf8');
 
 describe('the prompt handed to a chat model', () => {
   const prompt = chatPrompt();
 
-  it('turns the model into an interviewer that hands back programs', () => {
-    expect(prompt).toMatch(/Interview complete/);
-    expect(prompt).toMatch(/one json code block per training day/);
-    expect(prompt).toMatch(/Paste a program/);
-    expect(prompt).toContain('https://sdaveas.github.io/workout-companion/#/p/');
+  it('is short, and points at the instructions the app serves', () => {
+    expect(prompt).toContain(COACH_URL);
+    expect(prompt.length).toBeLessThan(600);
+    expect(decodeURIComponent(chatUrl().split('?q=')[1])).toBe(prompt);
+    expect(chatUrl().length).toBeLessThan(1500);
   });
 
+  it('asks for the one thing the answer must say', () => {
+    expect(prompt).toMatch(/Interview complete/);
+    expect(prompt).toMatch(/one json block per training day/);
+  });
+});
+
+describe('the coach file', () => {
   it('carries an example the importer accepts', () => {
-    const blocks = extractJsonBlocks(prompt);
+    const blocks = extractJsonBlocks(coach);
     expect(blocks).toHaveLength(1);
     const parsed = parseProgram(blocks[0]);
     if (!parsed.ok) {
@@ -25,20 +40,19 @@ describe('the prompt handed to a chat model', () => {
     expect(parsed.program.exercises[1].perHand).toBe(true);
   });
 
-  it('names the exercises that have a drawing, and only those', () => {
-    const list = prompt.slice(prompt.indexOf('EXERCISE NAMES WITH DRAWINGS'));
-    expect(list).toContain('Bench Press');
-    expect(list).toContain('Goblet Squat');
-    // "Leg Curl" has no art, so naming it would send the model off-list.
-    expect(list).not.toContain('Leg Curl');
-    expect(EXERCISE_LIBRARY.some((e) => e.name === 'Goblet Squat')).toBe(true);
+  it('says how a program gets back into the app', () => {
+    expect(coach).toContain('#/p/');
+    expect(coach).toContain('Paste a program');
+    expect(coach).toContain('Interview complete');
   });
 
-  it('fits in a link, so one tap can open the interview', () => {
-    const url = chatUrl();
-    expect(url.startsWith('https://chatgpt.com/?q=')).toBe(true);
-    expect(decodeURIComponent(url.split('?q=')[1])).toBe(prompt);
-    expect(url.length).toBeLessThan(6000);
+  it('names the exercises that have a drawing, and only those', () => {
+    const list = coach.slice(coach.indexOf('Exercise names with drawings'));
+    for (const exercise of EXERCISE_LIBRARY.filter((e) => ownFigure(e.name))) {
+      expect(list).toContain(exercise.name);
+    }
+    // "Leg Curl" has no art, so naming it would send the model off-list.
+    expect(list).not.toContain('Leg Curl');
   });
 });
 
