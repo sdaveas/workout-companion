@@ -840,7 +840,10 @@ const auditScreen = async (page, screen) => {
   const href = await page.getByRole('link', { name: 'Open ChatGPT' }).getAttribute('href');
   expect(href.startsWith('https://chatgpt.com/?q='), 'the coach opens in one tap');
   const asked = decodeURIComponent(href.split('?q=')[1]);
-  expect(asked.includes('/coach.md'), 'the prompt is one line pointing at the coach file');
+  expect(
+    asked.includes('github.com/sdaveas/workout-companion') && asked.includes('coach.md'),
+    'the prompt is one line pointing at the coach file a chat can read',
+  );
   expect(asked.length < 600, `the prompt is short enough to copy (${asked.length} chars)`);
   const coach = await (await page.request.get(`${BASE}/coach.md`)).text();
   expect(coach.includes('Interview complete'), 'the coach file interviews before it writes programs');

@@ -1,7 +1,15 @@
 import { APP_URL } from './programLink';
 
-/** The coach's instructions, served beside the app so one short line can load them. */
-export const COACH_URL = `${APP_URL}coach.md`;
+/**
+ * Where the prompt sends a chat assistant. Not the Pages copy: ChatGPT will not read
+ * a bare text/markdown response, but it reads the rendered file on GitHub. The app's
+ * own copy is `COACH_FILE` — same content, same origin, for fetching and for people.
+ */
+export const COACH_URL =
+  'https://github.com/sdaveas/workout-companion/blob/main/public/coach.md';
+
+/** The same file from this deploy. Used in-app, where a fetch has to stay on-origin. */
+export const COACH_FILE = `${APP_URL}coach.md`;
 
 /**
  * What gets copied, or handed to `?q=`. Deliberately short: the interview, the json

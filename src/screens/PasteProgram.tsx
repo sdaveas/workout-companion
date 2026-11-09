@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
-import { COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
+import { COACH_FILE, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { usePrograms } from '../store/programsStore';
@@ -71,7 +71,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
   /** The whole coach, for an assistant that cannot open the link on its own. */
   async function copyFull() {
     try {
-      const response = await fetch(COACH_URL);
+      const response = await fetch(COACH_FILE);
       if (!response.ok) throw new Error(String(response.status));
       await navigator.clipboard.writeText(await response.text());
       setCopiedFull('yes');
@@ -187,7 +187,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
             {copiedFull === 'no' && (
               <p role="status" className="mt-2 text-xs text-danger">
                 Could not fetch them.{' '}
-                <a href={COACH_URL} className="underline">
+                <a href={COACH_FILE} className="underline">
                   Open the file
                 </a>{' '}
                 and copy it by hand.

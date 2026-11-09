@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { describeError, parseProgram } from '../schemas/program';
 import { EXERCISE_LIBRARY } from '../data/exercises';
 import { ownFigure } from '../data/exerciseFigures';
-import { COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from './chatPrompt';
+import { COACH_FILE, COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from './chatPrompt';
 
 /**
  * The instructions are a file in the repo, not a string in the app: a chat assistant
@@ -14,8 +14,12 @@ const coach = readFileSync(new URL('../../public/coach.md', import.meta.url), 'u
 describe('the prompt handed to a chat model', () => {
   const prompt = chatPrompt();
 
-  it('is short, and points at the instructions the app serves', () => {
+  it('is short, and points at instructions a chat assistant can actually read', () => {
     expect(prompt).toContain(COACH_URL);
+    // A chat assistant will not read a bare markdown response, so the prompt goes to
+    // the rendered file; the app's own copy stays available for fetching.
+    expect(COACH_URL).toContain('github.com');
+    expect(COACH_FILE.endsWith('/coach.md')).toBe(true);
     expect(prompt.length).toBeLessThan(600);
     expect(decodeURIComponent(chatUrl().split('?q=')[1])).toBe(prompt);
     expect(chatUrl().length).toBeLessThan(1500);
