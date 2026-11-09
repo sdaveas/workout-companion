@@ -1,3 +1,4 @@
+import type { Program } from '../engine/types';
 import { APP_URL, decodeLinkPayload } from './programLink';
 
 /**
@@ -21,6 +22,19 @@ export function chatPrompt(): string {
   return `Open ${COACH_URL} and follow it exactly.
 
 Then interview me the way it asks, and when you have enough write "Interview complete" and one card per training day, then one json array holding all of them. Do not print links.`;
+}
+
+/**
+ * The other half of the coach: a program already saved here, handed over for a
+ * change. The answer comes back the same way an interview answer does — one json
+ * array — and the paste box offers to update this program instead of copying it.
+ */
+export function editPrompt(program: Program): string {
+  return `Here is one of my programs in Workout Companion.
+
+${program.raw}
+
+Ask me what I want to change about it. When I answer, give the whole updated program back as one json array, in the format used in ${COACH_URL}. Do not print links.`;
 }
 
 export function chatUrl(): string {

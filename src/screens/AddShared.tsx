@@ -6,6 +6,7 @@ import { conflictingProgram, renameProgram, suggestedName, uniqueId, uniqueName,
 import { decodePrograms } from '../lib/share';
 import { saveProgram } from '../storage/programs';
 import { exerciseCount, formatDay } from '../lib/format';
+import { withDays } from '../lib/schedule';
 import { NameConflict } from '../components/programs/NameConflict';
 
 const DAYS: Weekday[] = [
@@ -27,13 +28,6 @@ type Loaded =
  * The days live in the program's own JSON, so a backup or a re-export carries them.
  * `raw` is what a backup writes, so patching only the object would lose the schedule.
  */
-function withDays(program: Program, days: Weekday[]): Program {
-  const raw = JSON.parse(program.raw) as Record<string, unknown>;
-  if (days.length > 0) raw.schedule = { days };
-  else delete raw.schedule;
-  return { ...program, scheduleDays: days, raw: JSON.stringify(raw) };
-}
-
 function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[]) => void }) {
   return (
     <div className="mt-4">

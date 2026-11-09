@@ -5,6 +5,7 @@ import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
 import { COACH_FILE, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
+import { withDays } from '../lib/schedule';
 import { usePrograms } from '../store/programsStore';
 
 /** Every json block in the text, read as a program. Errors come back as words. */
@@ -94,11 +95,27 @@ export function PasteProgram({ initial }: { initial?: string }) {
     setError(result.error);
   }
 
-  async function add() {
+  /** A coach reply for a program already saved here: same id means a change, not a copy. */
+  const updating =
+    offers.length === 1 ? (programs.find((p) => p.id === offers[0].id) ?? null) : null;
+
+  async function add(mode: 'update' | 'copy' = 'update') {
     if (offers.length === 0) return;
     setBusy(true);
     setError(null);
     try {
+      if (mode === 'update' && updating) {
+        // The days stay as they were set here: a chat never sees them.
+        const next =
+          offers[0].scheduleDays.length === 0
+            ? withDays(offers[0], updating.scheduleDays)
+            : offers[0];
+        await saveProgram(next, { replace: true });
+        await load();
+        usePrograms.setState({ notice: `Program "${next.name}" updated.` });
+        window.location.hash = '#/programs';
+        return;
+      }
       const names = programs.map((p) => p.name);
       const ids = programs.map((p) => p.id);
       const added: string[] = [];
@@ -319,14 +336,33 @@ export function PasteProgram({ initial }: { initial?: string }) {
               </li>
             ))}
           </ul>
+          {updating && (
+            <p className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs">
+              This replaces the copy saved here. The days you picked stay as they are.
+            </p>
+          )}
           <button
             type="button"
             disabled={busy}
-            onClick={() => void add()}
+            onClick={() => void add(updating ? 'update' : 'copy')}
             className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
           >
-            {offers.length === 1 ? 'Add to my routines' : `Add all ${offers.length}`}
+            {updating
+              ? `Update "${updating.name}"`
+              : offers.length === 1
+                ? 'Add to my routines'
+                : `Add all ${offers.length}`}
           </button>
+          {updating && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void add('copy')}
+              className="mt-2 h-11 w-full text-xs text-muted underline"
+            >
+              Add a copy instead
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setOffers([])}

@@ -6,6 +6,7 @@ import { figureSlug } from '../data/exerciseFigures';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
 import { Banner } from '../components/ui/Banner';
 import { formatDays, formatWeight } from '../lib/format';
+import { editPrompt } from '../lib/chatPrompt';
 
 /**
  * A saved program, read-only: what is in it, what it looks like, and a way to start.
@@ -17,6 +18,17 @@ export function ProgramDetail({ id }: { id: string }) {
   const error = useSession((s) => s.error);
   const clearError = useSession((s) => s.clearError);
   const [starting, setStarting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copyForCoach() {
+    if (!program) return;
+    try {
+      await navigator.clipboard.writeText(editPrompt(program));
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   async function start() {
     if (!program) return;
@@ -103,6 +115,21 @@ export function ProgramDetail({ id }: { id: string }) {
       >
         {starting ? 'Getting ready…' : 'Start this program'}
       </button>
+
+      <section className="mt-4 rounded-xl border border-line bg-surface p-4">
+        <h2 className="text-sm font-semibold">Change it with a coach</h2>
+        <p className="mt-1 text-xs text-muted">
+          Copies this program and a message for ChatGPT. Paste the reply back in Programs → + → Talk
+          to a ChatGPT, and it offers to update this one instead of adding a copy.
+        </p>
+        <button
+          type="button"
+          onClick={() => void copyForCoach()}
+          className="mt-3 h-12 w-full rounded-xl border border-line text-sm font-semibold"
+        >
+          {copied ? 'Copied the program and the message' : 'Copy for ChatGPT'}
+        </button>
+      </section>
     </main>
   );
 }

@@ -985,7 +985,7 @@ const auditScreen = async (page, screen) => {
   await page.goto(`${BASE}/#/paste`);
   await page.getByLabel("The coach's answer").fill(day('day-a', 'Day A', 'monday'));
   await page.getByRole('button', { name: 'Read it' }).click();
-  await page.getByRole('button', { name: 'Add to my routines' }).click();
+  await page.getByRole('button', { name: 'Add a copy instead' }).click();
   await page.waitForSelector('text=Program "Day A (2)" added');
   expect(true, 'a repeated paste is saved as a copy');
 
@@ -1096,6 +1096,45 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
   await page.getByLabel("The coach's answer").waitFor();
   expect(page.url().endsWith('#/paste'), 'Talk to a ChatGPT opens the interview');
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 20: a coach edits a saved program
+{
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    permissions: ['clipboard-read', 'clipboard-write'],
+  });
+  const page = await context.newPage();
+  page.on('dialog', (d) => d.accept());
+  await saveProgram(page, program('edit-day', 'Edit Day', 'monday', [ex('sq', 'Squat'), ex('row', 'Row')]));
+
+  await page.goto(`${BASE}/#/program/edit-day`);
+  await page.getByRole('button', { name: 'Copy for ChatGPT' }).click();
+  await page.getByText('Copied the program').waitFor();
+  const sent = await page.evaluate(() => navigator.clipboard.readText());
+  expect(sent.includes('edit-day'), 'the saved program travels to the chat');
+  expect(/Ask me what I want to change/.test(sent), 'the message asks for a change, not a fresh plan');
+
+  // The coach answers with the same program, one exercise lighter: that is an edit.
+  await page.goto(`${BASE}/#/paste`);
+  await page
+    .getByLabel("The coach's answer")
+    .fill(program('edit-day', 'Edit Day', 'monday', [ex('sq', 'Squat')]));
+  await page.getByRole('button', { name: 'Read it' }).click();
+  expect(
+    await page.getByRole('button', { name: 'Update "Edit Day"' }).isVisible(),
+    'a program already saved here is offered as an update',
+  );
+  await page.getByRole('button', { name: 'Update "Edit Day"' }).click();
+  await page.waitForSelector('text=updated');
+  expect(await page.getByText('Saved (1)').isVisible(), 'it replaces instead of piling up a copy');
+  expect(
+    await page.getByText('1 exercise · mon').isVisible(),
+    'the new shape lands and the day it was given stays',
+  );
   await context.close();
 }
 
