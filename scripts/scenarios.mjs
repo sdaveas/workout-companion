@@ -869,54 +869,6 @@ const auditScreen = async (page, screen) => {
   await context.close();
 }
 
-// ---------------------------------------------------------------- scenario 17: auto-play
-{
-  const { context, page } = await fresh();
-  // Three sets with a real rest, so the clock has to end it while the audit runs.
-  await saveProgram(page, program('auto-day', 'Auto Day', null, [ex('sq', 'Squat', 3, 3)]));
-  await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: /Auto Day/ }).click();
-  await beginFromPreview(page);
-  await auditScreen(page, 'workout/auto');
-
-  const toggle = page.getByRole('button', { name: /Auto-play/ });
-  expect((await toggle.getAttribute('aria-pressed')) === 'false', 'auto-play starts off');
-  await toggle.click();
-  expect((await toggle.getAttribute('aria-pressed')) === 'true', 'auto-play turns on');
-
-  const nextSetWaits = (ms) =>
-    page.getByRole('button', { name: 'Complete set' }).waitFor({ timeout: ms }).then(() => true, () => false);
-
-  await page.getByRole('button', { name: 'Complete set' }).click();
-  expect(await nextSetWaits(8000), 'the rest ends and the next set waits with no tap');
-  expect((await progress(page)).startsWith('1 of'), 'the set that came back is the second one');
-
-  // A paused rest belongs to the user, not to the clock.
-  await page.getByRole('button', { name: 'Complete set' }).click();
-  await page.getByRole('button', { name: 'Pause' }).click();
-  await page.waitForTimeout(2500);
-  expect(
-    await page.getByText('Timer is frozen. Resume when you are ready.').isVisible(),
-    'a paused rest does not move on by itself',
-  );
-  await page.getByRole('button', { name: 'Resume' }).click();
-  expect(await nextSetWaits(8000), 'resuming hands the rest back to auto-play');
-  expect((await progress(page)).startsWith('2 of'), 'the third set is the one waiting');
-
-  // Finishing stays the user's call, even with nothing left to do.
-  await page.getByRole('button', { name: 'Complete set' }).click();
-  await page.waitForTimeout(4500);
-  const body = await page.textContent('body');
-  expect(body.includes('Last exercise done'), 'auto-play does not finish the workout');
-  expect(!page.url().includes('#/summary/'), 'the summary is not opened on its own');
-  await page.getByRole('button', { name: 'Finish workout' }).click();
-  expect(
-    await page.getByText('Share this workout?').waitFor({ timeout: 5000 }).then(() => true, () => false),
-    'the workout still finishes when the user says so',
-  );
-  await context.close();
-}
-
 await browser.close();
 const counts = results.reduce((acc, [k]) => ({ ...acc, [k]: (acc[k] ?? 0) + 1 }), {});
 console.log('\nSUMMARY', JSON.stringify(counts));

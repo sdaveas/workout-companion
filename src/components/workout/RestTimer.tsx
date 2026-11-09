@@ -10,14 +10,11 @@ export function RestTimer({
   state,
   now,
   variant = 'set',
-  auto = false,
 }: {
   state: WorkoutState;
   now: number;
   /** 'exercise' is the break between two exercises: no Pause, the footer moves on. */
   variant?: 'set' | 'exercise';
-  /** Auto-play is on, so the clock, not the user, ends this rest. */
-  auto?: boolean;
 }) {
   const between = variant === 'exercise';
   const dispatch = useSession((s) => s.dispatch);
@@ -48,13 +45,7 @@ export function RestTimer({
         role="status"
         aria-live={remaining > 0 ? 'off' : 'polite'}
       >
-        {remaining > 0
-          ? formatClock(remaining)
-          : auto
-            ? 'Starting the next set'
-            : between
-              ? 'Continue when ready'
-              : 'Start when ready'}
+        {remaining > 0 ? formatClock(remaining) : between ? 'Continue when ready' : 'Start when ready'}
       </p>
 
       {next && !between && (
@@ -86,7 +77,7 @@ export function RestTimer({
         </p>
       )}
       <p className="mt-6 text-xs text-muted">
-        {remainingSeconds(state, now)}s left · {auto ? 'moves on at zero' : 'rest never advances on its own'}
+        {remainingSeconds(state, now)}s left · rest never advances on its own
       </p>
     </div>
   );
