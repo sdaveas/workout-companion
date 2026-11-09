@@ -128,7 +128,11 @@ describe('execution cues', () => {
 describe('exercise illustrations', () => {
   const files = readdirSync('public/exercises');
   const slugsInFolder = new Set(
-    files.filter((f) => f.endsWith('.svg')).map((f) => f.replace(/-[01]\.svg$/, '')),
+    files
+      .filter((f) => f.endsWith('.svg'))
+      .map((f) => f.replace(/-[01]\.svg$/, ''))
+      // The break cue is not a lift, so it is not in the exercise art list.
+      .filter((slug) => slug !== 'rest'),
   );
 
   it('ships exactly the art it claims to ship', () => {

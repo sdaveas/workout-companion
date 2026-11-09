@@ -102,6 +102,8 @@ export function ActiveWorkout() {
   /** The drawing belongs to a set. On a break it only competes with the clock. */
   const inSet = state.status === 'exercise_active' || (state.status === 'paused' && !pausedInRest);
   const isReady = state.status === 'ready';
+  /** A break shows the rest cue instead of the lift's own drawing. */
+  const restingNow = !isReady && !inSet;
   const currentSet = record?.sets[state.currentSetIndex];
   const side = currentSet?.side ?? null;
   const restLeft = remainingMs(state, tickNow);
@@ -126,6 +128,8 @@ export function ActiveWorkout() {
       exercise.commonMistakes.length > 0 ||
       exercise.equipment.length > 0 ||
       exercise.muscleGroups.length > 0);
+  /** The (i) opens the form sheet, which now carries the animation too. */
+  const canExplain = hasDetails || !!slug || !!exercise?.imageUrl;
 
   const kicker = (() => {
     if (state.status === 'exercise_active')
@@ -319,9 +323,24 @@ export function ActiveWorkout() {
         )}
 
         {exercise && (
-          <h1 className="mt-2 shrink-0 truncate text-2xl font-semibold leading-tight" title={exercise.name}>
-            {exercise.name}
-          </h1>
+          <div className="mt-2 flex shrink-0 items-center gap-2">
+            <h1
+              className="min-w-0 flex-1 truncate text-2xl font-semibold leading-tight"
+              title={exercise.name}
+            >
+              {exercise.name}
+            </h1>
+            {canExplain && (
+              <button
+                type="button"
+                aria-label="How to do it"
+                onClick={() => setHowTo(true)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line font-serif text-sm italic text-muted"
+              >
+                i
+              </button>
+            )}
+          </div>
         )}
         {exercise && (
           <p className="shrink-0 truncate text-sm text-muted">
@@ -381,14 +400,10 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {hasDetails && exercise && (
-          <button
-            type="button"
-            onClick={() => setHowTo(true)}
-            className="mt-3 shrink-0 self-start text-xs uppercase tracking-widest text-muted underline underline-offset-4"
-          >
-            How to do it
-          </button>
+        {restingNow && (
+          <div data-testid="rest-figure" className="mt-3 flex min-h-0 flex-1 items-center justify-center">
+            <ExerciseMotion slug="rest" className="h-full max-h-44 w-full" />
+          </div>
         )}
       </section>
 
@@ -514,6 +529,15 @@ export function ActiveWorkout() {
               Close
             </Button>
           </div>
+          {slug ? (
+            <div className="mt-4">
+              <ExerciseMotion slug={slug} className="h-40 w-full" />
+            </div>
+          ) : exercise.imageUrl ? (
+            <div className="mt-4">
+              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-40 w-full" />
+            </div>
+          ) : null}
           <ExerciseDetails exercise={exercise} open />
         </div>
       )}

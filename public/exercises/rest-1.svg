@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Rest cue, pose 2 of 2: the chest settles as the breath goes out. -->
+  <g stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M228 166 L254 306" />
+    <path d="M236 192 L330 268 L338 350" />
+    <path d="M242 200 L322 278 L330 352" />
+    <path d="M254 306 L150 322 L170 414" />
+    <path d="M254 306 L182 300 L188 408" />
+  </g>
+  <circle cx="226" cy="126" r="42" fill="#000" />
+</svg>

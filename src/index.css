@@ -73,29 +73,25 @@ dialog::backdrop {
    with animations off you get the first pose, not a blank. */
 .exercise-frame {
   background-color: currentColor;
-  opacity: 0;
+  /* Both poses are painted at once; the pair takes turns by visibility. Opacity
+     would need the browser to re-rasterise the mask, which is what flickered. */
+  visibility: hidden;
   animation: exercise-flip 1.6s steps(1, end) infinite;
-  /* Phones re-rasterise a masked layer on every opacity change, which shows up as
-     the drawing blinking off twice a second. Promote each pose to its own layer so
-     the mask is painted once and the flip is a compositor-only change. */
-  will-change: opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 .exercise-frame-base {
-  opacity: 1;
+  visibility: visible;
   animation-name: exercise-flip-base;
 }
 
 @keyframes exercise-flip {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
+  0% { visibility: hidden; }
+  50% { visibility: visible; }
 }
 
 @keyframes exercise-flip-base {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
+  0% { visibility: visible; }
+  50% { visibility: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -105,5 +101,12 @@ dialog::backdrop {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Two still line drawings swapping in place, not motion across the screen. It is
+     the exercise form cue, so it keeps flipping even with motion turned down. */
+  .exercise-frame {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
   }
 }
