@@ -48,7 +48,7 @@ describe('the coach file', () => {
     // The reliable route on a phone: the answer travels by clipboard, not by link.
     expect(coach).toMatch(/paste it into Programs → \+ → Talk to a ChatGPT/);
     expect(coach).toContain('Interview complete');
-    expect(coach).toMatch(/json code block/);
+    expect(coach).toMatch(/code block tagged json/);
     // A link tapped in a chat opens a browser copy of the app, so the coach never
     // hands one out.
     expect(coach).not.toContain('#/p/');

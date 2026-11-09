@@ -34,12 +34,12 @@ Then one card per training day, and nothing else. A three-day week is three card
 
 - The first line is the program name and its day, in bold: "Workout A — Monday", "Upper Body — Thursday".
 - The second line is the exercise count, then how long the session takes. Estimate with the numbers you set: about a minute a set plus its rest.
-- Under those two lines goes that day's program, in the format at the bottom, as a single json code block. One block per day, used once.
+- Under those two lines goes that day's program, in the format at the bottom, as one fenced code block tagged json. One block per day, used once, so a three-day week has three blocks.
 - Never print a link to the app. A link tapped in this chat opens a browser copy of the app, and what I add there never reaches the app on my phone.
 
 After the last card, close with this, and nothing else:
 
-Your programs are ready above. Copy this whole answer (the copy button, or long-press → Copy), open Workout Companion, and paste it into Programs → + → Talk to a ChatGPT. The app reads the json for you, so it does not need to look readable.
+Your programs are ready above. Copy this reply in one go — the Copy button under it, or long-press → Copy — so all of its json blocks come along, not the interview above it. Then open Workout Companion → Programs → + → Talk to a ChatGPT and paste once: every block goes in together. The app reads the json for you, so it does not need to look readable.
 
 ## Format — one program
 {"schema_version":1,"id":"upper-a","name":"Upper A","description":"Pressing and pulling, twice a week","schedule":{"days":["monday","thursday"]},"exercises":[{"id":"bench-press","name":"Bench Press","sets":3,"reps":{"min":6,"max":10},"weight":{"value":60,"unit":"kg"},"rest_seconds":150,"instructions":["Feet planted, shoulder blades pulled back."],"muscle_groups":["chest","triceps"]},{"id":"dumbbell-row","name":"One-Arm Dumbbell Row","sets":3,"reps":{"min":8,"max":12},"per_hand":true,"rest_seconds":90}]}

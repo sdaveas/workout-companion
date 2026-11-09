@@ -868,7 +868,7 @@ const auditScreen = async (page, screen) => {
   expect(step2.includes('ring-accent'), 'Step 2 is the loudest thing when you come back');
   const coach = await (await page.request.get(`${BASE}/coach.md`)).text();
   expect(coach.includes('Interview complete'), 'the coach file interviews before it writes programs');
-  expect(coach.includes('json code block'), 'it asks for the program as a json block');
+  expect(coach.includes('code block tagged json'), 'it asks for one json block per day');
   expect(coach.includes('approximately 40 minutes'), 'each card says how long the session takes');
   expect(!coach.includes('#/p/'), 'it never hands out a link, which opens the wrong copy');
 
