@@ -39,7 +39,7 @@ Then one card per training day, and nothing else. A three-day week is three card
 
 After the last card, close with this, and nothing else:
 
-Your programs are ready above. Copy this reply in one go — the Copy button under it, or long-press → Copy — so all of its json blocks come along, not the interview above it. Then open Workout Companion → Programs → + → Talk to a ChatGPT and paste once: every block goes in together. The app reads the json for you, so it does not need to look readable.
+Your programs are ready above. Copy this reply in one go — the Copy button under it, or long-press → Copy — so all of its json blocks come along, not the interview above it. Then open Workout Companion and paste it into Programs → + → Talk to a ChatGPT, once: every block goes in together. The app reads the json for you, so it does not need to look readable.
 
 ## Format — one program
 {"schema_version":1,"id":"upper-a","name":"Upper A","description":"Pressing and pulling, twice a week","schedule":{"days":["monday","thursday"]},"exercises":[{"id":"bench-press","name":"Bench Press","sets":3,"reps":{"min":6,"max":10},"weight":{"value":60,"unit":"kg"},"rest_seconds":150,"instructions":["Feet planted, shoulder blades pulled back."],"muscle_groups":["chest","triceps"]},{"id":"dumbbell-row","name":"One-Arm Dumbbell Row","sets":3,"reps":{"min":8,"max":12},"per_hand":true,"rest_seconds":90}]}
