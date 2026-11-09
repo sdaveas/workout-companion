@@ -1,4 +1,4 @@
-import { libraryExercise, type MotionPattern } from './exercises';
+import { libraryExercise } from './exercises';
 
 /**
  * Illustrations come from bryllim/workout-guide (CC BY-SA 4.0), which builds on
@@ -45,20 +45,63 @@ const SHIPPED: Record<string, true> = Object.fromEntries(
   ].map((slug) => [slug, true as const]),
 );
 
-const PATTERN_SLUG: Record<MotionPattern, string> = {
-  push: 'bench-press',
-  pull: 'one-arm-dumbbell-row',
-  squat: 'goblet-squat',
-  hinge: 'deadlift',
-  curl: 'bicep-curl',
-  raise: 'lateral-raise',
-  core: 'plank',
-};
+/**
+ * A name the library does not carry gets the nearest drawing we actually ship. The
+ * first rule that matches wins, so the specific lifts sit above the families.
+ *
+ * `null` means the closest drawing would be a lie — a leg curl is not a bicep curl,
+ * and a blank card reads better than a picture of a different lift. This is the bug
+ * that made the workout show something random.
+ */
+export const FAMILY: Array<[RegExp, string | null]> = [
+  // Legs
+  [/calf/i, 'calf-raise'],
+  [/bulgarian|split squat/i, 'bulgarian-split-squat'],
+  [/lunge/i, 'walking-lunge'],
+  [/hip thrust|glute bridge/i, 'hip-thrust'],
+  [/leg ?curl|hamstring|nordic|leg extension/i, null],
+  [/romanian deadlift|\brdl\b/i, 'romanian-deadlift'],
+  [/kettlebell swing|\bswing\b/i, 'kettlebell-swing'],
+  [/back extension|hyperextension/i, 'back-extension'],
+  [/deadlift|good morning|rack pull|pull.?through/i, 'deadlift'],
+  [/squat|leg press|step.?up|pistol|skater|sissy|hack/i, 'squat'],
+  // Push
+  [/incline (bench|dumbbell|.*press)|incline push/i, 'incline-bench-press'],
+  [
+    /overhead press|shoulder press|military|arnold|standing dumbbell press|seated dumbbell press|push press|handstand|landmine press/i,
+    'overhead-press',
+  ],
+  [/bench press|chest press|floor press|smith machine press|machine press/i, 'bench-press'],
+  [/push.?up/i, 'push-up'],
+  [/^((assisted|weighted|bench|chest|chair|tricep|triceps|parallel bar) )?dips?$/i, 'bench-press'],
+  // Pull
+  [/pull.?up|chin.?up/i, 'pull-up'],
+  [/pulldown/i, 'lat-pulldown'],
+  [/face pull|rear delt|reverse fly|rear fly/i, 'face-pull'],
+  [/upright row/i, 'lateral-raise'],
+  [/row/i, 'seated-row'],
+  // Shoulders
+  [/front raise/i, 'front-raise'],
+  [/lateral raise|side raise/i, 'lateral-raise'],
+  // Arms
+  [/hammer curl/i, 'hammer-curl'],
+  [/overhead tricep|tricep extension|triceps extension|skull ?crusher|french press/i, 'overhead-tricep-extension'],
+  [/pushdown|kickback/i, 'tricep-pushdown'],
+  [/curl/i, 'bicep-curl'],
+  // Core, then the catch-alls
+  [/side plank/i, 'side-plank'],
+  [
+    /plank|crunch|sit.?up|leg raise|knee raise|hollow|tuck|v-up|russian twist|ab wheel|dead bug|mountain climber|bird dog|superman|flutter|toe touch/i,
+    'plank',
+  ],
+  [/\braise\b/i, 'lateral-raise'],
+];
 
-export function figureSlug(name: string, pattern: MotionPattern | null): string | null {
+export function figureSlug(name: string): string | null {
   const slug = libraryExercise(name)?.slug;
   if (slug && SHIPPED[slug]) return slug;
-  return pattern ? PATTERN_SLUG[pattern] : null;
+  for (const [re, target] of FAMILY) if (re.test(name)) return target;
+  return null;
 }
 
 /**

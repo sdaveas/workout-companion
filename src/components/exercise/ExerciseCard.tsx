@@ -3,7 +3,7 @@ import type { ProgramExercise } from '../../engine/types';
 import { ExerciseDetails } from './ExerciseDetails';
 import { ExerciseImage } from './ExerciseImage';
 import { ExerciseMotion } from './ExerciseMotion';
-import { muscleSummary, patternFor } from '../../data/exercises';
+import { muscleSummary } from '../../data/exercises';
 import { figureSlug } from '../../data/exerciseFigures';
 
 export function ExerciseCard({
@@ -21,7 +21,7 @@ export function ExerciseCard({
   totalSets: number;
   side?: 'left' | 'right' | null;
 }) {
-  const slug = figureSlug(exercise.name, patternFor(exercise.name));
+  const slug = figureSlug(exercise.name);
   const muscles = muscleSummary(exercise.name);
   return (
     <section aria-label={exercise.name}>

@@ -8,7 +8,7 @@ import {
   muscleSummary,
   patternFor,
 } from './exercises';
-import { SHIPPED_SLUGS, easterEggFor } from './exerciseFigures';
+import { FAMILY, SHIPPED_SLUGS, easterEggFor, figureSlug } from './exerciseFigures';
 
 describe('exercise library', () => {
   it('has unique names and usable defaults', () => {
@@ -136,6 +136,38 @@ describe('exercise illustrations', () => {
     for (const slug of SHIPPED_SLUGS) {
       expect(files, slug).toContain(`${slug}-0.svg`);
       expect(files, slug).toContain(`${slug}-1.svg`);
+    }
+  });
+});
+
+describe('which drawing an exercise gets', () => {
+  it('only ever points at art that exists', () => {
+    for (const [, target] of FAMILY) expect(target === null || SHIPPED_SLUGS.includes(target)).toBe(true);
+    for (const e of EXERCISE_LIBRARY) {
+      const slug = figureSlug(e.name);
+      if (slug) expect(SHIPPED_SLUGS, e.name).toContain(slug);
+    }
+  });
+
+  it('gives the near misses a drawing of the right lift', () => {
+    expect(figureSlug('Seated Calf Raise')).toBe('calf-raise');
+    expect(figureSlug('Weighted Chin-up')).toBe('pull-up');
+    expect(figureSlug('Machine Row')).toBe('seated-row');
+    expect(figureSlug('Dumbbell Seated Shoulder Press')).toBe('overhead-press');
+    expect(figureSlug('Skull Crusher')).toBe('overhead-tricep-extension');
+    expect(figureSlug('Hanging Knee Raise')).toBe('plank');
+    expect(figureSlug('Side Plank Hip Dip')).toBe('side-plank');
+    expect(figureSlug('Romanian Deadlift')).toBe('romanian-deadlift');
+  });
+
+  it('shows nothing rather than a different body part', () => {
+    // The old fallback was "any curl is a bicep curl", which drew a bicep for a leg curl.
+    for (const name of ['Leg Curl', 'Lying Leg Curl', 'Leg Extension', 'Nordic Hamstring Curl']) {
+      expect(figureSlug(name), name).toBeNull();
+    }
+    for (const e of EXERCISE_LIBRARY) {
+      if (figureSlug(e.name) !== 'bicep-curl') continue;
+      expect(e.name).not.toMatch(/leg|hamstring|extension/i);
     }
   });
 });
