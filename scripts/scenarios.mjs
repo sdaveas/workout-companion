@@ -174,7 +174,10 @@ const auditScreen = async (page, screen) => {
   expect(page.url().includes('#/summary/'), 'finishing opens the summary');
   await auditScreen(page, 'summary');
   expect(
-    await page.getByText('Share this workout?').isVisible(),
+    await page.getByText('Share this workout?').waitFor({ timeout: 5000 }).then(
+      () => true,
+      () => false,
+    ),
     'a finished workout offers to share the program',
   );
   await page.getByLabel(/ask again/).check();
@@ -826,7 +829,7 @@ const auditScreen = async (page, screen) => {
   await context.close();
 }
 
-// ---------------------------------------------------------------- scenario 16: paste a chat program
+// ---------------------------------------------------------------- scenario 16: the coach, the paste box, the link
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs`);
@@ -834,38 +837,106 @@ const auditScreen = async (page, screen) => {
   await page.getByLabel('The program JSON').waitFor();
   await auditScreen(page, 'paste');
 
-  const answer = `Here you go:\n\n\`\`\`json\n${JSON.stringify({
-    schema_version: 1,
-    id: 'pasted-day',
-    name: 'Pasted Day',
-    schedule: { days: ['monday', 'thursday'] },
-    exercises: [
-      { id: 'squat', name: 'Squat', sets: 3, reps: { min: 5, max: 5 }, rest_seconds: 120 },
-    ],
-  })}\n\`\`\`\n\nGood luck!`;
+  const href = await page.getByRole('link', { name: 'Open ChatGPT' }).getAttribute('href');
+  expect(href.startsWith('https://chatgpt.com/?q='), 'the coach opens in one tap');
+  const asked = decodeURIComponent(href.split('?q=')[1]);
+  expect(asked.includes('Interview complete'), 'the prompt interviews before it writes programs');
+  expect(asked.includes('one json code block per training day'), 'the prompt asks for a block per day');
+  expect(asked.includes('#/p/'), 'the prompt shows how to link a program');
+
+  const day = (id, name, d) => program(id, name, d, [ex(`${id}-squat`, 'Squat', 3, 90)]);
+  const answer = [
+    'Interview complete',
+    '```json',
+    day('day-a', 'Day A', 'monday'),
+    '```',
+    '```json',
+    day('day-b', 'Day B', 'wednesday'),
+    '```',
+    '```json',
+    day('day-c', 'Day C', 'friday'),
+    '```',
+    'Open Workout Companion, go to Programs, tap Paste a program.',
+  ].join('\n');
+
   await page.getByLabel('The program JSON').fill(answer);
+  await page.getByRole('button', { name: 'Read it' }).click();
+  expect(await page.getByText('3 programs').isVisible(), 'three days read back as three programs');
+  await page.getByRole('button', { name: 'Add all 3' }).click();
+  await page.waitForSelector('text=3 programs added');
+  expect(await page.getByText('Saved (3)').isVisible(), 'all three land in the list');
+
+  // A half-written program is named as the problem; the good ones still import.
+  await page.goto(`${BASE}/#/paste`);
+  await page
+    .getByLabel('The program JSON')
+    .fill(
+      `\`\`\`json\n${day('day-d', 'Day D', 'saturday')}\n\`\`\`\n\`\`\`json\n{"schema_version":1,"id":"broken","name":"Broken"}\n\`\`\``,
+    );
   await page.getByRole('button', { name: 'Read it' }).click();
   expect(
-    await page.getByText('Pasted Day', { exact: true }).isVisible(),
-    'the pasted program is read back',
+    (await page.getByRole('alert').innerText()).includes('1 of 2'),
+    'the importer says which block is broken',
   );
   await page.getByRole('button', { name: 'Add to my routines' }).click();
-  await page.waitForSelector('text=Program "Pasted Day" added');
-  expect(true, 'the pasted program is saved');
+  await page.waitForSelector('text=Program "Day D" added');
+  expect(true, 'the readable program still goes in');
 
-  // a second paste of the same thing must land beside it, never over it
+  // The same paste again lands beside it, never over it.
   await page.goto(`${BASE}/#/paste`);
-  await page.getByLabel('The program JSON').fill(answer);
+  await page.getByLabel('The program JSON').fill(day('day-a', 'Day A', 'monday'));
   await page.getByRole('button', { name: 'Read it' }).click();
   await page.getByRole('button', { name: 'Add to my routines' }).click();
-  await page.waitForSelector('text=Program "Pasted Day (2)" added');
+  await page.waitForSelector('text=Program "Day A (2)" added');
   expect(true, 'a repeated paste is saved as a copy');
 
-  await page.goto(`${BASE}/#/paste`);
-  await page.getByLabel('The program JSON').fill('{"schema_version":1,"id":"x","name":"X","exercises":[]}');
-  await page.getByRole('button', { name: 'Read it' }).click();
-  const complaint = await page.getByRole('alert').innerText();
-  expect(complaint.includes('at least one exercise'), `the importer explains the problem (${complaint})`);
+  // A link written by the coach opens the same preview with nothing to type.
+  await page.goto(`${BASE}/#/p/${encodeURIComponent(day('link-day', 'Linked Day', 'sunday'))}`);
+  await page.getByText('That is a program').waitFor();
+  expect(
+    await page.getByText('Linked Day', { exact: true }).isVisible(),
+    'a program link opens its own preview',
+  );
+  await page.getByRole('button', { name: 'Add to my routines' }).click();
+  await page.waitForSelector('text=Program "Linked Day" added');
+  expect(true, 'the linked program can be added');
+
+  // A truncated link says so instead of pretending.
+  await page.goto(`${BASE}/#/p/%7B%22schema_version%22`);
+  expect(
+    await page
+      .getByText('This link did not carry a program')
+      .waitFor({ timeout: 5000 })
+      .then(() => true, () => false),
+    'a broken link explains itself',
+  );
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 18: reading a saved program
+{
+  const { context, page } = await fresh();
+  await saveProgram(
+    page,
+    program('read-day', 'Read Day', 'monday', [ex('sq', 'Squat', 3, 90), ex('bp', 'Bench Press', 3, 120)]),
+  );
+  await page.goto(`${BASE}/#/programs`);
+  await page.getByRole('link', { name: /Read Day/ }).click();
+  await page.getByRole('button', { name: 'Start this program' }).waitFor();
+  expect(page.url().includes('#/program/read-day'), 'tapping a program name opens its overview');
+  await auditScreen(page, 'program/detail');
+
+  const body = await page.textContent('body');
+  expect(body.includes('Bench Press') && body.includes('Read Day'), 'the overview lists the whole program');
+  expect(body.includes('3 × 5'), 'sets and reps are spelled out');
+  expect(
+    (await page.locator('.exercise-frame').count()) > 0,
+    'the overview draws the exercises',
+  );
+
+  await page.getByRole('button', { name: 'Start this program' }).click();
+  await page.getByRole('button', { name: 'Start', exact: true }).waitFor();
+  expect(true, 'the overview can start the workout');
   await context.close();
 }
 

@@ -141,7 +141,7 @@ export function ProgramBuilder({
                       days: on ? draft.days.filter((x) => x !== d) : [...draft.days, d],
                     })
                   }
-                  className={`min-h-11 rounded-full border px-3 text-xs ${
+                  className={`min-h-11 min-w-11 rounded-full border px-3 text-xs ${
                     on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
                   }`}
                 >

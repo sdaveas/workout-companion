@@ -173,12 +173,12 @@ export function Programs() {
                 key={p.id}
                 className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface px-4 py-3"
               >
-                <div className="min-w-0 flex-1">
+                <a href={`#/program/${p.id}`} className="min-w-0 flex-1 py-1">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="text-xs text-muted">
                     {p.exercises.length} exercises · {formatDays(p.scheduleDays)}
                   </p>
-                </div>
+                </a>
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"

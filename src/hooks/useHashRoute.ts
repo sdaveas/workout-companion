@@ -6,7 +6,10 @@ export interface Route {
 }
 
 function parse(hash: string): Route {
-  const [name = '', param = null] = hash.replace(/^#\/?/, '').split('/');
+  const path = hash.replace(/^#\/?/, '');
+  // A program carried in a link is raw json, and json holds slashes: keep it whole.
+  if (path.startsWith('p/')) return { name: 'p', param: path.slice(2) };
+  const [name = '', param = null] = path.split('/');
   return { name: name || 'home', param };
 }
 

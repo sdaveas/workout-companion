@@ -6,9 +6,11 @@ import { Credits } from './screens/Credits';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { PasteProgram } from './screens/PasteProgram';
+import { ProgramDetail } from './screens/ProgramDetail';
 import { Programs } from './screens/Programs';
 import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
+import { decodeLinkPayload } from './lib/programLink';
 import { usePrograms } from './store/programsStore';
 import { useSession } from './store/sessionStore';
 
@@ -30,6 +32,8 @@ export function App() {
       {route.name === 'programs' && <Programs />}
       {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
       {route.name === 'paste' && <PasteProgram />}
+      {route.name === 'p' && <PasteProgram initial={decodeLinkPayload(route.param ?? '')} />}
+      {route.name === 'program' && <ProgramDetail id={route.param ?? ''} />}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
       {route.name === 'history' && <History />}
