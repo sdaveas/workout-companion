@@ -69,12 +69,11 @@ dialog::backdrop {
 
 /* The illustration is a mask, so it takes the colour of its container. Two poses of
    the same lift then flip like a GIF. Each layer paints only its own lines, so the
-   pair cannot be stacked — both would show through. They take turns instead, and
-   with animations off you get the first pose, not a blank. */
+   pair cannot be stacked — both would show through. They take turns by visibility:
+   no opacity animation on a masked layer (that is what flashed on phones), and if
+   animations never run the first pose stays up, so the frame is never empty. */
 .exercise-frame {
   background-color: currentColor;
-  /* Both poses are painted at once; the pair takes turns by visibility. Opacity
-     would need the browser to re-rasterise the mask, which is what flickered. */
   visibility: hidden;
   animation: exercise-flip 1.6s steps(1, end) infinite;
 }

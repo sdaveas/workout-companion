@@ -376,17 +376,13 @@ export function ActiveWorkout() {
         )}
 
         {exercise && inSet && (
-          <>
+          <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
             {slug ? (
-              <div className="mt-2 hidden shrink-0 [@media(min-height:700px)]:block">
-                <ExerciseMotion slug={slug} className="h-20 w-full" />
-              </div>
+              <ExerciseMotion slug={slug} className="h-full max-h-40 w-full" />
             ) : (
-              <div className="mt-2 hidden shrink-0 [@media(min-height:700px)]:block">
-                <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-20 w-full" />
-              </div>
+              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-40 w-full" />
             )}
-          </>
+          </div>
         )}
 
         {exercise && state.draft && state.status === 'exercise_active' && (
