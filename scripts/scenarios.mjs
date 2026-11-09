@@ -854,14 +854,23 @@ const auditScreen = async (page, screen) => {
     'the prompt is one line pointing at the coach file a chat can read',
   );
   expect(asked.length < 600, `the prompt is short enough to copy (${asked.length} chars)`);
+
+  // Going to ChatGPT marks Step 2, so the way back is obvious.
+  await page.getByRole('link', { name: 'Open ChatGPT' }).evaluate((el) => {
+    el.addEventListener('click', (e) => e.preventDefault(), { once: true });
+    el.click();
+  });
+  expect(
+    await page.getByText('the answer goes in Step 2', { exact: false }).isVisible(),
+    'leaving for ChatGPT points at Step 2',
+  );
+  const step2 = (await page.locator('section', { hasText: 'Paste the answer' }).getAttribute('class')) ?? '';
+  expect(step2.includes('ring-accent'), 'Step 2 is the loudest thing when you come back');
   const coach = await (await page.request.get(`${BASE}/coach.md`)).text();
   expect(coach.includes('Interview complete'), 'the coach file interviews before it writes programs');
-  expect(
-    coach.includes('[Open Workout A]('),
-    'it asks for a card whose link opens the program',
-  );
+  expect(coach.includes('json code block'), 'it asks for the program as a json block');
   expect(coach.includes('approximately 40 minutes'), 'each card says how long the session takes');
-  expect(coach.includes('#/p/'), 'it shows how to link a program');
+  expect(!coach.includes('#/p/'), 'it never hands out a link, which opens the wrong copy');
 
   const day = (id, name, d) => program(id, name, d, [ex(`${id}-squat`, 'Squat', 3, 90)]);
   const answer = [

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
@@ -57,6 +57,9 @@ export function PasteProgram({ initial }: { initial?: string }) {
   const [offers, setOffers] = useState<Program[]>(() => (initial ? readPrograms(initial).programs : []));
   const [error, setError] = useState<string | null>(() => (initial ? readPrograms(initial).error : null));
   const [busy, setBusy] = useState(false);
+  // A trip to ChatGPT is why Step 2 exists; mark it so the way back is obvious.
+  const [sent, setSent] = useState(false);
+  const answer = useRef<HTMLTextAreaElement>(null);
   // A chat app opens links in its own browser; an installed app has its own storage.
   const standalone =
     typeof window !== 'undefined' &&
@@ -139,17 +142,29 @@ export function PasteProgram({ initial }: { initial?: string }) {
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 1</p>
           <h2 className="mt-1 text-lg font-semibold">Talk to a coach</h2>
           <p className="mt-1 text-sm text-muted">
-            ChatGPT asks about your goal, days, equipment and time, then hands back one tappable
-            link per training day. Each one opens the app with that session ready to add.
+            ChatGPT asks about your goal, days, equipment and time, then hands back one card per
+            training day, each followed by that day's program. Copy the whole answer and paste it
+            below.
           </p>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              setSent(true);
+              // The app keeps its place while the chat opens over it, so Step 2 is
+              // already in view when the reader comes back.
+              requestAnimationFrame(() => answer.current?.scrollIntoView({ block: 'center' }));
+            }}
             className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-accent font-semibold text-ink"
           >
             Open ChatGPT
           </a>
+          {sent && (
+            <p role="status" className="mt-2 text-xs text-accent">
+              Back from ChatGPT? The answer goes in Step 2.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => void copy()}
@@ -223,7 +238,11 @@ export function PasteProgram({ initial }: { initial?: string }) {
       )}
 
       {!initial && (
-        <section className="mt-4 rounded-xl border border-line bg-surface p-4">
+        <section
+          className={`mt-4 rounded-xl border bg-surface p-4 ${
+            sent && !text ? 'border-accent ring-2 ring-accent' : 'border-line'
+          }`}
+        >
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 2</p>
           <h2 className="mt-1 text-lg font-semibold">Paste the answer</h2>
           <p className="mt-1 text-sm text-muted">
@@ -231,10 +250,11 @@ export function PasteProgram({ initial }: { initial?: string }) {
             json block. A three-day week goes in one go.
           </p>
           <textarea
+            ref={answer}
             value={text}
             onChange={(e) => setText(e.target.value)}
             aria-label="The coach's answer"
-            placeholder={'**Workout A — Monday**\n7 exercises · approximately 40 minutes\nOpen Workout A: https://…'}
+            placeholder={'**Workout A — Monday**\n7 exercises · approximately 40 minutes\n{"schema_version":1,…}'}
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}

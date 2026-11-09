@@ -29,19 +29,17 @@ Then one card per training day, and nothing else. A three-day week is three card
 
 **Workout A — Monday**
 7 exercises · approximately 40 minutes
-[Open Workout A](https://sdaveas.github.io/workout-companion/#/p/THE-JSON)
+
+...with that day's program under it, as one json code block.
 
 - The first line is the program name and its day, in bold: "Workout A — Monday", "Upper Body — Thursday".
 - The second line is the exercise count, then how long the session takes. Estimate with the numbers you set: about a minute a set plus its rest.
-- The third line is the link, and it is the button. Text: "Open <the same name>". Nothing goes under it.
-- The json rides inside the link and nowhere else. Delete every space and line break first, then percent-encode it: every character that is not a letter, a digit, or one of `-_.~` becomes `%` and its two hex digits, so a quote is `%22`, a space is `%20`, a brace is `%7B`. A percent-encoded link looks like:
-  `https://sdaveas.github.io/workout-companion/#/p/%7B%22schema_version%22%3A1%2C...`
-  The app reads anything before the `#` as noise, so extra tracking parameters are fine.
-- Never print the json as a code block, and never print it twice.
+- Under those two lines goes that day's program, in the format at the bottom, as a single json code block. One block per day, used once.
+- Never print a link to the app. A link tapped in this chat opens a browser copy of the app, and what I add there never reaches the app on my phone.
 
 After the last card, close with this, and nothing else:
 
-On a phone: copy this whole answer (long-press → Copy), open Workout Companion, and paste it into Programs → + → Talk to a ChatGPT. A link tapped inside this chat opens a browser copy of the app, where what you add may never reach your installed app.
+Your programs are ready above. Copy this whole answer (the copy button, or long-press → Copy), open Workout Companion, and paste it into Programs → + → Talk to a ChatGPT. The app reads the json for you, so it does not need to look readable.
 
 ## Format — one program
 {"schema_version":1,"id":"upper-a","name":"Upper A","description":"Pressing and pulling, twice a week","schedule":{"days":["monday","thursday"]},"exercises":[{"id":"bench-press","name":"Bench Press","sets":3,"reps":{"min":6,"max":10},"weight":{"value":60,"unit":"kg"},"rest_seconds":150,"instructions":["Feet planted, shoulder blades pulled back."],"muscle_groups":["chest","triceps"]},{"id":"dumbbell-row","name":"One-Arm Dumbbell Row","sets":3,"reps":{"min":8,"max":12},"per_hand":true,"rest_seconds":90}]}
