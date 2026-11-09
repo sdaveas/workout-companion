@@ -1,6 +1,6 @@
 import type { Program, ProgramExercise } from '../engine/types';
-import { encodeProgram, shareUrl } from './share';
-import { buildBackup } from './backup';
+import { encodeProgram, encodePrograms, shareUrl } from './share';
+import { exerciseCount } from './format';
 
 /** Rows the message lists before it folds the rest into "and N more". */
 export const MAX_ROWS = 8;
@@ -46,28 +46,31 @@ export async function shareProgram(program: Program): Promise<string | null> {
   return `Link for “${program.name}” copied.`;
 }
 
+/** Several programs, as the caption above one link. */
+export function shareManyMessage(programs: Program[], url: string): string {
+  const rows = programs.map((p) => `· ${p.name} — ${exerciseCount(p.exercises.length)}`);
+  return [`${programs.length} programs`, ...rows, '', url].join('\n');
+}
+
 /**
- * One program travels as the compact link. Several travel as a backup file — the
- * same envelope Settings exports and the Import door reads, so a plan moves phone
- * to phone with no new format. Where files cannot be shared, the json is copied
- * and the paste box reads it just as well.
+ * One program travels as the compact link it always did. Several travel as one
+ * link in the same wire form, so the receiver still taps once and still gets a
+ * picture of what is inside before adding anything.
  */
 export async function sharePrograms(programs: Program[]): Promise<string | null> {
   if (programs.length === 1) return shareProgram(programs[0]);
 
-  const backup = buildBackup(programs, [], Date.now());
-  const json = JSON.stringify(backup);
-  const names = programs.map((p) => p.name).join(', ');
-  const file = new File([json], 'workout-companion-programs.json', { type: 'application/json' });
+  const url = shareUrl(await encodePrograms(programs));
+  const text = shareManyMessage(programs, url);
 
-  if (navigator.canShare?.({ files: [file] })) {
+  if (navigator.share) {
     try {
-      await navigator.share({ files: [file], title: `${programs.length} programs`, text: names });
+      await navigator.share({ title: `${programs.length} programs`, text });
       return null;
     } catch (err) {
       if ((err as Error).name === 'AbortError') return null;
     }
   }
-  await navigator.clipboard.writeText(json);
-  return `${programs.length} programs copied. Paste them into a chat, or into Import a program on the other phone.`;
+  await navigator.clipboard.writeText(url);
+  return `${programs.length} programs copied as one link.`;
 }

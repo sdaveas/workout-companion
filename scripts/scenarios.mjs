@@ -630,6 +630,40 @@ const auditScreen = async (page, screen) => {
   await b.getByRole('button', { name: 'Save with this name' }).click();
   await b.waitForSelector('text=Saved (3)');
   expect(true, 'saving under the suggested name keeps every program');
+
+  // Several programs ride one link: pick two, tap once, both arrive.
+  const bundle = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    permissions: ['clipboard-read', 'clipboard-write'],
+  });
+  const c = await bundle.newPage();
+  c.on('dialog', (d) => d.accept());
+  await saveProgram(c, program('a-day', 'A Day', 'monday', [ex('squat', 'Squat')]));
+  await saveProgram(c, program('b-day', 'B Day', 'wednesday', [ex('row', 'Row')]));
+  await c.goto(`${BASE}/#/programs`);
+  await c.getByRole('button', { name: 'Select' }).click();
+  await c.getByRole('button', { name: /A Day/ }).click();
+  await c.getByRole('button', { name: /B Day/ }).click();
+  await c.getByRole('button', { name: 'Share 2' }).click();
+  await c.waitForSelector('text=copied as one link');
+  const bundleLink = await c.evaluate(() => navigator.clipboard.readText());
+  expect(
+    bundleLink.includes('#/add/') && bundleLink.length < 1200,
+    `two programs fit in one link (${bundleLink.length} chars)`,
+  );
+  await bundle.close();
+
+  await b.goto(bundleLink);
+  await b.getByText('Someone shared these').waitFor();
+  expect(
+    await b.getByRole('button', { name: 'Add all 2' }).isVisible(),
+    'a bundle asks once, for both',
+  );
+  await b.getByRole('button', { name: 'Add all 2' }).click();
+  await b.waitForSelector('text=2 programs added');
+  expect(await b.getByText('Saved (5)').isVisible(), 'both programs land at once');
   await receiver.close();
 }
 

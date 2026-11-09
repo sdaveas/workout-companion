@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Program } from '../engine/types';
 import { parseProgram } from '../schemas/program';
-import { decodeProgram, encodeProgram, shareUrl } from './share';
+import { decodeProgram, decodePrograms, encodeProgram, encodePrograms, shareUrl } from './share';
 
 const fixture = readFileSync(new URL('../fixtures/workout-b.json', import.meta.url), 'utf8');
 const parsed = parseProgram(fixture);
@@ -32,6 +32,24 @@ describe('share link', () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
     // 6 exercises used to cost ~1000 characters of payload; the compact wire form is ~200.
     expect(url.length).toBeLessThan(300);
+  });
+
+  it('carries several programs in one link, in one tap for the receiver', async () => {
+    const second: Program = { ...program, id: 'workout-b', name: 'Workout B' };
+    const url = shareUrl(await encodePrograms([program, second]), 'https://example.com/app/');
+    expect(url.length).toBeLessThan(500);
+    const back = await decodePrograms(url.split('#/add/')[1]);
+    expect(back.ok).toBe(true);
+    if (!back.ok) return;
+    expect(back.programs.map((p) => p.name)).toEqual([program.name, 'Workout B']);
+    expect(back.programs[1].exercises.length).toBe(program.exercises.length);
+  });
+
+  it('keeps reading a single-program link written before bundles existed', async () => {
+    const back = await decodePrograms(await encodeProgram(program));
+    expect(back.ok).toBe(true);
+    if (!back.ok) return;
+    expect(back.programs).toHaveLength(1);
   });
 
   it('rejects a link that is not a program', async () => {

@@ -115,8 +115,13 @@ async function unpack(bytes: Uint8Array): Promise<Uint8Array> {
 }
 
 export async function encodeProgram(program: Program): Promise<string> {
-  const json = JSON.stringify(toWire(program));
-  return VERSION + toB64url(await pack(new TextEncoder().encode(json)));
+  return encodePrograms([program]);
+}
+
+/** Several programs in one link: the same wire rows, one array around them. */
+export async function encodePrograms(programs: Program[]): Promise<string> {
+  const wire = programs.length === 1 ? toWire(programs[0]) : programs.map(toWire);
+  return VERSION + toB64url(await pack(new TextEncoder().encode(JSON.stringify(wire))));
 }
 
 async function readPayload(body: string): Promise<unknown> {
@@ -124,7 +129,12 @@ async function readPayload(body: string): Promise<unknown> {
   return JSON.parse(text) as unknown;
 }
 
-export async function decodeProgram(payload: string): Promise<ParseResult> {
+export type SharedPrograms =
+  | { ok: true; programs: Program[] }
+  | Extract<ParseResult, { ok: false }>;
+
+/** One link, one program or many. A single program reads exactly as it always did. */
+export async function decodePrograms(payload: string): Promise<SharedPrograms> {
   let data: unknown;
   try {
     // Version-less links predate the compact format; they carry the program JSON itself.
@@ -136,19 +146,58 @@ export async function decodeProgram(payload: string): Promise<ParseResult> {
     try {
       data = await readPayload(payload);
     } catch {
-      return { ok: false, error: { kind: 'invalid_json', message: 'This is not a program link.' } };
+      return notAProgram();
     }
   }
 
-  if (!Array.isArray(data)) return parseProgram(JSON.stringify(data));
-
-  try {
-    const json = fromWire(data);
-    if (json == null) return { ok: false, error: { kind: 'invalid_json', message: 'This is not a program link.' } };
-    return parseProgram(json);
-  } catch {
-    return { ok: false, error: { kind: 'invalid_json', message: 'That link is from an older version.' } };
+  if (!Array.isArray(data)) {
+    const parsed = parseProgram(JSON.stringify(data));
+    return parsed.ok ? { ok: true, programs: [parsed.program] } : parsed;
   }
+
+  // Program JSON itself, or an array of it, from a link written before the wire form.
+  if (data.length > 0 && typeof data[0] === 'object' && !Array.isArray(data[0])) {
+    const programs: Program[] = [];
+    for (const item of data) {
+      const parsed = parseProgram(JSON.stringify(item));
+      if (!parsed.ok) return parsed;
+      programs.push(parsed.program);
+    }
+    return { ok: true, programs };
+  }
+
+  // Wire rows: one tuple, or an array of tuples when several programs were shared.
+  const tuples = Array.isArray(data[0]) ? data : [data];
+  const programs: Program[] = [];
+  for (const [index, tuple] of tuples.entries()) {
+    try {
+      const json = fromWire(tuple);
+      if (json == null) return notAProgram();
+      const parsed = parseProgram(json);
+      if (!parsed.ok) return parsed;
+      programs.push(parsed.program);
+    } catch {
+      return {
+        ok: false,
+        error: {
+          kind: 'invalid_json',
+          message: tuples.length === 1 ? 'That link is from an older version.' : `Program ${index + 1} in that link is not readable.`,
+        },
+      };
+    }
+  }
+  return programs.length > 0 ? { ok: true, programs } : notAProgram();
+}
+
+function notAProgram(): SharedPrograms {
+  return { ok: false, error: { kind: 'invalid_json', message: 'This is not a program link.' } };
+}
+
+/** The first program in a link — the older, single-program callers. */
+export async function decodeProgram(payload: string): Promise<ParseResult> {
+  const result = await decodePrograms(payload);
+  if (!result.ok) return result;
+  return { ok: true, program: result.programs[0] };
 }
 
 /**
