@@ -27,7 +27,7 @@ describe('the prompt handed to a chat model', () => {
 
   it('asks for the one thing the answer must say', () => {
     expect(prompt).toMatch(/Interview complete/);
-    expect(prompt).toMatch(/one json block per training day/);
+    expect(prompt).toMatch(/one card per training day/);
   });
 });
 
