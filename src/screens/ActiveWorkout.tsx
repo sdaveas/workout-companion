@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { navigate } from '../hooks/useHashRoute';
 import { useNow } from '../hooks/useNow';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -6,6 +6,7 @@ import { useSession } from '../store/sessionStore';
 import { getCurrentExercise, getCurrentRecord, getNextExercise, getWorkoutProgress } from '../engine/selectors';
 import { remainingMs } from '../engine/rest';
 import { elapsedMs } from '../engine/time';
+import { autoStep } from '../lib/autoPlay';
 import { formatClock } from '../lib/format';
 import { ExerciseCard } from '../components/exercise/ExerciseCard';
 import { RestTimer } from '../components/workout/RestTimer';
@@ -15,6 +16,9 @@ import { NextUp } from '../components/workout/NextUp';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 
+/** "Hide the toggle and it stays on" — the mode belongs to the phone, not the session. */
+const AUTO_KEY = 'wc:autoPlay';
+
 export function ActiveWorkout() {
   const state = useSession((s) => s.state);
   const error = useSession((s) => s.error);
@@ -23,10 +27,16 @@ export function ActiveWorkout() {
   const reset = useSession((s) => s.reset);
   const startWorkout = useSession((s) => s.startWorkout);
   const [ending, setEnding] = useState(false);
+  // Auto-play: rests end themselves so the workout runs in one piece. Off unless asked.
+  const [auto, setAuto] = useState(() => localStorage.getItem(AUTO_KEY) === '1');
 
   const pausedInRest = state?.status === 'paused' && state.pausedFrom === 'resting';
   const now = useNow(1000, !!state);
-  const restNow = useNow(250, state?.status === 'resting' || pausedInRest);
+  // exercise_complete carries the break between two exercises, so it needs a tick too.
+  const restNow = useNow(
+    250,
+    state?.status === 'resting' || state?.status === 'exercise_complete' || pausedInRest,
+  );
 
   useEffect(() => {
     if (!state) navigate('#/');
@@ -37,11 +47,36 @@ export function ActiveWorkout() {
     if (state?.status === 'abandoned') navigate('#/');
   }, [state?.status, state?.sessionId]);
 
+  // Auto-play presses the single button a rest leads to. The ref stops a StrictMode
+  // double-run, or the same state rendering twice, from pressing it twice.
+  const autoFired = useRef<string | null>(null);
+  const step = autoStep(state, restNow, auto);
+  const stepKey =
+    state && step
+      ? `${step}:${state.restCount}:${state.currentExerciseIndex}:${state.currentSetIndex}`
+      : null;
+
+  useEffect(() => {
+    if (!step || !stepKey) {
+      autoFired.current = null;
+      return;
+    }
+    if (autoFired.current === stepKey) return;
+    autoFired.current = stepKey;
+    dispatch({ type: step });
+  }, [step, stepKey, dispatch]);
+
   useWakeLock(
     state?.status === 'exercise_active' || state?.status === 'resting' || state?.status === 'paused',
   );
 
   if (!state) return null;
+
+  function toggleAuto() {
+    const next = !auto;
+    setAuto(next);
+    localStorage.setItem(AUTO_KEY, next ? '1' : '0');
+  }
 
   const exercise = getCurrentExercise(state);
   const record = getCurrentRecord(state);
@@ -139,6 +174,24 @@ export function ActiveWorkout() {
         )}
       </header>
 
+      <div className="mt-3 flex items-center gap-3 px-5">
+        <button
+          type="button"
+          aria-pressed={auto}
+          onClick={toggleAuto}
+          className={`h-11 shrink-0 rounded-xl border px-4 text-sm ${
+            auto ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
+          }`}
+        >
+          Auto-play {auto ? 'on' : 'off'}
+        </button>
+        <p className="text-xs leading-tight text-muted">
+          {auto
+            ? 'Rests end on their own. Skip and End still work.'
+            : 'Nothing moves until you press.'}
+        </p>
+      </div>
+
       {error && <Banner message={error} onDismiss={clearError} />}
 
       <div className="flex-1 overflow-y-auto px-5 pb-6 pt-6">
@@ -199,7 +252,7 @@ export function ActiveWorkout() {
           </>
         )}
 
-        {state.status === 'resting' && <RestTimer state={state} now={restNow} />}
+        {state.status === 'resting' && <RestTimer state={state} now={restNow} auto={auto} />}
 
         {state.status === 'paused' && (
           <div className="pt-8 text-center">
@@ -223,7 +276,7 @@ export function ActiveWorkout() {
             </p>
             {nextExercise && state.restStartedAt != null && (
               <div className="mt-4">
-                <RestTimer state={state} now={restNow} variant="exercise" />
+                <RestTimer state={state} now={restNow} variant="exercise" auto={auto} />
               </div>
             )}
             <div className="mt-6 rounded-2xl border border-line bg-surface p-5">
