@@ -26,7 +26,11 @@ export function ActiveWorkout() {
 
   const pausedInRest = state?.status === 'paused' && state.pausedFrom === 'resting';
   const now = useNow(1000, !!state);
-  const restNow = useNow(250, state?.status === 'resting' || pausedInRest);
+  // exercise_complete carries the break between two exercises, so it needs a tick too.
+  const restNow = useNow(
+    250,
+    state?.status === 'resting' || state?.status === 'exercise_complete' || pausedInRest,
+  );
 
   useEffect(() => {
     if (!state) navigate('#/');
