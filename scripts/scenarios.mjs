@@ -142,10 +142,15 @@ const auditScreen = async (page, screen) => {
   await page.goto(`${BASE}/#/`);
   await page.waitForSelector('text=Ready to train');
   await page.waitForSelector('text=Get started');
-  expect(await page.getByRole('link', { name: 'Build a program' }).isVisible(), 'first run offers the builder');
+  expect(
+    await page.getByRole('link', { name: 'Build your first program' }).isVisible(),
+    'first run offers a first program',
+  );
   await auditScreen(page, 'home/first-run');
 
-  await page.getByRole('link', { name: 'Build a program' }).click();
+  await page.getByRole('link', { name: 'Build your first program' }).click();
+  expect(page.url().endsWith('#/programs/new'), 'it opens the same three ways in as the +');
+  await page.getByRole('link', { name: /Build your own/ }).click();
   await page.getByPlaceholder('Workout C').fill('Scenario Day');
   await page.getByRole('group', { name: 'Scheduled day' }).getByRole('button', { name: 'Mon' }).click();
   expect(
@@ -392,7 +397,10 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: 'Delete' }).first().click();
   await page.waitForSelector('text=Nothing saved yet');
   await page.goto(`${BASE}/#/`);
-  expect(await page.getByRole('link', { name: 'Build a program' }).isVisible(), 'deleting the last program returns Home to the first-run state');
+  expect(
+    await page.getByRole('link', { name: 'Build your first program' }).isVisible(),
+    'deleting the last program returns Home to the first-run state',
+  );
   await auditScreen(page, 'home/after-delete');
   await context.close();
 }
@@ -833,7 +841,8 @@ const auditScreen = async (page, screen) => {
 {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs`);
-  await page.getByRole('link', { name: 'Paste a program from ChatGPT' }).click();
+  await page.getByRole('link', { name: 'Add a program' }).click();
+  await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
   await page.getByLabel("The coach's answer").waitFor();
   await auditScreen(page, 'paste');
 
@@ -919,8 +928,11 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=Program "Day A (2)" added');
   expect(true, 'a repeated paste is saved as a copy');
 
-  // A link written by the coach opens the same preview with nothing to type.
-  await page.goto(`${BASE}/#/p/${encodeURIComponent(day('link-day', 'Linked Day', 'sunday'))}`);
+  // A link written by the coach opens the same preview with nothing to type. Chat
+  // clients add their own tracking parameters before the hash; they must not matter.
+  await page.goto(
+    `${BASE}/?utm_source=chatgpt.com#/p/${encodeURIComponent(day('link-day', 'Linked Day', 'sunday'))}`,
+  );
   await page.getByText('That is a program').waitFor();
   expect(
     await page.getByText('Linked Day', { exact: true }).isVisible(),
@@ -966,6 +978,51 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: 'Start this program' }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).waitFor();
   expect(true, 'the overview can start the workout');
+  await context.close();
+}
+
+// ---------------------------------------------------------------- scenario 19: the three ways in
+{
+  const { context, page } = await fresh();
+  await page.goto(`${BASE}/#/programs`);
+  await page.getByText('Nothing saved yet').waitFor();
+
+  const plus = page.getByRole('link', { name: 'Add a program' });
+  expect(
+    ((await plus.getAttribute('class')) ?? '').includes('bg-accent'),
+    'with nothing saved, the + is the loudest thing on the screen',
+  );
+  await plus.click();
+  await page.getByRole('link', { name: /Build your own/ }).waitFor();
+  await auditScreen(page, 'programs/new');
+  expect(page.url().endsWith('#/programs/new'), 'the + opens the three ways in');
+
+  const doors = await page.textContent('body');
+  expect(
+    ['Talk to a ChatGPT', 'Build your own', 'Import a program'].every((name) => doors.includes(name)),
+    'all three doors are named',
+  );
+
+  // A file goes in without leaving the door it came through.
+  await page.setInputFiles(
+    'input[type=file]',
+    await tmpFile(program('door-day', 'Door Day', 'tuesday', [ex('sq', 'Squat')])),
+  );
+  await page.waitForSelector('text=Saved (1)');
+  expect(true, 'Import a program takes a file straight away');
+
+  const calm = (await page.getByRole('link', { name: 'Add a program' }).getAttribute('class')) ?? '';
+  expect(!calm.includes('bg-accent'), 'the + steps back once something is saved');
+
+  await page.getByRole('link', { name: 'Add a program' }).click();
+  await page.getByRole('link', { name: /Build your own/ }).click();
+  await page.waitForSelector('text=New program');
+  expect(page.url().endsWith('#/programs/build'), 'Build your own goes to the builder');
+
+  await page.goto(`${BASE}/#/programs/new`);
+  await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
+  await page.getByLabel("The coach's answer").waitFor();
+  expect(page.url().endsWith('#/paste'), 'Talk to a ChatGPT opens the interview');
   await context.close();
 }
 

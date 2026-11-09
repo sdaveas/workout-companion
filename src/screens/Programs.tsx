@@ -4,6 +4,7 @@ import type { Program } from '../engine/types';
 import { usePrograms } from '../store/programsStore';
 import { formatDays } from '../lib/format';
 import { ProgramBuilder } from '../components/programs/ProgramBuilder';
+import { AddProgram } from './AddProgram';
 import { SyncFromDisk } from '../components/programs/SyncFromDisk';
 import { NameConflict } from '../components/programs/NameConflict';
 import { suggestedName } from '../lib/identity';
@@ -22,8 +23,10 @@ export function Programs() {
   const [shared, setShared] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const route = useHashRoute();
-  // #/programs/build is the builder; #/programs is the list of saved programs.
+  // #/programs/build is the builder, #/programs/new the three ways in,
+  // #/programs is the list of saved programs.
   const building = route.param === 'build';
+  const adding = route.param === 'new';
   const others = editing ? programs.filter((p) => p.id !== editing.id) : programs;
 
   const build = (program?: Program) => {
@@ -49,24 +52,30 @@ export function Programs() {
           onClick={() => setEditing(null)}
           className="flex min-h-11 min-w-11 items-center text-sm text-muted"
         >
-          {building ? '← Programs' : '← Home'}
+          {building || adding ? '← Programs' : '← Home'}
         </a>
         <h1 className="text-sm font-semibold uppercase tracking-widest">
-          {building ? (editing ? 'Edit program' : 'New program') : 'Programs'}
+          {building ? (editing ? 'Edit program' : 'New program') : adding ? 'Add a program' : 'Programs'}
         </h1>
-        {building ? (
+        {building || adding ? (
           <span className="w-12" />
         ) : (
           <a
-            href="#/programs/build"
+            href="#/programs/new"
             aria-label="Add a program"
             onClick={() => setEditing(null)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg border border-line text-xl leading-none text-accent"
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border text-xl leading-none ${
+              programs.length === 0
+                ? 'border-accent bg-accent font-semibold text-ink'
+                : 'border-line text-accent'
+            }`}
           >
             +
           </a>
         )}
       </header>
+
+      {adding && <AddProgram />}
 
       {building && (
         <ProgramBuilder
@@ -142,21 +151,9 @@ export function Programs() {
         </section>
       )}
 
-      {!building && (
-        <a
-          href="#/paste"
-          className="mt-5 flex min-h-11 items-center justify-between rounded-xl border border-dashed border-line px-4 py-3 text-sm"
-        >
-          <span>Paste a program from ChatGPT</span>
-          <span aria-hidden className="text-muted">
-            →
-          </span>
-        </a>
-      )}
+      {!building && !adding && <SyncFromDisk />}
 
-      {!building && <SyncFromDisk />}
-
-      {!building && (
+      {!building && !adding && (
       <section className="mt-8">
         <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
         {shared && (
@@ -165,7 +162,7 @@ export function Programs() {
           </p>
         )}
         {programs.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Nothing saved yet.</p>
+          <p className="mt-3 text-sm text-muted">Nothing saved yet. Tap + to add one.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {programs.map((p) => (

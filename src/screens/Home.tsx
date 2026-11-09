@@ -135,12 +135,14 @@ export function Home() {
           <p className="text-xs uppercase tracking-widest text-muted">Get started</p>
           {programs.length === 0 ? (
             <>
-              <p className="mt-2 text-sm text-muted">Build a workout program to begin.</p>
+              <p className="mt-2 text-sm text-muted">
+                A coach can write one, or you can build it yourself.
+              </p>
               <a
-                href="#/programs/build"
+                href="#/programs/new"
                 className="mt-4 flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
               >
-                Build a program
+                Build your first program
               </a>
             </>
           ) : (

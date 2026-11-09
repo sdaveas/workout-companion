@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNow } from '../hooks/useNow';
 import { usePrograms } from '../store/programsStore';
-import { useSession } from '../store/sessionStore';
-import { buildBackup, parseBackup } from '../lib/backup';
+import { buildBackup } from '../lib/backup';
+import { importBackupFile } from '../lib/importFile';
 import { downloadJson } from '../lib/exportHistory';
-import { mergeBackup } from '../storage/backup';
 import { countSessions, loadAllSessions } from '../storage/sessions';
 import { Banner } from '../components/ui/Banner';
 
 export function Settings() {
   const programs = usePrograms((s) => s.programs);
-  const loadPrograms = usePrograms((s) => s.load);
-  const loadHistory = useSession((s) => s.loadHistory);
   const [sessions, setSessions] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,21 +40,9 @@ export function Settings() {
   async function importFile(file: File) {
     setError(null);
     setNotice(null);
-    const parsed = parseBackup(await file.text());
-    if (!parsed.ok) {
-      setError(parsed.error);
-      return;
-    }
     try {
-      const counts = await mergeBackup(parsed.programs, parsed.sessions);
-      await loadPrograms();
-      await loadHistory();
+      setNotice(await importBackupFile(file));
       setSessions(await countSessions());
-      setNotice(
-        `Imported ${counts.programs} program${counts.programs === 1 ? '' : 's'} and ${counts.sessions} session${
-          counts.sessions === 1 ? '' : 's'
-        }.`,
-      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }

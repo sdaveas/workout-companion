@@ -17,8 +17,10 @@ const check = (cond, msg) => {
 
 await page.goto(`${BASE}/#/`);
 await page.waitForLoadState('networkidle');
-await page.getByRole('link', { name: 'Build a program' }).click();
-check(page.url().endsWith('#/programs/build'), 'empty Home sends the user to the builder');
+await page.getByRole('link', { name: 'Build your first program' }).click();
+check(page.url().endsWith('#/programs/new'), 'empty Home opens the three ways in');
+await page.getByRole('link', { name: /Build your own/ }).click();
+check(page.url().endsWith('#/programs/build'), 'the builder is one tap further');
 check((await page.getByRole('tab').count()) === 0, 'Programs has no source tabs any more');
 check((await page.getByText('Paste JSON').count()) === 0, 'the Paste JSON pane is gone');
 check(
