@@ -43,6 +43,13 @@ for (const src of ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-t
   check(bytes.join(',') === '137,80,78,71,13,10,26,10', `${src} is a PNG`);
 }
 
+// the tab icon browsers ask for on their own is a real .ico (header: reserved 0, type 1)
+const ico = await page.evaluate(async () => {
+  const r = await fetch('/favicon.ico');
+  return [...new Uint8Array(await r.arrayBuffer()).slice(0, 4)];
+});
+check(ico.join(',') === '0,0,1,0', 'favicon.ico is an icon');
+
 // service worker registers, activates, then controls the page after a reload
 await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
 await page.reload();
