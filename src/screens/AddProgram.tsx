@@ -36,7 +36,7 @@ export function AddProgram() {
         <span>
           <span className="block font-medium">Talk to a ChatGPT</span>
           <span className="block text-xs text-muted">
-            It interviews you, then sends one link per training day.
+            It interviews you, then writes a program for each training day.
           </span>
         </span>
         <span aria-hidden className="text-muted">
@@ -72,7 +72,7 @@ export function AddProgram() {
           </span>
         </span>
         <span aria-hidden className="text-muted">
-          ↑
+          →
         </span>
       </button>
       <input

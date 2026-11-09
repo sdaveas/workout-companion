@@ -128,8 +128,11 @@ export function PasteProgram({ initial }: { initial?: string }) {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between">
-        <a href="#/programs" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
-          ← Programs
+        <a
+          href={initial ? '#/programs' : '#/programs/new'}
+          className="flex min-h-11 min-w-11 items-center text-sm text-muted"
+        >
+          {initial ? '← Programs' : '← Add a program'}
         </a>
         <h1 className="text-sm font-semibold uppercase tracking-widest">
           {initial ? 'Shared program' : 'Paste a program'}
@@ -161,9 +164,16 @@ export function PasteProgram({ initial }: { initial?: string }) {
             Open ChatGPT
           </a>
           {sent && (
-            <p role="status" className="mt-2 text-xs text-accent">
-              Back from ChatGPT? The answer goes in Step 2.
-            </p>
+            <button
+              type="button"
+              onClick={() => {
+                answer.current?.scrollIntoView({ block: 'center' });
+                answer.current?.focus();
+              }}
+              className="mt-2 text-xs text-accent underline"
+            >
+              Back from ChatGPT? Paste it in Step 2.
+            </button>
           )}
           <button
             type="button"
@@ -246,8 +256,8 @@ export function PasteProgram({ initial }: { initial?: string }) {
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 2</p>
           <h2 className="mt-1 text-lg font-semibold">Paste the answer</h2>
           <p className="mt-1 text-sm text-muted">
-            The whole answer: every program in it is read, whether it comes as a card, a link or a
-            json block. A three-day week goes in one go.
+            The whole answer: every program in it is read, however it arrives. A three-day week
+            goes in one go.
           </p>
           <textarea
             ref={answer}
@@ -258,7 +268,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="mt-3 h-40 w-full rounded-lg bg-field p-3 font-mono text-base outline-none focus:ring-2 focus:ring-accent"
+            className="mt-3 h-40 w-full resize-none rounded-lg bg-field p-3 font-mono text-base outline-none focus:ring-2 focus:ring-accent"
           />
           {error && (
             <p

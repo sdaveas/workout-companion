@@ -861,7 +861,7 @@ const auditScreen = async (page, screen) => {
     el.click();
   });
   expect(
-    await page.getByText('the answer goes in Step 2', { exact: false }).isVisible(),
+    await page.getByText('Back from ChatGPT', { exact: false }).isVisible(),
     'leaving for ChatGPT points at Step 2',
   );
   const step2 = (await page.locator('section', { hasText: 'Paste the answer' }).getAttribute('class')) ?? '';
