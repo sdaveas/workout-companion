@@ -161,12 +161,14 @@ export function ActiveWorkout() {
     return null;
   })();
 
+  // Six XL digits cost 60 px of stage height; on a phone the drawing needs those.
+  const bigNumber = 'text-5xl [@media(min-height:760px)]:text-6xl';
   const bigClass =
     state.status === 'resting' || pausedInRest
-      ? 'text-6xl'
+      ? bigNumber
       : state.status === 'exercise_complete'
         ? 'text-3xl'
-        : 'text-6xl';
+        : bigNumber;
 
   return (
     <main className="relative flex h-dvh flex-col overflow-hidden">
@@ -380,9 +382,9 @@ export function ActiveWorkout() {
         {exercise && inSet && (
           <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
             {slug ? (
-              <ExerciseMotion slug={slug} className="h-full max-h-40 w-full" />
+              <ExerciseMotion slug={slug} className="h-full max-h-64 w-full" />
             ) : (
-              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-40 w-full" />
+              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-64 w-full" />
             )}
           </div>
         )}

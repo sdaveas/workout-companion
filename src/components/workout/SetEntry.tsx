@@ -66,25 +66,23 @@ function CompactStepper({
   onChange: (next: number) => void;
 }) {
   return (
-    <div>
-      <p className="text-[11px] uppercase tracking-widest text-muted">{label}</p>
-      <div className="mt-1 flex items-center justify-between gap-1">
+    <div className="flex items-center justify-between gap-1">
+      <span className="text-[11px] uppercase tracking-widest text-muted">{label}</span>
+      <div className="flex items-center gap-1">
         <button
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-surface text-lg"
+          className="h-9 w-9 shrink-0 rounded-lg border border-line bg-surface text-lg"
         >
           −
         </button>
-        <span className="min-w-0 flex-1 truncate text-center text-xl font-semibold tabular-nums">
-          {display}
-        </span>
+        <span className="min-w-8 text-center text-lg font-semibold tabular-nums">{display}</span>
         <button
           type="button"
           aria-label={`Increase ${label}`}
           onClick={() => onChange(value + step)}
-          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-surface text-lg"
+          className="h-9 w-9 shrink-0 rounded-lg border border-line bg-surface text-lg"
         >
           +
         </button>
@@ -117,7 +115,7 @@ export function SetEntry({ exercise, draft, onChange, compact = false }: Props) 
             onChange={(weightKg) => onChange({ ...draft, weightKg })}
           />
         ) : (
-          <p className="self-end pb-3 text-sm text-muted">Bodyweight</p>
+          <p className="self-center text-sm text-muted">Bodyweight</p>
         )}
       </div>
     );
