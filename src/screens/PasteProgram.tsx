@@ -204,8 +204,8 @@ export function PasteProgram({ initial }: { initial?: string }) {
 
       {initial && !standalone && (
         <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-          This opened in a browser. A program added here stays in this browser — your home-screen
-          app keeps its own copy. To keep it, paste the answer there instead.
+          This opened in a browser. A program added here stays in this browser, which may not be
+          the copy your home-screen app uses. To keep it, paste the answer into the app instead.
         </p>
       )}
 
