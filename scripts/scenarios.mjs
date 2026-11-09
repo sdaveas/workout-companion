@@ -647,12 +647,13 @@ const auditScreen = async (page, screen) => {
   await c.getByRole('button', { name: /A Day/ }).click();
   await c.getByRole('button', { name: /B Day/ }).click();
   await c.getByRole('button', { name: 'Share 2' }).click();
-  await c.waitForSelector('text=copied as one link');
+  await c.waitForSelector('text=Link copied');
   const bundleLink = await c.evaluate(() => navigator.clipboard.readText());
   expect(
     bundleLink.includes('#/add/') && bundleLink.length < 1200,
     `two programs fit in one link (${bundleLink.length} chars)`,
   );
+  expect(!bundleLink.includes('\n'), 'the clipboard holds the link alone, no caption');
   await bundle.close();
 
   await b.goto(bundleLink);
