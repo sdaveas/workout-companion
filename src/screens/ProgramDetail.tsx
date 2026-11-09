@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useState } from 'react';
 import { navigate } from '../hooks/useHashRoute';
 import { usePrograms } from '../store/programsStore';
@@ -41,9 +42,7 @@ export function ProgramDetail({ id }: { id: string }) {
   if (!program) {
     return (
       <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <a href="#/programs" className="flex min-h-11 items-center text-sm text-muted">
-          ← Programs
-        </a>
+        <ScreenHeader back={{ to: '#/programs', label: 'Programs' }} />
         <p className="mt-6 text-sm text-muted">That program is not saved here.</p>
       </main>
     );
@@ -53,9 +52,7 @@ export function ProgramDetail({ id }: { id: string }) {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <a href="#/programs" className="flex min-h-11 items-center text-sm text-muted">
-        ← Programs
-      </a>
+      <ScreenHeader back={{ to: '#/programs', label: 'Programs' }} />
       <h1 className="mt-3 text-2xl font-semibold">{program.name}</h1>
       <p className="mt-1 text-sm text-muted">
         {program.exercises.length} exercise{program.exercises.length === 1 ? '' : 's'} · {sets} sets ·{' '}

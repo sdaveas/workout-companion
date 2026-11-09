@@ -1,5 +1,6 @@
 import { draftFor } from './ids';
 import { InvalidArgument, InvalidTransition } from './errors';
+import { autoRemainingMs, clearedStage, rebaseStage, stageClock } from './auto';
 import { rebaseRest, remainingMs, restartRest } from './rest';
 import type {
   SetRecord,
@@ -79,7 +80,7 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
       return inStatus(s, ['exercise_active']) ? setDraft(s, e) : null;
 
     case 'PAUSE':
-      return inStatus(s, ['exercise_active', 'resting']) ? pause(s, e) : null;
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete']) ? pause(s, e) : null;
 
     case 'RESUME':
       return s.status === 'paused' ? resume(s, e) : null;
@@ -90,11 +91,26 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
     case 'RESTART_REST':
       return inStatus(s, ['resting', 'exercise_complete']) ? restart(s, e) : null;
 
+    case 'START_AUTO':
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete'])
+        ? startAuto(s, e.now)
+        : null;
+
+    case 'STOP_AUTO':
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete'])
+        ? { ...s, mode: 'manual', ...clearedStage() }
+        : null;
+
+    case 'EXTEND_STAGE':
+      return s.status === 'exercise_active' && s.mode === 'auto' && s.stageStartedAt != null
+        ? { ...s, ...rebaseStage(s, e.now, e.seconds) }
+        : null;
+
     case 'REST_DONE':
-      return s.status === 'resting' && remainingMs(s, e.now) === 0 ? beginSet(s) : null;
+      return s.status === 'resting' && remainingMs(s, e.now) === 0 ? beginSet(s, e.now) : null;
 
     case 'SKIP_REST':
-      return inStatus(s, ['resting']) ? beginSet(s) : null;
+      return inStatus(s, ['resting']) ? beginSet(s, e.now) : null;
 
     case 'NEXT_EXERCISE':
       return inStatus(s, ['exercise_complete']) ? nextExercise(s, e) : null;
@@ -108,7 +124,9 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
         : null;
 
     case 'UNDO':
-      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete']) ? undo(s) : null;
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete'])
+        ? undo(s, e.now)
+        : null;
 
     case 'SET_RPE':
       return s.status === 'completed' ? setRpe(s, e) : null;
@@ -125,6 +143,17 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
 
 function start(s: WorkoutState, e: { now: number }): WorkoutState {
   return { ...s, status: 'exercise_active', startedAt: e.now };
+}
+
+function startAuto(s: WorkoutState, now: number): WorkoutState {
+  return {
+    ...s,
+    mode: 'auto',
+    // A rest that is already running keeps its clock and starts advancing on its own.
+    ...(s.status === 'exercise_active'
+      ? stageClock('auto', currentExercise(s), now)
+      : clearedStage()),
+  };
 }
 
 function completeSet(
@@ -163,8 +192,11 @@ function completeSet(
       status: 'exercise_complete',
       draft: null,
       ...rest,
+      ...clearedStage(),
     };
   }
+
+  const stage = rest.restStartedAt != null ? clearedStage() : stageClock(s.mode, exercise, e.now);
 
   return {
     ...s,
@@ -174,6 +206,7 @@ function completeSet(
     draft: draftFor(exercise),
     status: rest.restStartedAt != null ? 'resting' : 'exercise_active',
     ...rest,
+    ...stage,
   };
 }
 
@@ -198,6 +231,7 @@ function skipSet(s: WorkoutState, e: { now: number }): WorkoutState {
       status: 'exercise_complete',
       draft: null,
       ...clearedRest(),
+      ...clearedStage(),
     };
   }
 
@@ -209,6 +243,7 @@ function skipSet(s: WorkoutState, e: { now: number }): WorkoutState {
     draft: draftFor(currentExercise(s)),
     status: 'exercise_active',
     ...clearedRest(),
+    ...stageClock(s.mode, currentExercise(s), e.now),
   };
 }
 
@@ -249,17 +284,26 @@ function setDraft(
 }
 
 function pause(s: WorkoutState, e: { now: number }): WorkoutState {
-  if (s.status === 'resting') {
+  if (s.status === 'resting' || s.status === 'exercise_complete') {
     return {
       ...s,
       status: 'paused',
-      pausedFrom: 'resting',
+      pausedFrom: s.status,
       pausedAt: e.now,
-      restPausedMs: remainingMs(s, e.now),
+      // No rest clock at all (a 0-second break, a skipped exercise) → nothing to freeze.
+      restPausedMs: s.restStartedAt == null ? null : remainingMs(s, e.now),
       restStartedAt: null,
     };
   }
-  return { ...s, status: 'paused', pausedFrom: 'exercise_active', pausedAt: e.now };
+  return {
+    ...s,
+    status: 'paused',
+    pausedFrom: 'exercise_active',
+    pausedAt: e.now,
+    stagePausedMs: s.mode === 'auto' ? autoRemainingMs(s, e.now) : null,
+    stageStartedAt: null,
+    stageDurationMs: 0,
+  };
 }
 
 function resume(s: WorkoutState, e: { now: number }): WorkoutState {
@@ -269,17 +313,22 @@ function resume(s: WorkoutState, e: { now: number }): WorkoutState {
     pausedAt: null,
     totalPausedMs: s.totalPausedMs + pausedMs,
   };
-  if (s.pausedFrom === 'resting') {
+  if (s.pausedFrom === 'resting' || s.pausedFrom === 'exercise_complete') {
+    const hadRest = s.restPausedMs != null;
     return {
       ...base,
-      status: 'resting',
+      status: s.pausedFrom,
       pausedFrom: null,
-      restStartedAt: e.now,
+      restStartedAt: hadRest ? e.now : null,
       restDurationMs: s.restPausedMs ?? 0,
       restPausedMs: null,
     };
   }
-  return { ...base, status: 'exercise_active', pausedFrom: null };
+  const stage =
+    s.mode === 'auto' && s.stagePausedMs != null
+      ? { stageStartedAt: e.now, stageDurationMs: s.stagePausedMs, stagePausedMs: null }
+      : clearedStage();
+  return { ...base, status: 'exercise_active', pausedFrom: null, ...stage };
 }
 
 /**
@@ -308,8 +357,13 @@ function restart(s: WorkoutState, e: { now: number }): WorkoutState {
   return rememberRest({ ...s, ...rest }, rest.restDurationMs);
 }
 
-function beginSet(s: WorkoutState): WorkoutState {
-  return { ...s, status: 'exercise_active', ...clearedRest() };
+function beginSet(s: WorkoutState, now: number): WorkoutState {
+  return {
+    ...s,
+    status: 'exercise_active',
+    ...clearedRest(),
+    ...stageClock(s.mode, currentExercise(s), now),
+  };
 }
 
 function nextExercise(s: WorkoutState, e: { now: number }): WorkoutState {
@@ -322,6 +376,7 @@ function nextExercise(s: WorkoutState, e: { now: number }): WorkoutState {
       endedEarly: false,
       undoStack: withUndo(s),
       ...clearedRest(),
+      ...clearedStage(),
     };
   }
   const nextIndex = s.currentExerciseIndex + 1;
@@ -333,6 +388,7 @@ function nextExercise(s: WorkoutState, e: { now: number }): WorkoutState {
     draft: draftFor(s.program.exercises[nextIndex]),
     undoStack: withUndo(s),
     ...clearedRest(),
+    ...stageClock(s.mode, s.program.exercises[nextIndex], e.now),
   };
 }
 
@@ -356,6 +412,7 @@ function skipExercise(s: WorkoutState, e: { now: number }): WorkoutState {
     status: 'exercise_complete',
     draft: null,
     ...clearedRest(),
+    ...clearedStage(),
   };
 }
 
@@ -381,13 +438,28 @@ function finish(s: WorkoutState, e: { now: number }): WorkoutState {
     draft: null,
     undoStack: withUndo(s),
     ...clearedRest(),
+    ...clearedStage(),
   };
 }
 
-function undo(s: WorkoutState): WorkoutState | null {
+/**
+ * Undo is a manual correction: the restored stage may have no clock, a spent clock
+ * or an expired rest, any of which would make the driver fire 250 ms later. So auto
+ * turns off; one tap of the Auto chip re-arms it.
+ */
+function undo(s: WorkoutState, now: number): WorkoutState | null {
   const entry = s.undoStack.at(-1);
   if (!entry) return null;
-  return { ...entry, program: s.program, undoStack: s.undoStack.slice(0, -1) };
+  const restored = {
+    ...entry,
+    program: s.program,
+    undoStack: s.undoStack.slice(0, -1),
+    mode: 'manual' as const,
+    ...clearedStage(),
+  };
+  // A restored break gets a fresh clock so it is not a ghost that has already expired.
+  if (restored.restStartedAt != null) restored.restStartedAt = now;
+  return restored;
 }
 
 function setRpe(
@@ -408,5 +480,6 @@ function abandon(s: WorkoutState, e: { now: number }): WorkoutState {
     pausedAt: null,
     pausedFrom: null,
     ...clearedRest(),
+    ...clearedStage(),
   };
 }

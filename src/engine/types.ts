@@ -74,8 +74,14 @@ export interface WorkoutState {
   startedAt: number | null;
   finishedAt: number | null;
   pausedAt: number | null;
-  pausedFrom: 'exercise_active' | 'resting' | null;
+  pausedFrom: 'exercise_active' | 'resting' | 'exercise_complete' | null;
   totalPausedMs: number;
+  /** Auto mode. Optional so sessions saved before it still load (absent = manual). */
+  mode?: 'manual' | 'auto';
+  /** Stage clock: meaningful only while auto and exercise_active. Never a countdown. */
+  stageStartedAt?: number | null;
+  stageDurationMs?: number;
+  stagePausedMs?: number | null;
   restStartedAt: number | null;
   restDurationMs: number;
   restPausedMs: number | null;
@@ -110,6 +116,9 @@ export type WorkoutEvent =
   | { type: 'RESUME'; now: number }
   | { type: 'ADJUST_REST'; now: number; seconds: number }
   | { type: 'RESTART_REST'; now: number }
+  | { type: 'START_AUTO'; now: number }
+  | { type: 'STOP_AUTO'; now: number }
+  | { type: 'EXTEND_STAGE'; now: number; seconds: number }
   | { type: 'REST_DONE'; now: number }
   | { type: 'SKIP_REST'; now: number }
   | { type: 'NEXT_EXERCISE'; now: number }

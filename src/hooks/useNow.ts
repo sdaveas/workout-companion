@@ -8,7 +8,15 @@ export function useNow(intervalMs: number, active = true): number {
     if (!active) return;
     const id = setInterval(() => setNow(Date.now()), intervalMs);
     setNow(Date.now());
-    return () => clearInterval(id);
+    // Back from a locked screen: repaint immediately instead of waiting for the tick.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setNow(Date.now());
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [intervalMs, active]);
 
   return now;

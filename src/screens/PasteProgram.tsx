@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useMemo, useRef, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
@@ -144,18 +145,14 @@ export function PasteProgram({ initial }: { initial?: string }) {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between">
-        <a
-          href={initial ? '#/programs' : '#/programs/new'}
-          className="flex min-h-11 min-w-11 items-center text-sm text-muted"
-        >
-          {initial ? '← Programs' : '← Add a program'}
-        </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">
-          {initial ? 'Shared program' : 'Paste a program'}
-        </h1>
-        <span className="w-12" />
-      </header>
+      <ScreenHeader
+        back={initial ? { to: '#/', label: 'Home' } : { to: '#/programs', label: 'Programs' }}
+        title={
+          <h1 className="text-sm font-semibold uppercase tracking-widest">
+            {initial ? 'Shared program' : 'Paste a program'}
+          </h1>
+        }
+      />
 
       {!initial && (
         <section className="mt-5 rounded-xl border border-line bg-surface p-4">

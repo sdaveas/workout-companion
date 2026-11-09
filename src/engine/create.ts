@@ -18,6 +18,10 @@ export function createSession(program: Program, now: number, sessionId: string):
     restDurationMs: 0,
     restPausedMs: null,
     restCount: 0,
+    mode: 'manual',
+    stageStartedAt: null,
+    stageDurationMs: 0,
+    stagePausedMs: null,
     exerciseRecords: program.exercises.map((e) => ({
       exerciseId: e.id,
       name: e.name,

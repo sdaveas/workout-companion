@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useEffect, useState } from 'react';
 import { navigate, useHashRoute } from '../hooks/useHashRoute';
 import { useSession } from '../store/sessionStore';
@@ -67,8 +68,10 @@ export function Summary() {
   // Only the session that just ended offers to rewrite the program it came from.
   const liveJustFinished = live != null && live.sessionId === param && updateState === 'idle';
   const storedProgram = source ? (programs.find((p) => p.id === source.programId) ?? null) : null;
+  // Auto sessions record the timed target, not measured reps: offering to rewrite the
+  // program from them would bake a budget into the prescription.
   const update =
-    liveJustFinished && source?.status === 'completed' && storedProgram
+    liveJustFinished && source?.status === 'completed' && source.mode !== 'auto' && storedProgram
       ? planProgramUpdate(source, storedProgram)
       : null;
 
@@ -116,26 +119,29 @@ export function Summary() {
 
   if (!param) {
     return (
-      <main className="px-5 pt-24 text-center">
-        <p className="text-muted">No session selected.</p>
-        <Button className="mt-4" onClick={() => navigate('#/history')}>
-          History
-        </Button>
+      <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+        <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+        <p className="mt-16 text-center text-muted">No session selected.</p>
+        <div className="mt-4 text-center">
+          <Button onClick={() => navigate('#/history')}>History</Button>
+        </div>
       </main>
     );
   }
 
   if (!summary) {
     return (
-      <main className="px-5 pt-24 text-center">
-        <p className="text-muted">Loading session…</p>
+      <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+        <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+        <p className="mt-16 text-center text-muted">Loading session…</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <p className="text-xs uppercase tracking-widest text-accent">
+      <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+      <p className="mt-4 text-xs uppercase tracking-widest text-accent">
         {summary.endedEarly ? 'Ended early' : 'Session complete'}
       </p>
       <h1 className="mt-2 text-3xl font-semibold">{summary.programName}</h1>
@@ -143,6 +149,9 @@ export function Summary() {
         {formatDate(summary.finishedAt)} · {summary.exercisesCompleted} of{' '}
         {summary.exercises.length} exercises
       </p>
+      {source?.mode === 'auto' && (
+        <p className="mt-2 text-xs text-muted">Auto session · reps are the timed target.</p>
+      )}
 
       <section className="mt-6 grid grid-cols-2 gap-2">
         <Stat label="Duration" value={formatClock(summary.durationMs)} />

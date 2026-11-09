@@ -20,7 +20,13 @@ const mask = (url: string): CSSProperties => ({
   WebkitMaskPosition: 'center',
 });
 
-export function ExerciseMotion({ slug }: { slug: string }) {
+export function ExerciseMotion({
+  slug,
+  className = 'aspect-[3/2] w-full',
+}: {
+  slug: string;
+  className?: string;
+}) {
   const base = `exercises/${slug}`;
   const [egg, setEgg] = useState(() => easterEggFor(slug, Math.random()));
 
@@ -30,7 +36,7 @@ export function ExerciseMotion({ slug }: { slug: string }) {
         src={egg}
         alt=""
         onError={() => setEgg(null)}
-        className="aspect-[3/2] w-full rounded-2xl border border-line object-cover"
+        className={`rounded-2xl border border-line object-cover ${className}`}
       />
     );
   }
@@ -38,7 +44,7 @@ export function ExerciseMotion({ slug }: { slug: string }) {
   return (
     <div
       aria-hidden
-      className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl border border-line bg-surface text-muted"
+      className={`relative overflow-hidden rounded-2xl border border-line bg-surface text-muted ${className}`}
     >
       <div className="exercise-frame exercise-frame-base absolute inset-3" style={mask(`${base}-0.svg`)} />
       <div className="exercise-frame exercise-flip absolute inset-3" style={mask(`${base}-1.svg`)} />

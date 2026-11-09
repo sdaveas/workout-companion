@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useEffect, useRef, useState } from 'react';
 import { useNow } from '../hooks/useNow';
 import { usePrograms } from '../store/programsStore';
@@ -50,13 +51,10 @@ export function Settings() {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between">
-        <a href="#/" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
-          ← Home
-        </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">Settings</h1>
-        <span className="w-12" />
-      </header>
+      <ScreenHeader
+        back={{ to: '#/', label: 'Home' }}
+        title={<h1 className="text-sm font-semibold uppercase tracking-widest">Settings</h1>}
+      />
 
       <section className="mt-6 rounded-2xl border border-line bg-surface p-5">
         <p className="text-xs uppercase tracking-widest text-muted">On this phone</p>

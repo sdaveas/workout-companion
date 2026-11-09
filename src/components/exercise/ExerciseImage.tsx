@@ -1,13 +1,21 @@
 import { useState } from 'react';
 
-export function ExerciseImage({ src, alt }: { src: string | null; alt: string }) {
+export function ExerciseImage({
+  src,
+  alt,
+  className = 'h-40 w-full',
+}: {
+  src: string | null;
+  alt: string;
+  className?: string;
+}) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
     return (
       <div
         aria-hidden
-        className="flex h-40 w-full items-center justify-center rounded-2xl border border-line bg-surface text-muted"
+        className={`flex items-center justify-center rounded-2xl border border-line bg-surface text-muted ${className}`}
       >
         <svg viewBox="0 0 64 64" className="h-16 w-16" fill="none" stroke="currentColor" strokeWidth="3">
           <rect x="4" y="26" width="8" height="12" rx="2" />
@@ -23,7 +31,7 @@ export function ExerciseImage({ src, alt }: { src: string | null; alt: string })
       src={src}
       alt={alt}
       onError={() => setFailed(true)}
-      className="h-40 w-full rounded-2xl border border-line object-cover"
+      className={`rounded-2xl border border-line object-cover ${className}`}
     />
   );
 }

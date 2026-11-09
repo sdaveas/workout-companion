@@ -5,6 +5,8 @@ interface Props {
   exercise: ProgramExercise;
   draft: { reps: number; weightKg: number | null };
   onChange: (draft: { reps: number; weightKg: number | null }) => void;
+  /** Two columns with the label above; fits a 390 px screen without scrolling. */
+  compact?: boolean;
 }
 
 function Stepper({
@@ -48,8 +50,78 @@ function Stepper({
   );
 }
 
-export function SetEntry({ exercise, draft, onChange }: Props) {
+function CompactStepper({
+  label,
+  value,
+  display,
+  step,
+  min,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  display: string;
+  step: number;
+  min: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-widest text-muted">{label}</p>
+      <div className="mt-1 flex items-center justify-between gap-1">
+        <button
+          type="button"
+          aria-label={`Decrease ${label}`}
+          onClick={() => onChange(Math.max(min, value - step))}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-surface text-lg"
+        >
+          −
+        </button>
+        <span className="min-w-0 flex-1 truncate text-center text-xl font-semibold tabular-nums">
+          {display}
+        </span>
+        <button
+          type="button"
+          aria-label={`Increase ${label}`}
+          onClick={() => onChange(value + step)}
+          className="h-11 w-11 shrink-0 rounded-xl border border-line bg-surface text-lg"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function SetEntry({ exercise, draft, onChange, compact = false }: Props) {
   const hasWeight = draft.weightKg != null || exercise.weightKg != null;
+
+  if (compact) {
+    return (
+      <div className={`grid gap-3 ${hasWeight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <CompactStepper
+          label="Reps"
+          value={draft.reps}
+          display={String(draft.reps)}
+          step={1}
+          min={0}
+          onChange={(reps) => onChange({ ...draft, reps })}
+        />
+        {hasWeight ? (
+          <CompactStepper
+            label={exercise.perHand ? 'Weight / hand' : 'Weight'}
+            value={draft.weightKg ?? 0}
+            display={formatWeight(draft.weightKg, exercise.perHand)}
+            step={0.5}
+            min={0}
+            onChange={(weightKg) => onChange({ ...draft, weightKg })}
+          />
+        ) : (
+          <p className="self-end pb-3 text-sm text-muted">Bodyweight</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="divide-y divide-line">

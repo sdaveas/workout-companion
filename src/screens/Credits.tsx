@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import type { ReactNode } from 'react';
 
 /**
@@ -49,13 +50,10 @@ function Row({ href, icon, title, note }: { href: string; icon: ReactNode; title
 export function Credits() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between">
-        <a href="#/settings" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
-          ← Settings
-        </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">Credits</h1>
-        <span className="w-12" />
-      </header>
+      <ScreenHeader
+        back={{ to: '#/settings', label: 'Settings' }}
+        title={<h1 className="text-sm font-semibold uppercase tracking-widest">Credits</h1>}
+      />
 
       <h2 className="mt-8 text-[10px] uppercase tracking-widest text-muted">Exercise illustrations</h2>
       <p className="mt-2 text-sm text-muted">

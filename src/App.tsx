@@ -13,6 +13,20 @@ import { Summary } from './screens/Summary';
 import { decodeLinkPayload } from './lib/programLink';
 import { usePrograms } from './store/programsStore';
 import { useSession } from './store/sessionStore';
+import { ScreenHeader } from './components/ui/ScreenHeader';
+
+const KNOWN = new Set([
+  'programs',
+  'add',
+  'paste',
+  'p',
+  'program',
+  'session',
+  'summary',
+  'history',
+  'settings',
+  'credits',
+]);
 
 export function App() {
   const route = useHashRoute();
@@ -40,6 +54,17 @@ export function App() {
       {route.name === 'settings' && <Settings />}
       {route.name === 'credits' && <Credits />}
       {(route.name === 'home' || route.name === '') && <Home />}
+      {!KNOWN.has(route.name) && route.name !== 'home' && (
+        <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+          <p className="mt-16 text-center text-muted">That page is not here.</p>
+          <div className="mt-4 text-center">
+            <a href="#/" className="text-sm text-accent underline underline-offset-4">
+              Back to Home
+            </a>
+          </div>
+        </main>
+      )}
     </div>
   );
 }

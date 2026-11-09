@@ -1,6 +1,13 @@
 import type { ProgramExercise } from '../../engine/types';
 
-export function ExerciseDetails({ exercise }: { exercise: ProgramExercise }) {
+export function ExerciseDetails({
+  exercise,
+  open,
+}: {
+  exercise: ProgramExercise;
+  /** Force-expanded, e.g. inside the instructions overlay. */
+  open?: boolean;
+}) {
   const hasDetails =
     exercise.instructions.length > 0 ||
     exercise.commonMistakes.length > 0 ||
@@ -10,7 +17,7 @@ export function ExerciseDetails({ exercise }: { exercise: ProgramExercise }) {
   if (!hasDetails) return null;
 
   return (
-    <details className="mt-4 rounded-xl border border-line bg-surface px-4 py-3">
+    <details open={open} className="mt-4 rounded-xl border border-line bg-surface px-4 py-3">
       <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted">
         How to do it
       </summary>

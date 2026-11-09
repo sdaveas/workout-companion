@@ -5,7 +5,10 @@ const BASE = 'http://localhost:5184';
 const fixture = await readFile('src/fixtures/workout-b.json', 'utf8');
 const APP = `${BASE}/`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  headless: !process.env.HEADED,
+  ...(process.env.HEADED ? { channel: 'chrome' } : {}),
+});
 const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 3,

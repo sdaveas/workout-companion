@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useEffect, useState } from 'react';
 import { useSession } from '../store/sessionStore';
 import { usePrograms } from '../store/programsStore';
@@ -57,23 +58,21 @@ export function History() {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between">
-        <a href="#/" className="flex min-h-11 min-w-11 items-center text-sm text-muted">
-          ← Home
-        </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>
-        {history.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => downloadJson('workout-history.json', historyExport(history, now))}
-            className="h-11 rounded-lg border border-line px-3 text-xs"
-          >
-            Export
-          </button>
-        ) : (
-          <span className="w-12" />
-        )}
-      </header>
+      <ScreenHeader
+        back={{ to: '#/', label: 'Home' }}
+        title={<h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>}
+        actions={
+          history.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => downloadJson('workout-history.json', historyExport(history, now))}
+              className="h-11 rounded-lg border border-line px-3 text-xs"
+            >
+              Export
+            </button>
+          ) : undefined
+        }
+      />
 
       {shared && (
         <p role="status" className="mt-4 text-xs text-accent">

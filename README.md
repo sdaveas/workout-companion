@@ -8,7 +8,8 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `docs/designs/workout-companion.md` — design (how, and what was rejected).
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
-Status: all five phases done — import, engine, UI, recovery, PWA. See
+Status: six phases done — import, engine, UI, recovery, PWA, auto mode (timed sets,
+one non-scrolling workout screen, a back control on every view). See
 `docs/phase-status.md`. Programs are built with the in-app form (Programs) or imported
 from a program JSON / backup file (Settings → **Import a file**).
 

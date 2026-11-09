@@ -10,7 +10,10 @@ const total = fixtureProgram.exercises.reduce(
 );
 const completeSet = /^Complete (set|left hand|right hand)$/;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  headless: !process.env.HEADED,
+  ...(process.env.HEADED ? { channel: 'chrome' } : {}),
+});
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 3,

@@ -1,3 +1,4 @@
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useState } from 'react';
 import { useHashRoute } from '../hooks/useHashRoute';
 import type { Program } from '../engine/types';
@@ -59,34 +60,38 @@ export function Programs() {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between">
-        <a
-          href={building && !editing ? '#/programs/new' : adding || building ? '#/programs' : '#/'}
-          onClick={() => setEditing(null)}
-          className="flex min-h-11 min-w-11 items-center text-sm text-muted"
-        >
-          {building && !editing ? '← Add a program' : adding || building ? '← Programs' : '← Home'}
-        </a>
-        <h1 className="text-sm font-semibold uppercase tracking-widest">
-          {building ? (editing ? 'Edit program' : 'New program') : adding ? 'Add a program' : 'Programs'}
-        </h1>
-        {building || adding ? (
-          <span className="w-12" />
-        ) : (
-          <a
-            href="#/programs/new"
-            aria-label="Add a program"
-            onClick={() => setEditing(null)}
-            className={`flex h-11 w-11 items-center justify-center rounded-lg border text-xl leading-none ${
-              programs.length === 0
-                ? 'border-accent bg-accent font-semibold text-ink'
-                : 'border-line text-accent'
-            }`}
-          >
-            +
-          </a>
-        )}
-      </header>
+      <ScreenHeader
+        back={
+          building || adding
+            ? {
+                to: '#/programs',
+                label: 'Programs',
+                onSelect: () => setEditing(null),
+              }
+            : { to: '#/', label: 'Home', onSelect: () => setEditing(null) }
+        }
+        title={
+          <h1 className="text-sm font-semibold uppercase tracking-widest">
+            {building ? (editing ? 'Edit program' : 'New program') : adding ? 'Add a program' : 'Programs'}
+          </h1>
+        }
+        actions={
+          building || adding ? undefined : (
+            <a
+              href="#/programs/new"
+              aria-label="Add a program"
+              onClick={() => setEditing(null)}
+              className={`flex h-11 w-11 items-center justify-center rounded-lg border text-xl leading-none ${
+                programs.length === 0
+                  ? 'border-accent bg-accent font-semibold text-ink'
+                  : 'border-line text-accent'
+              }`}
+            >
+              +
+            </a>
+          )
+        }
+      />
 
       {adding && <AddProgram />}
 
