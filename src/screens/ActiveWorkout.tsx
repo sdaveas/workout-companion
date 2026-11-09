@@ -397,8 +397,8 @@ export function ActiveWorkout() {
         )}
 
         {restingNow && (
-          <div data-testid="rest-figure" className="mt-3 flex min-h-0 flex-1 items-center justify-center">
-            <ExerciseMotion slug="rest" className="h-full max-h-44 w-full" />
+          <div data-testid="rest-cue" className="mt-3 flex min-h-0 flex-1 items-center justify-center">
+            <p className="text-5xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
           </div>
         )}
       </section>
