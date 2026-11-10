@@ -173,6 +173,8 @@ export function ActiveWorkout() {
   const [ending, setEnding] = useState(false);
   // The right hand ends a two-hand set: hold the screen briefly so the tick is seen.
   const [flashDone, setFlashDone] = useState(false);
+  // A second tap during the hold must not queue a second completion.
+  const holdRef = useRef(false);
   const [howTo, setHowTo] = useState(false);
 
   const status = state?.status;
@@ -592,16 +594,19 @@ export function ActiveWorkout() {
               <Button
                 variant="primary"
                 className={PRIMARY_BTN}
-                disabled={primaryDisabled || flashDone}
+                disabled={primaryDisabled}
                 onClick={() => {
                   const action = {
                     type: 'COMPLETE_SET',
                     reps: state.draft?.reps ?? exercise.reps.min,
                     weightKg: state.draft?.weightKg ?? exercise.weightKg ?? null,
                   } as const;
+                  if (holdRef.current) return;
                   if (side !== 'right') return dispatch(action);
+                  holdRef.current = true;
                   setFlashDone(true);
                   window.setTimeout(() => {
+                    holdRef.current = false;
                     setFlashDone(false);
                     dispatch(action);
                   }, HAND_TICK_MS);

@@ -66,8 +66,12 @@ async function settle() {
 async function completeOneSet() {
   await settle();
   if (page.url().includes('#/summary/')) return;
-  await page.getByRole('button', { name: completeSet }).click();
+  const button = page.getByRole('button', { name: completeSet });
+  const closingHand = /hand/i.test((await button.textContent()) ?? '');
+  await button.click();
   sets += 1;
+  // A two-hand set holds the closing hand for 600 ms before the break starts.
+  if (closingHand) await page.waitForTimeout(700);
 }
 
 // import + start
@@ -109,9 +113,11 @@ check(!(await body()).includes('Ready to train'), 'reload lands on the active se
 for (let i = 0; i < 3 && !(await visible('Skip rest')); i += 1) {
   await settle();
   if (page.url().includes('#/summary/')) break;
-  await page.getByRole('button', { name: completeSet }).click();
+  const handButton = page.getByRole('button', { name: completeSet });
+  const handClosing = /hand/i.test((await handButton.textContent()) ?? '');
+  await handButton.click();
   sets += 1;
-  await page.waitForTimeout(60);
+  await page.waitForTimeout(handClosing ? 700 : 60);
 }
 await page.waitForSelector('text=Rest remaining');
 await page.waitForTimeout(2000);

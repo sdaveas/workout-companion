@@ -66,7 +66,10 @@ for (let i = 0; i < 300; i += 1) {
   const complete = page.getByRole('button', { name: completeSet });
   if (await complete.isVisible().catch(() => false)) {
     sets += 1;
+    const closingHand = /hand/i.test((await complete.textContent()) ?? '');
     await complete.click();
+    // A two-hand set holds the closing hand for 600 ms before the break starts.
+    if (closingHand) await page.waitForTimeout(700);
     continue;
   }
   const cont = page.getByRole('button', { name: /^(Continue|Finish workout)$/ });
