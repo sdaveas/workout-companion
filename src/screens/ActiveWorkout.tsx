@@ -59,9 +59,9 @@ function TransportRow({
         aria-label={auto ? 'Stop auto' : 'Start auto'}
         aria-pressed={auto}
         onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-        className={`${TRANSPORT_BTN} ${auto ? 'border-accent text-accent' : 'border-line text-muted'}`}
+        className={`${TRANSPORT_BTN} ${auto ? 'border-accent bg-accent/10 text-accent' : 'border-line text-muted'}`}
       >
-        <span aria-hidden>{auto ? '||' : '>'}</span>
+        auto
       </button>
       {state.status === 'exercise_active' && (
         <button
