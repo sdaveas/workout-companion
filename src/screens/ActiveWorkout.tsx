@@ -110,7 +110,7 @@ function ExerciseOverview({
   );
 }
 
-/** The session transport: previous set, then skip the set or toggle auto. */
+/** The session transport: previous set, then skip the set or restart the break. */
 function TransportRow({
   state,
   dispatch,
@@ -142,7 +142,7 @@ function TransportRow({
           next
         </button>
       ) : (
-        state.restStartedAt != null && (
+        state.restStartedAt != null ? (
           <button
             type="button"
             aria-label="Restart rest"
@@ -151,6 +151,9 @@ function TransportRow({
           >
             restart
           </button>
+        ) : (
+          // No break to restart (the last set): hold the slot so previous stays put.
+          <div aria-hidden className="flex-1" />
         )
       )}
     </div>
