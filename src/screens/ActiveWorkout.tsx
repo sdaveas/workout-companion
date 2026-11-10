@@ -31,7 +31,7 @@ const RUNNING: WorkoutState['status'][] = ['exercise_active', 'resting', 'exerci
 const STAGE_GUARD_MS = 700;
 
 const TRANSPORT_BTN =
-  'flex h-12 flex-1 items-center justify-center rounded-xl border text-base disabled:opacity-40';
+  'flex h-12 flex-1 items-center justify-center rounded-xl border text-sm disabled:opacity-40';
 
 /** The session transport: previous set, auto on/off, skip the current stage. */
 function TransportRow({
@@ -52,7 +52,7 @@ function TransportRow({
         onClick={() => dispatch({ type: 'UNDO' })}
         className={`${TRANSPORT_BTN} border-line text-muted`}
       >
-        <span aria-hidden>{'<<'}</span>
+        back
       </button>
       <button
         type="button"
@@ -73,7 +73,7 @@ function TransportRow({
           }}
           className={`${TRANSPORT_BTN} border-line text-muted`}
         >
-          <span aria-hidden>{'>>'}</span>
+          skip this set
         </button>
       )}
     </div>
@@ -144,6 +144,8 @@ export function ActiveWorkout() {
   /** The drawing belongs to a set. On a break it only competes with the clock. */
   const inSet = state.status === 'exercise_active' || (state.status === 'paused' && !pausedInRest);
   const isReady = state.status === 'ready';
+  /** The preview has no stepper, so its figure can take the stage a live set caps. */
+  const artClass = isReady ? 'h-full w-full' : 'h-full max-h-72 w-full';
   /** A break shows the rest cue instead of the lift's own drawing. */
   const restingNow = !isReady && !inSet;
   const currentSet = record?.sets[state.currentSetIndex];
@@ -201,7 +203,7 @@ export function ActiveWorkout() {
     if (state.status === 'exercise_active') {
       if (auto) return formatClock(setLeft);
       if (!exercise) return null;
-      return `${exercise.reps.min}–${exercise.reps.max}`;
+      return repsText(exercise.reps);
     }
     if (state.status === 'resting') return restLeft > 0 ? formatClock(restLeft) : 'Start when ready';
     if (state.status === 'exercise_complete') {
@@ -213,7 +215,7 @@ export function ActiveWorkout() {
       if (pausedInRest) return formatClock(restLeft);
       if (auto) return formatClock(state.stagePausedMs ?? 0);
       if (!exercise) return null;
-      return `${exercise.reps.min}–${exercise.reps.max}`;
+      return repsText(exercise.reps);
     }
     return null;
   })();
@@ -355,6 +357,11 @@ export function ActiveWorkout() {
             >
               {exercise.name}
             </h1>
+            {exercise.sets > 1 && (
+              <span className="shrink-0 text-sm tabular-nums text-muted">
+                [{state.currentSetIndex + 1}/{exercise.sets}]
+              </span>
+            )}
             {canExplain && (
               <button
                 type="button"
@@ -369,8 +376,7 @@ export function ActiveWorkout() {
         )}
         {(inSet || isReady) && exercise && (
           <p className="shrink-0 truncate text-sm text-muted">
-            {exercise.sets} × {exercise.reps.min}–{exercise.reps.max} ·{' '}
-            {formatWeight(exercise.weightKg, exercise.perHand)}
+            {repsText(exercise.reps)} · {formatWeight(exercise.weightKg, exercise.perHand)}
           </p>
         )}
 
@@ -390,13 +396,31 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {exercise && inSet && (
+        {exercise && (inSet || isReady) && (
           <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
             {slug ? (
-              <ExerciseMotion slug={slug} className="h-full max-h-72 w-full" />
+              <ExerciseMotion slug={slug} className={artClass} />
             ) : (
-              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-72 w-full" />
+              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className={artClass} />
             )}
+          </div>
+        )}
+
+        {/* The preview is otherwise a title and a list with a void under it. */}
+        {isReady && state.program.exercises.length > 1 && (
+          <div data-testid="overview" className="mt-3 flex flex-col">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted">Up next</p>
+            <ul className="mt-1 divide-y divide-line">
+              {state.program.exercises.slice(1).map((next, i) => (
+                <li key={next.id} className="flex items-center gap-3 py-2">
+                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted">{i + 2}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{next.name}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {next.sets} × {repsText(next.reps)} · {formatWeight(next.weightKg, next.perHand)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

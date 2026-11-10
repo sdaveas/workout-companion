@@ -812,11 +812,13 @@ const auditScreen = async (page, screen) => {
   const figure = (await page.locator('.exercise-flip').getAttribute('style')) ?? '';
   expect(figure.includes('exercises/'), 'the workout shows an exercise figure');
   expect(figure.includes('dumbbell-row'), 'Dumbbell Row shows the row poses');
+  const titleBlock = await page.locator('[data-testid="stage"] h1').locator('xpath=..').textContent();
+  expect(titleBlock?.includes('[1/3]'), 'the workout names the set it is on');
   const target = await page
     .locator('[data-testid="stage"] h1')
     .locator('xpath=following::p[1]')
     .textContent();
-  expect(target?.includes('×'), 'the workout names the sets and reps it wants');
+  expect(target?.includes('8–12'), 'the workout names the reps it wants');
   await auditScreen(page, 'workout/motion');
   await context.close();
 }
