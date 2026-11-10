@@ -228,7 +228,7 @@ export function ActiveWorkout() {
   // together instead of drifting apart.
   const restLeft = remainingMs(state, now);
   const setLeft = autoRemainingMs(state, now);
-  const metaLine = `Set ${formatSetNumber(exercise.perHand, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
+  const metaLine = `Set ${formatSetNumber(exercise?.perHand ?? false, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
     state.currentExerciseIndex + 1
   } / ${state.program.exercises.length}`;
   const breakSource = state.status === 'paused' ? state.pausedFrom : state.status;
