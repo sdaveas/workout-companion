@@ -19,17 +19,23 @@ export function ScreenHeader({
   title,
   actions,
   children,
+  /** Slightly tighter top padding; exactly one pt-* class is emitted, so the override
+      does not depend on stylesheet order. */
+  dense = false,
   className = '',
 }: {
   back?: Back;
   title?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
+  dense?: boolean;
   className?: string;
 }) {
   return (
     <header
-      className={`shrink-0 px-5 pt-[max(1rem,env(safe-area-inset-top))] ${className}`}
+      className={`shrink-0 px-5 ${
+        dense ? 'pt-[max(0.75rem,env(safe-area-inset-top))]' : 'pt-[max(1rem,env(safe-area-inset-top))]'
+      } ${className}`}
     >
       <div className="flex min-h-11 items-center gap-2">
         {back && (

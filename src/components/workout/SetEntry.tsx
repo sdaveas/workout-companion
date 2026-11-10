@@ -57,6 +57,7 @@ function CompactStepper({
   step,
   min,
   onChange,
+  showLabel = true,
 }: {
   label: string;
   value: number;
@@ -64,10 +65,15 @@ function CompactStepper({
   step: number;
   min: number;
   onChange: (next: number) => void;
+  /** The weight column's display already carries its unit; a visible label only
+      wraps inside the narrow second column. */
+  showLabel?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-1">
-      <span className="text-[11px] uppercase tracking-widest text-muted">{label}</span>
+      <span className={showLabel ? 'text-[11px] uppercase tracking-widest text-muted' : 'sr-only'}>
+        {label}
+      </span>
       <div className="flex items-center gap-1">
         <button
           type="button"
@@ -77,7 +83,7 @@ function CompactStepper({
         >
           −
         </button>
-        <span className="min-w-8 text-center text-lg font-semibold tabular-nums">{display}</span>
+        <span className="min-w-0 flex-1 truncate text-center text-lg font-semibold tabular-nums">{display}</span>
         <button
           type="button"
           aria-label={`Increase ${label}`}
@@ -109,10 +115,13 @@ export function SetEntry({ exercise, draft, onChange, compact = false }: Props) 
           <CompactStepper
             label={exercise.perHand ? 'Weight / hand' : 'Weight'}
             value={draft.weightKg ?? 0}
-            display={formatWeight(draft.weightKg, exercise.perHand)}
+            // The compact column is ~149px wide: a bare `kg` keeps the display on one
+            // line; the per-hand form lives in the target line above.
+            display={formatWeight(draft.weightKg, false)}
             step={0.5}
             min={0}
             onChange={(weightKg) => onChange({ ...draft, weightKg })}
+            showLabel={false}
           />
         ) : (
           <p className="self-center text-sm text-muted">Bodyweight</p>

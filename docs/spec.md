@@ -196,9 +196,8 @@ Actions: `startWorkout(programId)`, `completeSet(actualReps, actualWeightKg)`,
 `pauseWorkout()`, `resumeWorkout()`, `skipRest()`, `adjustRest(seconds)`,
 `skipExercise()`, `undoLastSet()`, `updateSetResult(setNumber, result)`,
 `finishWorkout()`, `abandonWorkout()`.
-Selectors: `getCurrentExercise()`, `getCurrentSet()`, `getExerciseProgress()`,
-`getWorkoutProgress()`, `getRemainingRestSeconds()`, `getNextExercise()`,
-`getSessionSummary()`.
+Selectors: `getCurrentExercise()`, `getCurrentSet()`, `getWorkoutProgress()`,
+`getRemainingRestSeconds()`, `getNextExercise()`, `getSessionSummary()`.
 
 UI dispatches actions; no component mutates session records.
 

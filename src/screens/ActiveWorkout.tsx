@@ -7,9 +7,7 @@ import { useSession } from '../store/sessionStore';
 import {
   getCurrentExercise,
   getCurrentRecord,
-  getExerciseProgress,
   getNextExercise,
-  getSetBoundaries,
   getWorkoutProgress,
 } from '../engine/selectors';
 import { autoRemainingMs, skipAction } from '../engine/auto';
@@ -93,8 +91,6 @@ export function ActiveWorkout() {
   const record = getCurrentRecord(state);
   const nextExercise = getNextExercise(state);
   const progress = getWorkoutProgress(state);
-  const exerciseProgress = getExerciseProgress(state);
-  const setMarks = getSetBoundaries(state);
   /** The drawing belongs to a set. On a break it only competes with the clock. */
   const inSet = state.status === 'exercise_active' || (state.status === 'paused' && !pausedInRest);
   const isReady = state.status === 'ready';
@@ -104,6 +100,15 @@ export function ActiveWorkout() {
   const side = currentSet?.side ?? null;
   const restLeft = remainingMs(state, tickNow);
   const setLeft = autoRemainingMs(state, tickNow);
+  const metaLine = `Set ${formatSet(null, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
+    state.currentExerciseIndex + 1
+  } / ${state.program.exercises.length}`;
+  const breakSource = state.status === 'paused' ? state.pausedFrom : state.status;
+  const inStandingRest = breakSource === 'resting';
+  const inExerciseBreak = breakSource === 'exercise_complete';
+  const restIsTimed = state.restStartedAt != null && restLeft > 0;
+  const repsText = (r: { min: number; max: number }) =>
+    r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`;
   const stageElapsed =
     state.stageStartedAt != null ? tickNow - state.stageStartedAt : Number.POSITIVE_INFINITY;
   const justStarted = state.startedAt != null && now - state.startedAt < STAGE_GUARD_MS;
@@ -173,6 +178,7 @@ export function ActiveWorkout() {
   return (
     <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden">
       <ScreenHeader
+        dense
         back={{
           to: '#/',
           label: 'Home',
@@ -185,9 +191,24 @@ export function ActiveWorkout() {
             : undefined,
         }}
         title={
-          <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
-            {state.program.name}
-          </p>
+          <div>
+            <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
+              {state.program.name}
+            </p>
+            {!isReady && <p className="truncate text-xs tabular-nums text-muted">{metaLine}</p>}
+          </div>
+        }
+        actions={
+          !isReady ? (
+            <button
+              type="button"
+              onClick={() => setEnding((v) => !v)}
+              aria-expanded={ending}
+              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+            >
+              End
+            </button>
+          ) : undefined
         }
       >
         {!isReady && (
@@ -197,6 +218,7 @@ export function ActiveWorkout() {
               <p className="text-xl font-semibold tabular-nums" aria-label="elapsed time">
                 {formatClock(elapsedMs(state, now))}
               </p>
+              <p className="text-xs text-muted">{`${formatDuration(estimatedRemainingMs(state, now))} left`}</p>
               <div className="ml-auto flex shrink-0 gap-2">
                 {RUNNING.includes(state.status) && (
                   <button
@@ -232,17 +254,9 @@ export function ActiveWorkout() {
                     Undo
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setEnding((v) => !v)}
-                  aria-expanded={ending}
-                  className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
-                >
-                  End
-                </button>
               </div>
             </div>
-            <div className="mt-2">
+            <div className="mt-1">
               <ProgressBar
                 value={progress.ratio}
                 parts={state.exerciseRecords.map((r) => ({
@@ -258,11 +272,6 @@ export function ActiveWorkout() {
                 }`}
               />
             </div>
-            <p className="mt-2 truncate text-xs tabular-nums text-muted">
-              Set {formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Exercise{' '}
-              {state.currentExerciseIndex + 1} / {state.program.exercises.length} ·{' '}
-              {formatDuration(estimatedRemainingMs(state, now))} left
-            </p>
           </>
         )}
       </ScreenHeader>
@@ -322,11 +331,7 @@ export function ActiveWorkout() {
             )}
         </div>
 
-        {state.status === 'exercise_active' && !auto && (
-          <p className="shrink-0 text-xs text-muted">reps</p>
-        )}
-
-        {exercise && (
+        {(inSet || isReady) && exercise && (
           <div className="mt-2 flex shrink-0 items-center gap-2">
             <h1
               className="min-w-0 flex-1 truncate text-2xl font-semibold leading-tight"
@@ -346,7 +351,7 @@ export function ActiveWorkout() {
             )}
           </div>
         )}
-        {exercise && (
+        {(inSet || isReady) && exercise && (
           <p className="shrink-0 truncate text-sm text-muted">
             {exercise.sets} × {exercise.reps.min}–{exercise.reps.max} ·{' '}
             {formatWeight(exercise.weightKg, exercise.perHand)}
@@ -369,22 +374,12 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {exercise && exerciseProgress.total > 1 && (
-          <div data-testid="exercise-progress" className="mt-1.5 shrink-0">
-            <ProgressBar
-              value={exerciseProgress.done / exerciseProgress.total}
-              ticks={setMarks}
-              label={`This exercise: ${exerciseProgress.done} of ${exerciseProgress.total} sets`}
-            />
-          </div>
-        )}
-
         {exercise && inSet && (
           <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
             {slug ? (
-              <ExerciseMotion slug={slug} className="h-full max-h-64 w-full" />
+              <ExerciseMotion slug={slug} className="h-full max-h-72 w-full" />
             ) : (
-              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-64 w-full" />
+              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-full max-h-72 w-full" />
             )}
           </div>
         )}
@@ -401,15 +396,44 @@ export function ActiveWorkout() {
         )}
 
         {restingNow && (
-          <div data-testid="rest-cue" className="mt-3 flex min-h-0 flex-1 items-center justify-center">
-            <p className="text-5xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+          <div
+            data-testid="rest-cue"
+            className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center"
+          >
+            {restIsTimed && (inStandingRest || (inExerciseBreak && !!nextExercise)) && (
+              <p className="text-4xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+            )}
+            <div className="min-w-0 space-y-1">
+              {inStandingRest && exercise && (
+                <>
+                  <p className="text-base font-semibold">
+                    {`Next · set ${formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)}`}
+                  </p>
+                  <p className="truncate text-sm text-muted">
+                    {exercise.name} · {repsText(exercise.reps)} reps
+                  </p>
+                </>
+              )}
+              {inExerciseBreak && nextExercise && (
+                <>
+                  <p className="text-base font-semibold">{`Up next · ${nextExercise.name}`}</p>
+                  <p className="truncate text-sm text-muted">
+                    {nextExercise.sets} × {repsText(nextExercise.reps)} ·{' '}
+                    {formatWeight(nextExercise.weightKg, nextExercise.perHand)}
+                  </p>
+                </>
+              )}
+              {inExerciseBreak && !nextExercise && (
+                <p className="text-base font-semibold">Last exercise done</p>
+              )}
+            </div>
           </div>
         )}
       </section>
 
       <footer
         data-testid="footer"
-        className="shrink-0 border-t border-line bg-ink px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3"
+        className="shrink-0 border-t border-line bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
       >
         {isReady && (
           <Button variant="primary" className="h-14 w-full text-base" onClick={startWorkout}>
@@ -500,7 +524,7 @@ export function ActiveWorkout() {
       </footer>
 
       {ending && (
-        <div className="absolute inset-x-5 bottom-24 z-30 rounded-2xl border border-line bg-surface p-3">
+        <div className="absolute inset-x-5 bottom-44 z-30 rounded-2xl border border-line bg-surface p-3">
           <p className="mb-2 text-xs text-muted">End this session?</p>
           <div className="flex gap-2">
             <Button className="flex-1" onClick={() => dispatch({ type: 'FINISH' })}>

@@ -41,15 +41,30 @@ const noScroll = (page) =>
         !stepper || !footer
           ? true
           : stepper.getBoundingClientRect().bottom <= footer.getBoundingClientRect().top + 1,
+      header: document.querySelector('header')?.getBoundingClientRect().height ?? 0,
+      art: document.querySelector('[data-testid="stage"] .exercise-frame-base')?.getBoundingClientRect().height ?? 0,
     };
   });
 
-const layoutOk = async (page, label) => {
+const layoutOk = async (page, label, minArt = 0) => {
   const m = await noScroll(page);
   check(m.document <= 1, `${label}: no page scroll (${m.document}px)`);
   check(m.stage <= 1, `${label}: stage does not clip (${m.stage}px)`);
   check(m.stepperAboveFooter, `${label}: reps stepper sits above the footer`);
+  check(m.header <= 116, `${label}: header is compact (${m.header}px)`);
+  if (minArt > 0) check(m.art >= minArt, `${label}: illustration is legible (${m.art}px)`);
 };
+
+/** The footer's primary label changes with the stage; tap whichever exists. */
+async function tapAny(page, names) {
+  for (const name of names) {
+    try {
+      await page.getByRole('button', { name, exact: true }).click({ timeout: 1500 });
+      return;
+    } catch {}
+  }
+  throw new Error(`none of: ${names.join(', ')}`);
+}
 
 const backLinks = (page) =>
   page.evaluate(() =>
@@ -108,7 +123,7 @@ await layoutOk(page, 'ready');
 
 await page.getByRole('button', { name: 'Start', exact: true }).click();
 await page.waitForSelector('text=Complete set');
-await layoutOk(page, 'set');
+await layoutOk(page, 'set', 120);
 
 const countdown = () => page.locator('p[role="status"]').first().textContent();
 const seconds = (t) => Number(t.trim().slice(0, 2)) * 60 + Number(t.trim().slice(3));
@@ -131,7 +146,7 @@ await layoutOk(page, 'rest');
 await page.getByRole('button', { name: 'Skip rest' }).click();
 await page.waitForTimeout(900);
 check(await page.getByRole('button', { name: 'Done now' }).isVisible(), 'next set is armed for auto');
-await layoutOk(page, 'set after rest');
+await layoutOk(page, 'set after rest', 120);
 
 // the one skip button takes the set, then end through the confirm overlay
 await page.getByRole('button', { name: 'Skip stage' }).click();
@@ -161,6 +176,32 @@ await page.goto(`${BASE}/#/history`);
 await page.waitForSelector('text=Workout B', { timeout: 5000 });
 check(true, 'history lists the auto session');
 
+// --- 375x667: the tightest real phone, plus the weighted perHand exercise ----
+const tight = await newPage({ width: 375, height: 667 });
+await importFixture(tight);
+await tight.goto(`${BASE}/#/program/workout-b`);
+await tight.getByRole('button', { name: 'Start this program' }).click();
+await tight.waitForURL(/#\/session/);
+await tight.getByRole('button', { name: 'Start', exact: true }).click();
+await tight.waitForSelector('text=Complete set');
+await layoutOk(tight, '375x667 set', 120);
+await tight.getByRole('button', { name: 'Auto', exact: true }).click();
+await tight.waitForTimeout(500);
+await layoutOk(tight, '375x667 auto set', 120);
+await tight.getByRole('button', { name: 'Done now' }).click();
+await tight.waitForSelector('text=Rest remaining');
+await layoutOk(tight, '375x667 rest');
+// three sets through auto: the last one lands on the weighted, perHand exercise
+for (let i = 0; i < 3; i += 1) {
+  await tapAny(tight, ['Skip rest', 'Continue']);
+  await tight.waitForTimeout(700);
+  await tapAny(tight, ['Done now']);
+  await tight.waitForTimeout(500);
+  if (i === 1) await layoutOk(tight, '375x667 exercise break');
+}
+await layoutOk(tight, '375x667 weighted set', 120);
+await tight.context().close();
+
 // --- the same layout on the smallest screen --------------------------------
 await page.setViewportSize({ width: 360, height: 640 });
 await page.goto(`${BASE}/#/program/workout-b`);
@@ -170,10 +211,16 @@ await page.getByRole('button', { name: 'Start', exact: true }).waitFor();
 await layoutOk(page, '360x640 ready');
 await page.getByRole('button', { name: 'Start', exact: true }).click();
 await page.waitForSelector('text=Complete set');
-await layoutOk(page, '360x640 set');
+await layoutOk(page, '360x640 set', 100);
 await page.getByRole('button', { name: 'Auto', exact: true }).click();
 await page.waitForTimeout(500);
-await layoutOk(page, '360x640 auto set');
+await layoutOk(page, '360x640 auto set', 100);
+await tapAny(page, ['Done now']);
+await page.waitForSelector('text=Rest remaining');
+await layoutOk(page, '360x640 rest');
+await tapAny(page, ['Skip rest']);
+await page.waitForTimeout(900);
+await layoutOk(page, '360x640 set after rest', 100);
 await page.context().close();
 
 check(errors.length === 0, `no console errors (${errors.slice(0, 3).join(' | ')})`);
