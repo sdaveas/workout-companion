@@ -338,6 +338,15 @@ describe('per-hand sets', () => {
     expect(s.restDurationMs).toBe(60_000);
     expect(summarize(s, T0).setsCompleted).toBe(4);
   });
+
+  it('skips both hands of a one-arm set in one go', () => {
+    let s = startedOneArm();
+    s = reduce(s, { type: 'SKIP_SET', now: T0 });
+    expect(s.currentSetIndex).toBe(2);
+    expect(s.exerciseRecords[0].sets.slice(0, 2).every((x) => x.skipped)).toBe(true);
+    expect(s.exerciseRecords[0].sets[2].skipped).toBe(false);
+    expect(s.status).toBe('exercise_active');
+  });
 });
 
 describe('undo', () => {

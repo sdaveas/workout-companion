@@ -13,9 +13,9 @@ import {
 import { autoRemainingMs, skipAction } from '../engine/auto';
 import { remainingMs } from '../engine/rest';
 import { elapsedMs, estimatedRemainingMs } from '../engine/time';
-import { formatClock, formatDuration, formatSet, formatWeight } from '../lib/format';
+import { formatClock, formatDuration, formatSet, formatSetNumber, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
-import type { WorkoutAction, WorkoutState } from '../engine/types';
+import type { ProgramExercise, WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
@@ -31,9 +31,83 @@ const RUNNING: WorkoutState['status'][] = ['exercise_active', 'resting', 'exerci
 const STAGE_GUARD_MS = 700;
 
 const TRANSPORT_BTN =
-  'flex h-12 flex-1 items-center justify-center rounded-xl border text-sm disabled:opacity-40';
+  'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-sm disabled:opacity-40';
 
-/** The session transport: previous set, auto on/off, skip the current stage. */
+const AUTO_ON = 'border-accent bg-accent/10 text-accent';
+const AUTO_OFF = 'border-line text-muted';
+
+/** "6–10", or just "6" when the prescription is a single number. */
+const repsText = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`);
+
+/** The mode toggle sits beside the primary action, where the set is won or lost. */
+function AutoToggle({
+  auto,
+  dispatch,
+}: {
+  auto: boolean;
+  dispatch: (action: WorkoutAction) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={auto ? 'Stop auto' : 'Start auto'}
+      aria-pressed={auto}
+      onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+      className={`flex h-14 flex-1 items-center justify-center rounded-xl border font-gym text-sm ${
+        auto ? AUTO_ON : AUTO_OFF
+      }`}
+    >
+      auto
+    </button>
+  );
+}
+
+/** One row per remaining exercise; the one about to start is lit up. */
+function ExerciseOverview({
+  exercises,
+  firstNumber,
+  activeId,
+  className,
+}: {
+  exercises: ProgramExercise[];
+  firstNumber: number;
+  activeId?: string | null;
+  className?: string;
+}) {
+  return (
+    <div data-testid="overview" className={className}>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted">Up next</p>
+      <ul className="mt-1 divide-y divide-line">
+        {exercises.map((next, i) => {
+          const active = next.id === activeId;
+          return (
+            <li key={next.id} className="flex items-center gap-3 py-1.5">
+              <span
+                className={`w-5 shrink-0 text-right text-xs tabular-nums ${
+                  active ? 'text-accent' : 'text-muted'
+                }`}
+              >
+                {firstNumber + i}
+              </span>
+              <span
+                className={`min-w-0 flex-1 truncate text-sm ${
+                  active ? 'font-semibold text-white' : 'font-medium'
+                }`}
+              >
+                {next.name}
+              </span>
+              <span className="shrink-0 text-xs text-muted">
+                {next.sets} × {repsText(next.reps)} · {formatWeight(next.weightKg, next.perHand)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** The session transport: previous set, then skip the set or toggle auto. */
 function TransportRow({
   state,
   auto,
@@ -52,18 +126,9 @@ function TransportRow({
         onClick={() => dispatch({ type: 'UNDO' })}
         className={`${TRANSPORT_BTN} border-line text-muted`}
       >
-        back
+        previous
       </button>
-      <button
-        type="button"
-        aria-label={auto ? 'Stop auto' : 'Start auto'}
-        aria-pressed={auto}
-        onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-        className={`${TRANSPORT_BTN} ${auto ? 'border-accent bg-accent/10 text-accent' : 'border-line text-muted'}`}
-      >
-        auto
-      </button>
-      {state.status === 'exercise_active' && (
+      {state.status === 'exercise_active' ? (
         <button
           type="button"
           aria-label="Skip set"
@@ -73,7 +138,17 @@ function TransportRow({
           }}
           className={`${TRANSPORT_BTN} border-line text-muted`}
         >
-          skip this set
+          next
+        </button>
+      ) : (
+        <button
+          type="button"
+          aria-label={auto ? 'Stop auto' : 'Start auto'}
+          aria-pressed={auto}
+          onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+          className={`${TRANSPORT_BTN} ${auto ? AUTO_ON : AUTO_OFF}`}
+        >
+          auto
         </button>
       )}
     </div>
@@ -147,22 +222,19 @@ export function ActiveWorkout() {
   /** The preview has no stepper, so its figure can take the stage a live set caps. */
   const artClass = isReady ? 'h-full w-full' : 'h-full max-h-72 w-full';
   /** A break shows the rest cue instead of the lift's own drawing. */
-  const restingNow = !isReady && !inSet;
   const currentSet = record?.sets[state.currentSetIndex];
   const side = currentSet?.side ?? null;
   // Both clocks read the same tick, so the elapsed timer and the stage timer tick
   // together instead of drifting apart.
   const restLeft = remainingMs(state, now);
   const setLeft = autoRemainingMs(state, now);
-  const metaLine = `Set ${formatSet(null, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
+  const metaLine = `Set ${formatSetNumber(exercise.perHand, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
     state.currentExerciseIndex + 1
   } / ${state.program.exercises.length}`;
   const breakSource = state.status === 'paused' ? state.pausedFrom : state.status;
   const inStandingRest = breakSource === 'resting';
   const inExerciseBreak = breakSource === 'exercise_complete';
   const restIsTimed = state.restStartedAt != null && restLeft > 0;
-  const repsText = (r: { min: number; max: number }) =>
-    r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`;
   const stageElapsed =
     state.stageStartedAt != null ? tickNow - state.stageStartedAt : Number.POSITIVE_INFINITY;
   const justStarted = state.startedAt != null && now - state.startedAt < STAGE_GUARD_MS;
@@ -177,6 +249,7 @@ export function ActiveWorkout() {
       : null;
 
   const slug = exercise ? figureSlug(exercise.name) : null;
+  const nextSlug = nextExercise ? figureSlug(nextExercise.name) : null;
   const hasDetails =
     !!exercise &&
     (exercise.instructions.length > 0 ||
@@ -359,7 +432,7 @@ export function ActiveWorkout() {
             </h1>
             {exercise.sets > 1 && (
               <span className="shrink-0 text-sm tabular-nums text-muted">
-                [{state.currentSetIndex + 1}/{exercise.sets}]
+                [{formatSetNumber(exercise.perHand, state.currentSetIndex + 1, record?.sets.length ?? 0)}]
               </span>
             )}
             {canExplain && (
@@ -408,20 +481,11 @@ export function ActiveWorkout() {
 
         {/* The preview is otherwise a title and a list with a void under it. */}
         {isReady && state.program.exercises.length > 1 && (
-          <div data-testid="overview" className="mt-3 flex flex-col">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Up next</p>
-            <ul className="mt-1 divide-y divide-line">
-              {state.program.exercises.slice(1).map((next, i) => (
-                <li key={next.id} className="flex items-center gap-3 py-2">
-                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted">{i + 2}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{next.name}</span>
-                  <span className="shrink-0 text-xs text-muted">
-                    {next.sets} × {repsText(next.reps)} · {formatWeight(next.weightKg, next.perHand)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ExerciseOverview
+            className="mt-3 flex flex-col"
+            exercises={state.program.exercises.slice(1)}
+            firstNumber={2}
+          />
         )}
 
         {exercise && state.draft && state.status === 'exercise_active' && (
@@ -435,38 +499,63 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {restingNow && (
+        {inStandingRest && (
           <div
             data-testid="rest-cue"
             className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center"
           >
-            {restIsTimed && (inStandingRest || (inExerciseBreak && !!nextExercise)) && (
+            {restIsTimed && (
               <p className="text-4xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
             )}
-            <div className="min-w-0 space-y-1">
-              {inStandingRest && exercise && (
-                <>
-                  <p className="text-base font-semibold">
-                    {`Next · set ${formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)}`}
-                  </p>
-                  <p className="truncate text-sm text-muted">
-                    {exercise.name} · {repsText(exercise.reps)} reps
-                  </p>
-                </>
-              )}
-              {inExerciseBreak && nextExercise && (
-                <>
-                  <p className="text-base font-semibold">{`Up next · ${nextExercise.name}`}</p>
-                  <p className="truncate text-sm text-muted">
-                    {nextExercise.sets} × {repsText(nextExercise.reps)} ·{' '}
-                    {formatWeight(nextExercise.weightKg, nextExercise.perHand)}
-                  </p>
-                </>
-              )}
-              {inExerciseBreak && !nextExercise && (
-                <p className="text-base font-semibold">Last exercise done</p>
+            {exercise && (
+              <div className="min-w-0 space-y-1">
+                <p className="text-base font-semibold">
+                  {`Next · set ${formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)}`}
+                </p>
+                <p className="truncate text-sm text-muted">
+                  {exercise.name} · {repsText(exercise.reps)} reps
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* The exercise break previews the next lift: its drawing, plus the same
+            plan the ready screen shows, with the next exercise lit up. */}
+        {inExerciseBreak && nextExercise && (
+          <div data-testid="rest-cue" className="mt-2 flex min-h-0 flex-1 flex-col">
+            {restIsTimed && (
+              <p className="text-3xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+            )}
+            <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
+              {nextSlug ? (
+                <ExerciseMotion slug={nextSlug} className="h-full max-h-32 w-full" />
+              ) : (
+                <ExerciseImage
+                  src={nextExercise.imageUrl}
+                  alt={nextExercise.name}
+                  className="h-full max-h-32 w-full"
+                />
               )}
             </div>
+            <ExerciseOverview
+              className="mt-2"
+              exercises={state.program.exercises.slice(state.currentExerciseIndex + 1)}
+              firstNumber={state.currentExerciseIndex + 2}
+              activeId={nextExercise.id}
+            />
+          </div>
+        )}
+
+        {inExerciseBreak && !nextExercise && (
+          <div
+            data-testid="rest-cue"
+            className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center"
+          >
+            {restIsTimed && (
+              <p className="text-4xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+            )}
+            <p className="text-base font-semibold">Last exercise done</p>
           </div>
         )}
       </section>
@@ -483,42 +572,51 @@ export function ActiveWorkout() {
 
         {state.status === 'exercise_active' && exercise && (
           <div className="space-y-2">
-            <Button
-              variant="primary"
-              className="h-14 w-full text-base"
-              disabled={primaryDisabled}
-              onClick={() =>
-                dispatch({
-                  type: 'COMPLETE_SET',
-                  reps: state.draft?.reps ?? exercise.reps.min,
-                  weightKg: state.draft?.weightKg ?? exercise.weightKg ?? null,
-                })
-              }
-            >
-              {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                className="h-14 flex-[3] text-base"
+                disabled={primaryDisabled}
+                onClick={() =>
+                  dispatch({
+                    type: 'COMPLETE_SET',
+                    reps: state.draft?.reps ?? exercise.reps.min,
+                    weightKg: state.draft?.weightKg ?? exercise.weightKg ?? null,
+                  })
+                }
+              >
+                {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
+              </Button>
+              <AutoToggle auto={auto} dispatch={dispatch} />
+            </div>
             <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}
 
         {state.status === 'resting' && (
           <div className="space-y-2">
-            {restLeft === 0 ? (
+            <div className="flex gap-2">
+              {restLeft === 0 ? (
+                <Button
+                  variant="primary"
+                  className="h-14 flex-[3] text-base"
+                  onClick={() => dispatch({ type: 'REST_DONE' })}
+                >
+                  Start set
+                </Button>
+              ) : (
+                <Button className="h-14 flex-[3] text-base" onClick={() => dispatch({ type: 'SKIP_REST' })}>
+                  Skip rest
+                </Button>
+              )}
               <Button
-                variant="primary"
-                className="h-14 w-full text-base"
-                onClick={() => dispatch({ type: 'REST_DONE' })}
+                className="h-14 flex-1 px-1"
+                variant="secondary"
+                onClick={() => dispatch({ type: 'RESTART_REST' })}
               >
-                Start set
+                Restart
               </Button>
-            ) : (
-              <Button className="h-14 w-full text-base" onClick={() => dispatch({ type: 'SKIP_REST' })}>
-                Skip rest
-              </Button>
-            )}
-            <Button className="h-11 w-full" variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
-              Restart rest
-            </Button>
+            </div>
             <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}
@@ -535,18 +633,24 @@ export function ActiveWorkout() {
 
         {state.status === 'exercise_complete' && (
           <div className="space-y-2">
-            <Button
-              variant="primary"
-              className="h-14 w-full text-base"
-              onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}
-            >
-              {nextExercise ? 'Continue' : 'Finish workout'}
-            </Button>
-            {state.restStartedAt != null && (
-              <Button className="h-11 w-full" variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
-                Restart rest
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                className={`h-14 text-base ${state.restStartedAt != null ? 'flex-[3]' : 'w-full'}`}
+                onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}
+              >
+                {nextExercise ? 'Continue' : 'Finish workout'}
               </Button>
-            )}
+              {state.restStartedAt != null && (
+                <Button
+                  className="h-14 flex-1 px-1"
+                  variant="secondary"
+                  onClick={() => dispatch({ type: 'RESTART_REST' })}
+                >
+                  Restart
+                </Button>
+              )}
+            </div>
             <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}

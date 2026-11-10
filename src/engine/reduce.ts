@@ -213,13 +213,16 @@ function completeSet(
 function skipSet(s: WorkoutState, e: { now: number }): WorkoutState {
   const index = s.currentSetIndex;
   const sets = currentSets(s);
+  const exercise = currentExercise(s);
+  // A "set" of a one-hand movement is both hands, so one skip clears both rows.
+  const last = exercise.perHand && sets[index].side === 'left' ? index + 1 : index;
   const updatedSets = sets.map((set, i) =>
-    i === index ? { ...set, skipped: true, completedAt: e.now } : set,
+    i >= index && i <= last ? { ...set, skipped: true, completedAt: e.now } : set,
   );
   const records = s.exerciseRecords.map((r, i) =>
     i === s.currentExerciseIndex ? { ...r, sets: updatedSets } : r,
   );
-  const moreSets = index + 1 < sets.length;
+  const moreSets = last + 1 < sets.length;
 
   if (!moreSets) {
     return {
@@ -239,11 +242,11 @@ function skipSet(s: WorkoutState, e: { now: number }): WorkoutState {
     ...s,
     exerciseRecords: records,
     undoStack: withUndo(s),
-    currentSetIndex: index + 1,
-    draft: draftFor(currentExercise(s)),
+    currentSetIndex: last + 1,
+    draft: draftFor(exercise),
     status: 'exercise_active',
     ...clearedRest(),
-    ...stageClock(s.mode, currentExercise(s), e.now),
+    ...stageClock(s.mode, exercise, e.now),
   };
 }
 

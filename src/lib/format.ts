@@ -30,6 +30,11 @@ export function formatSet(side: 'left' | 'right' | null | undefined, setNumber: 
   return `${group} / ${groups} · ${side} hand`;
 }
 
+/** Set number without a hand label; pairs rows only when the exercise is unilateral. */
+export function formatSetNumber(perHand: boolean, setNumber: number, totalSets: number): string {
+  return formatSet(perHand ? 'left' : null, setNumber, totalSets).split(' ·')[0];
+}
+
 export function formatWeight(kg: number | null, perHand = false): string {
   if (kg == null) return 'Bodyweight';
   return `${kg} kg${perHand ? ' / hand' : ''}`;

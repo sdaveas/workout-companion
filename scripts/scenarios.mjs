@@ -813,7 +813,7 @@ const auditScreen = async (page, screen) => {
   expect(figure.includes('exercises/'), 'the workout shows an exercise figure');
   expect(figure.includes('dumbbell-row'), 'Dumbbell Row shows the row poses');
   const titleBlock = await page.locator('[data-testid="stage"] h1').locator('xpath=..').textContent();
-  expect(titleBlock?.includes('[1/3]'), 'the workout names the set it is on');
+  expect(titleBlock?.includes('[1 / 3]'), 'the workout names the set it is on');
   const target = await page
     .locator('[data-testid="stage"] h1')
     .locator('xpath=following::p[1]')
