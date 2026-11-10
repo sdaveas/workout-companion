@@ -30,6 +30,9 @@ const RUNNING: WorkoutState['status'][] = ['exercise_active', 'resting', 'exerci
 /** A double-tap on the preview's Start must not land on the set's primary button. */
 const STAGE_GUARD_MS = 700;
 
+/** How long the closing hand stays ticked before the rest screen takes over. */
+const HAND_TICK_MS = 600;
+
 const TRANSPORT_BTN =
   'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-sm disabled:opacity-40';
 
@@ -168,6 +171,8 @@ export function ActiveWorkout() {
   const reset = useSession((s) => s.reset);
   const startWorkout = useSession((s) => s.startWorkout);
   const [ending, setEnding] = useState(false);
+  // The right hand ends a two-hand set: hold the screen briefly so the tick is seen.
+  const [flashDone, setFlashDone] = useState(false);
   const [howTo, setHowTo] = useState(false);
 
   const status = state?.status;
@@ -464,11 +469,13 @@ export function ActiveWorkout() {
               <div
                 key={hand.setNumber}
                 className={`flex items-center justify-between rounded-xl border px-3 py-1.5 text-xs ${
-                  hand.completed ? 'border-accent text-accent' : 'border-line text-muted'
+                  hand.completed || (flashDone && hand.side === side)
+                    ? 'border-accent text-accent'
+                    : 'border-line text-muted'
                 }`}
               >
                 <span>{hand.side === 'left' ? 'Left hand' : 'Right hand'}</span>
-                <span>{hand.completed ? '✓' : '·'}</span>
+                <span>{hand.completed || (flashDone && hand.side === side) ? '✓' : '·'}</span>
               </div>
             ))}
           </div>
@@ -585,14 +592,20 @@ export function ActiveWorkout() {
               <Button
                 variant="primary"
                 className={PRIMARY_BTN}
-                disabled={primaryDisabled}
-                onClick={() =>
-                  dispatch({
+                disabled={primaryDisabled || flashDone}
+                onClick={() => {
+                  const action = {
                     type: 'COMPLETE_SET',
                     reps: state.draft?.reps ?? exercise.reps.min,
                     weightKg: state.draft?.weightKg ?? exercise.weightKg ?? null,
-                  })
-                }
+                  } as const;
+                  if (side !== 'right') return dispatch(action);
+                  setFlashDone(true);
+                  window.setTimeout(() => {
+                    setFlashDone(false);
+                    dispatch(action);
+                  }, HAND_TICK_MS);
+                }}
               >
                 {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
               </Button>

@@ -67,11 +67,19 @@ dialog::backdrop {
   background: rgb(0 0 0 / 0.6);
 }
 
-/* Gym-poster lettering for the session transport. Impact is the athletic
-   condensed face on iOS/macOS; the fallbacks keep it bold everywhere else. */
+/* Gym-poster lettering for the session transport. Impact was too heavy; Barlow
+   Condensed 600 keeps the poster look at a weight that reads on a phone. */
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/barlow-condensed-600.woff2') format('woff2');
+}
+
 .font-gym {
-  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Franklin Gothic Medium', sans-serif;
-  font-weight: 700;
+  font-family: 'Barlow Condensed', Impact, 'Arial Narrow', 'Franklin Gothic Medium', sans-serif;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }

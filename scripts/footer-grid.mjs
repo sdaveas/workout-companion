@@ -59,12 +59,18 @@ states.later = { footer: await snap(), page: await metrics(), at: await where() 
 if (states.set.footer.length !== 4) problems.push(`set state has ${states.set.footer.length} footer buttons, expected 4`);
 if (states.rest.footer.length !== 4) problems.push(`rest state has ${states.rest.footer.length} footer buttons, expected 4`);
 
+const fontStatus = await page.evaluate(async () => {
+  await document.fonts.load('600 16px "Barlow Condensed"');
+  return [...document.fonts].map((f) => `${f.family} ${f.weight} ${f.status}`);
+});
+if (!fontStatus.some((f) => f.endsWith('loaded'))) problems.push(`the gym font never loaded: ${fontStatus.join(', ')}`);
+
 const ref = states.set.footer;
 for (const [name, s] of Object.entries(states)) {
   if (s.page.scroll > 1) problems.push(`${name}: page scrolls ${s.page.scroll}px`);
   for (const b of s.footer) {
     if (b.h < 44) problems.push(`${name}: ${b.label} only ${b.h}px tall`);
-    if (b.font !== 'Impact') problems.push(`${name}: ${b.label} font ${b.font}`);
+    if (b.font.replace(/"/g, '') !== 'Barlow Condensed') problems.push(`${name}: ${b.label} font ${b.font}`);
     const twin = ref.find(r => Math.abs(r.x - b.x) <= 2 && Math.abs(r.y - b.y) <= 2 && Math.abs(r.w - b.w) <= 2);
     if (!twin) problems.push(`${name}: ${b.label} sits at ${b.x},${b.y} ${b.w}x${b.h}, no matching slot in the set state`);
     if (b.x + b.w > 390) problems.push(`${name}: ${b.label} overflows right`);
