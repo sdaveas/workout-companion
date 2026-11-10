@@ -33,6 +33,9 @@ const STAGE_GUARD_MS = 700;
 const TRANSPORT_BTN =
   'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-sm disabled:opacity-40';
 
+/** The primary action keeps the same size and type in every stage of the session. */
+const PRIMARY_BTN = 'h-14 flex-[3] font-gym text-base';
+
 const AUTO_ON = 'border-accent bg-accent/10 text-accent';
 const AUTO_OFF = 'border-line text-muted';
 
@@ -110,11 +113,9 @@ function ExerciseOverview({
 /** The session transport: previous set, then skip the set or toggle auto. */
 function TransportRow({
   state,
-  auto,
   dispatch,
 }: {
   state: WorkoutState;
-  auto: boolean;
   dispatch: (action: WorkoutAction) => void;
 }) {
   return (
@@ -141,15 +142,16 @@ function TransportRow({
           next
         </button>
       ) : (
-        <button
-          type="button"
-          aria-label={auto ? 'Stop auto' : 'Start auto'}
-          aria-pressed={auto}
-          onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-          className={`${TRANSPORT_BTN} ${auto ? AUTO_ON : AUTO_OFF}`}
-        >
-          auto
-        </button>
+        state.restStartedAt != null && (
+          <button
+            type="button"
+            aria-label="Restart rest"
+            onClick={() => dispatch({ type: 'RESTART_REST' })}
+            className={`${TRANSPORT_BTN} border-line text-muted`}
+          >
+            restart
+          </button>
+        )
       )}
     </div>
   );
@@ -331,7 +333,7 @@ export function ActiveWorkout() {
               type="button"
               onClick={() => setEnding((v) => !v)}
               aria-expanded={ending}
-              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+              className="h-11 shrink-0 rounded-xl border border-line px-3 font-gym text-sm text-muted"
             >
               End
             </button>
@@ -389,13 +391,13 @@ export function ActiveWorkout() {
           {state.status === 'exercise_active' && auto && (
             <>
               <Button
-                className="ml-auto h-10 px-2.5"
+                className="ml-auto h-10 px-2.5 font-gym"
                 onClick={() => dispatch({ type: 'EXTEND_STAGE', seconds: -15 })}
               >
                 −15s
               </Button>
               <Button
-                className="h-10 px-2.5"
+                className="h-10 px-2.5 font-gym"
                 onClick={() => dispatch({ type: 'EXTEND_STAGE', seconds: 15 })}
               >
                 +15s
@@ -407,13 +409,13 @@ export function ActiveWorkout() {
             restLeft > 0 && (
               <>
                 <Button
-                  className="ml-auto h-10 px-2.5"
+                  className="ml-auto h-10 px-2.5 font-gym"
                   onClick={() => dispatch({ type: 'ADJUST_REST', seconds: -15 })}
                 >
                   −15s
                 </Button>
                 <Button
-                  className="h-10 px-2.5"
+                  className="h-10 px-2.5 font-gym"
                   onClick={() => dispatch({ type: 'ADJUST_REST', seconds: 15 })}
                 >
                   +15s
@@ -575,7 +577,7 @@ export function ActiveWorkout() {
             <div className="flex gap-2">
               <Button
                 variant="primary"
-                className="h-14 flex-[3] text-base"
+                className={PRIMARY_BTN}
                 disabled={primaryDisabled}
                 onClick={() =>
                   dispatch({
@@ -589,7 +591,7 @@ export function ActiveWorkout() {
               </Button>
               <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
-            <TransportRow state={state} auto={auto} dispatch={dispatch} />
+            <TransportRow state={state} dispatch={dispatch} />
           </div>
         )}
 
@@ -599,32 +601,26 @@ export function ActiveWorkout() {
               {restLeft === 0 ? (
                 <Button
                   variant="primary"
-                  className="h-14 flex-[3] text-base"
+                  className={PRIMARY_BTN}
                   onClick={() => dispatch({ type: 'REST_DONE' })}
                 >
                   Start set
                 </Button>
               ) : (
-                <Button className="h-14 flex-[3] text-base" onClick={() => dispatch({ type: 'SKIP_REST' })}>
+                <Button className={PRIMARY_BTN} onClick={() => dispatch({ type: 'SKIP_REST' })}>
                   Skip rest
                 </Button>
               )}
-              <Button
-                className="h-14 flex-1 px-1"
-                variant="secondary"
-                onClick={() => dispatch({ type: 'RESTART_REST' })}
-              >
-                Restart
-              </Button>
+              <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
-            <TransportRow state={state} auto={auto} dispatch={dispatch} />
+            <TransportRow state={state} dispatch={dispatch} />
           </div>
         )}
 
         {state.status === 'paused' && (
           <Button
             variant="primary"
-            className="h-14 w-full text-base"
+            className="h-14 w-full font-gym text-base"
             onClick={() => dispatch({ type: 'RESUME' })}
           >
             Resume
@@ -636,22 +632,14 @@ export function ActiveWorkout() {
             <div className="flex gap-2">
               <Button
                 variant="primary"
-                className={`h-14 text-base ${state.restStartedAt != null ? 'flex-[3]' : 'w-full'}`}
+                className={PRIMARY_BTN}
                 onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}
               >
                 {nextExercise ? 'Continue' : 'Finish workout'}
               </Button>
-              {state.restStartedAt != null && (
-                <Button
-                  className="h-14 flex-1 px-1"
-                  variant="secondary"
-                  onClick={() => dispatch({ type: 'RESTART_REST' })}
-                >
-                  Restart
-                </Button>
-              )}
+              <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
-            <TransportRow state={state} auto={auto} dispatch={dispatch} />
+            <TransportRow state={state} dispatch={dispatch} />
           </div>
         )}
       </footer>
@@ -660,12 +648,12 @@ export function ActiveWorkout() {
         <div className="absolute inset-x-5 bottom-44 z-30 rounded-2xl border border-line bg-surface p-3">
           <p className="mb-2 text-xs text-muted">End this session?</p>
           <div className="flex gap-2">
-            <Button className="flex-1" onClick={() => dispatch({ type: 'FINISH' })}>
+            <Button className="flex-1 font-gym" onClick={() => dispatch({ type: 'FINISH' })}>
               Finish &amp; save
             </Button>
             <Button
               variant="danger"
-              className="flex-1"
+              className="flex-1 font-gym"
               onClick={() => {
                 if (confirm('Abandon this session? It will not appear in history.')) {
                   dispatch({ type: 'ABANDON' });
@@ -682,7 +670,7 @@ export function ActiveWorkout() {
         <div className="absolute inset-0 z-40 overflow-y-auto bg-ink px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{exercise.name}</h2>
-            <Button className="h-11" onClick={() => setHowTo(false)}>
+            <Button className="h-11 font-gym" onClick={() => setHowTo(false)}>
               Close
             </Button>
           </div>
