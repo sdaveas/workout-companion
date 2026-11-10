@@ -104,7 +104,7 @@ check(after?.set === before?.set && after?.total === before?.total, 'reload rest
 check(afterName === beforeName, `reload restores the same exercise (${afterName})`);
 check(!(await body()).includes('Ready to train'), 'reload lands on the active session, not Home');
 
-// reload mid-rest, and mid-pause
+// reload mid-rest, with auto stopped and restarted
 // a per-hand exercise needs a second tap before the break starts
 for (let i = 0; i < 3 && !(await visible('Skip rest')); i += 1) {
   await settle();
@@ -116,19 +116,27 @@ for (let i = 0; i < 3 && !(await visible('Skip rest')); i += 1) {
 await page.waitForSelector('text=Rest remaining');
 await page.waitForTimeout(2000);
 const rest1 = (await body()).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
-await page.getByRole('button', { name: 'Pause' }).click();
-const frozen = await page.locator('[data-testid="stage-big"]').textContent();
+const secs = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+await page.getByRole('button', { name: 'Start auto' }).click();
+await page.waitForTimeout(1200);
+const restAuto = (await body()).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
+check(
+  rest1 && restAuto && secs(rest1) - secs(restAuto) >= 1,
+  `the rest clock runs with auto on (${rest1} → ${restAuto})`,
+);
+await page.getByRole('button', { name: 'Stop auto' }).click();
+await page.waitForTimeout(1200);
+const restStopped = (await body()).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
+check(
+  restAuto && restStopped && secs(restAuto) - secs(restStopped) >= 1,
+  `stopping auto leaves the rest clock running (${restAuto} → ${restStopped})`,
+);
 await page.reload();
-await page.waitForSelector('text=Paused');
-const frozenAfter = (await page.locator('[data-testid="stage-big"]').textContent()).trim();
-check(frozenAfter === frozen.trim(), `paused countdown survives reload (${frozenAfter})`);
-await page.getByRole('button', { name: 'Resume' }).click();
 await page.waitForSelector('text=Rest remaining');
 const rest2 = (await body()).match(/Rest remaining(\d{2}:\d{2})/)?.[1];
-const secs = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 check(
-  rest1 && rest2 && Math.abs(secs(rest2) - secs(rest1)) <= 2,
-  `rest resumes from the clock, not from zero (${rest1} → ${rest2})`,
+  rest2 && Math.abs(secs(rest2) - secs(restStopped)) <= 2,
+  `rest resumes from the clock after a reload (${restStopped} → ${rest2})`,
 );
 await page.getByRole('button', { name: 'Skip rest' }).first().click();
 

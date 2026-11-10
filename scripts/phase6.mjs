@@ -128,8 +128,8 @@ await layoutOk(page, 'set', 120);
 const countdown = () => page.locator('p[role="status"]').first().textContent();
 const seconds = (t) => Number(t.trim().slice(0, 2)) * 60 + Number(t.trim().slice(3));
 
-await page.getByRole('button', { name: 'Auto', exact: true }).click();
-await page.waitForSelector('text=Auto on');
+await page.getByRole('button', { name: 'Start auto' }).click();
+await page.getByRole('button', { name: 'Stop auto' }).waitFor();
 await page.waitForTimeout(1100);
 const before = seconds(await countdown());
 check(before > 0 && before < 32, `auto set clock is counting down (${before}s)`);
@@ -149,7 +149,7 @@ check(await page.getByRole('button', { name: 'Done now' }).isVisible(), 'next se
 await layoutOk(page, 'set after rest', 120);
 
 // the one skip button takes the set, then end through the confirm overlay
-await page.getByRole('button', { name: 'Skip stage' }).click();
+await page.getByRole('button', { name: 'Skip set' }).click();
 await page.waitForTimeout(300);
 await layoutOk(page, 'after skip');
 
@@ -185,7 +185,7 @@ await tight.waitForURL(/#\/session/);
 await tight.getByRole('button', { name: 'Start', exact: true }).click();
 await tight.waitForSelector('text=Complete set');
 await layoutOk(tight, '375x667 set', 120);
-await tight.getByRole('button', { name: 'Auto', exact: true }).click();
+await tight.getByRole('button', { name: 'Start auto' }).click();
 await tight.waitForTimeout(500);
 await layoutOk(tight, '375x667 auto set', 120);
 await tight.getByRole('button', { name: 'Done now' }).click();
@@ -212,7 +212,7 @@ await layoutOk(page, '360x640 ready');
 await page.getByRole('button', { name: 'Start', exact: true }).click();
 await page.waitForSelector('text=Complete set');
 await layoutOk(page, '360x640 set', 100);
-await page.getByRole('button', { name: 'Auto', exact: true }).click();
+await page.getByRole('button', { name: 'Start auto' }).click();
 await page.waitForTimeout(500);
 await layoutOk(page, '360x640 auto set', 100);
 await tapAny(page, ['Done now']);

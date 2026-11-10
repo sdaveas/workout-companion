@@ -15,7 +15,7 @@ import { remainingMs } from '../engine/rest';
 import { elapsedMs, estimatedRemainingMs } from '../engine/time';
 import { formatClock, formatDuration, formatSet, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
-import type { WorkoutState } from '../engine/types';
+import type { WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
@@ -29,6 +29,56 @@ const RUNNING: WorkoutState['status'][] = ['exercise_active', 'resting', 'exerci
 
 /** A double-tap on the preview's Start must not land on the set's primary button. */
 const STAGE_GUARD_MS = 700;
+
+const TRANSPORT_BTN =
+  'flex h-12 flex-1 items-center justify-center rounded-xl border text-base disabled:opacity-40';
+
+/** The session transport: previous set, auto on/off, skip the current stage. */
+function TransportRow({
+  state,
+  auto,
+  dispatch,
+}: {
+  state: WorkoutState;
+  auto: boolean;
+  dispatch: (action: WorkoutAction) => void;
+}) {
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        aria-label="Previous set"
+        disabled={state.undoStack.length === 0}
+        onClick={() => dispatch({ type: 'UNDO' })}
+        className={`${TRANSPORT_BTN} border-line text-muted`}
+      >
+        <span aria-hidden>{'<<'}</span>
+      </button>
+      <button
+        type="button"
+        aria-label={auto ? 'Stop auto' : 'Start auto'}
+        aria-pressed={auto}
+        onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+        className={`${TRANSPORT_BTN} ${auto ? 'border-accent text-accent' : 'border-line text-muted'}`}
+      >
+        <span aria-hidden>{auto ? '||' : '>'}</span>
+      </button>
+      {state.status === 'exercise_active' && (
+        <button
+          type="button"
+          aria-label="Skip set"
+          onClick={() => {
+            const action = skipAction(state);
+            if (action) dispatch(action);
+          }}
+          className={`${TRANSPORT_BTN} border-line text-muted`}
+        >
+          <span aria-hidden>{'>>'}</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function ActiveWorkout() {
   const state = useSession((s) => s.state);
@@ -98,8 +148,10 @@ export function ActiveWorkout() {
   const restingNow = !isReady && !inSet;
   const currentSet = record?.sets[state.currentSetIndex];
   const side = currentSet?.side ?? null;
-  const restLeft = remainingMs(state, tickNow);
-  const setLeft = autoRemainingMs(state, tickNow);
+  // Both clocks read the same tick, so the elapsed timer and the stage timer tick
+  // together instead of drifting apart.
+  const restLeft = remainingMs(state, now);
+  const setLeft = autoRemainingMs(state, now);
   const metaLine = `Set ${formatSet(null, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
     state.currentExerciseIndex + 1
   } / ${state.program.exercises.length}`;
@@ -213,48 +265,12 @@ export function ActiveWorkout() {
       >
         {!isReady && (
           <>
-            {/* The clock and the controls that act on it belong together. */}
+            {/* One tick drives both clocks, so they change together. */}
             <div className="mt-1 flex min-h-11 items-center gap-2">
               <p className="text-xl font-semibold tabular-nums" aria-label="elapsed time">
                 {formatClock(elapsedMs(state, now))}
               </p>
               <p className="text-xs text-muted">{`${formatDuration(estimatedRemainingMs(state, now))} left`}</p>
-              <div className="ml-auto flex shrink-0 gap-2">
-                {RUNNING.includes(state.status) && (
-                  <button
-                    type="button"
-                    aria-label="Pause"
-                    onClick={() => dispatch({ type: 'PAUSE' })}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
-                  >
-                    <span aria-hidden className="flex gap-1">
-                      <span className="h-4 w-1 bg-current" />
-                      <span className="h-4 w-1 bg-current" />
-                    </span>
-                  </button>
-                )}
-                {RUNNING.includes(state.status) && (
-                  <button
-                    type="button"
-                    aria-pressed={auto}
-                    onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-                    className={`h-11 shrink-0 rounded-xl border px-3 text-sm ${
-                      auto ? 'border-accent text-accent' : 'border-line text-muted'
-                    }`}
-                  >
-                    {auto ? 'Auto on' : 'Auto'}
-                  </button>
-                )}
-                {state.undoStack.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => dispatch({ type: 'UNDO' })}
-                    className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
-                  >
-                    Undo
-                  </button>
-                )}
-              </div>
             </div>
             <div className="mt-1">
               <ProgressBar
@@ -457,20 +473,7 @@ export function ActiveWorkout() {
             >
               {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
             </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const action = skipAction(state);
-                  if (action) dispatch(action);
-                }}
-              >
-                {auto ? 'Skip stage' : 'Skip set'}
-              </Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: 'SKIP_EXERCISE' })}>
-                Skip exercise
-              </Button>
-            </div>
+            <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}
 
@@ -492,6 +495,7 @@ export function ActiveWorkout() {
             <Button className="h-11 w-full" variant="ghost" onClick={() => dispatch({ type: 'RESTART_REST' })}>
               Restart rest
             </Button>
+            <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}
 
@@ -519,6 +523,7 @@ export function ActiveWorkout() {
                 Restart rest
               </Button>
             )}
+            <TransportRow state={state} auto={auto} dispatch={dispatch} />
           </div>
         )}
       </footer>

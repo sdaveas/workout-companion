@@ -169,7 +169,7 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: /Start/ }).waitFor();
   expect(await page.getByRole('button', { name: /Start/ }).isVisible(), 'home offers Start after creating');
   await page.getByRole('button', { name: /Start/ }).click();
-  const backHome = page.getByRole('button', { name: '← Home' });
+  const backHome = page.getByRole('link', { name: 'Back to Home' });
   await backHome.waitFor();
   expect(await backHome.isVisible(), 'starting opens the preview instead of the workout');
   await beginFromPreview(page);
@@ -246,7 +246,7 @@ const auditScreen = async (page, screen) => {
 
   // undo: is there any way to take back the set just logged?
   await page.getByRole('button', { name: 'Complete set' }).click();
-  const undo = page.getByRole('button', { name: /undo/i });
+  const undo = page.getByRole('button', { name: /previous set|undo/i });
   const hasUndo = await undo.count();
   if (hasUndo === 0) report('workout: no Undo control — a mis-tapped "Complete set" cannot be taken back');
   else expect(await undo.first().isVisible(), 'Undo is reachable after logging a set');
@@ -354,19 +354,10 @@ const auditScreen = async (page, screen) => {
   expect(true, 'the skipped-set position survives a reload');
   const afterSkipSet = await progress(page);
   expect(/skipped/.test(afterSkipSet), `the progress label says how many sets were skipped (${afterSkipSet})`);
-  await page.getByRole('button', { name: 'Skip exercise' }).click();
-  await page.waitForSelector('text=Next exercise');
-  expect(true, 'Skip exercise previews the next exercise before moving on');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.waitForSelector('text=Beta');
-  expect(
-    await page.getByRole('region', { name: 'Beta' }).isVisible().catch(() => false),
-    'Continue after Skip exercise lands on the next exercise',
-  );
 
   // a mis-tapped Complete set must be reversible
   await page.getByRole('button', { name: 'Complete set' }).click();
-  const undo = page.getByRole('button', { name: 'Undo' });
+  const undo = page.getByRole('button', { name: 'Previous set' });
   await undo.waitFor();
   const before = await progress(page);
   await undo.click();
@@ -472,12 +463,12 @@ const auditScreen = async (page, screen) => {
   await auditScreen(page, 'home/two-programs');
 
   await page.getByRole('button', { name: /Any Day/ }).click();
-  await page.getByRole('region', { name: 'Beta' }).waitFor();
+  await page.getByText('Beta', { exact: true }).waitFor();
   const previewBody = (await page.textContent('body')).replace(/\s+/g, ' ');
   expect(!/Complete set/.test(previewBody), 'the preview does not begin the workout');
   expect(/Start/.test(previewBody), 'the preview offers Start');
 
-  await page.getByRole('button', { name: '← Home' }).click();
+  await page.getByRole('link', { name: 'Back to Home' }).click();
   await page.waitForSelector('text=Ready to train');
   expect(
     !(await page.getByText('In progress').isVisible().catch(() => false)),
@@ -492,7 +483,7 @@ const auditScreen = async (page, screen) => {
 
   await page.goto(`${BASE}/#/`);
   await page.getByRole('button', { name: /Start workout/ }).click();
-  await page.getByRole('region', { name: 'Alpha' }).waitFor();
+  await page.getByText('Alpha', { exact: true }).waitFor();
 
   // a fast double-tap must not land on the Complete set button that replaces Start
   const startBox = await page.getByRole('button', { name: 'Start', exact: true }).boundingBox();
@@ -821,8 +812,11 @@ const auditScreen = async (page, screen) => {
   const figure = (await page.locator('.exercise-flip').getAttribute('style')) ?? '';
   expect(figure.includes('exercises/'), 'the workout shows an exercise figure');
   expect(figure.includes('dumbbell-row'), 'Dumbbell Row shows the row poses');
-  const muscles = await page.locator('section[aria-label="Dumbbell Row"] h1 + p').textContent();
-  expect(muscles?.startsWith('Back'), 'the workout names the muscle group it works');
+  const target = await page
+    .locator('[data-testid="stage"] h1')
+    .locator('xpath=following::p[1]')
+    .textContent();
+  expect(target?.includes('×'), 'the workout names the sets and reps it wants');
   await auditScreen(page, 'workout/motion');
   await context.close();
 }
@@ -1087,10 +1081,10 @@ const auditScreen = async (page, screen) => {
   await page.waitForSelector('text=New program');
   expect(page.url().endsWith('#/programs/build'), 'Build your own goes to the builder');
 
-  // The builder's way back is the door it came from, not the list.
-  await page.getByRole('link', { name: /Add a program/ }).click();
-  await page.getByRole('link', { name: /Build your own/ }).waitFor();
-  expect(page.url().endsWith('#/programs/new'), 'the builder leads back to the door');
+  // The builder's way back is the programs list.
+  await page.getByRole('link', { name: 'Back to Programs' }).click();
+  await page.waitForURL(/#\/programs$/);
+  expect(page.url().endsWith('#/programs'), 'the builder leads back to the list');
 
   await page.goto(`${BASE}/#/programs/new`);
   await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();

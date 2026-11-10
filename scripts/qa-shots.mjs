@@ -99,7 +99,7 @@ async function staticScreens(page, prefix) {
   await shoot(page, `${prefix}-07-build`);
 }
 
-/** The session: ready, set, auto, sheet, rest, paused, exercise break, summary. */
+/** The session: ready, set, auto, sheet, rest, exercise break, summary. */
 async function sessionScreens(page, prefix) {
   await page.goto(`${BASE}/#/program/workout-b`);
   await page.getByRole('button', { name: 'Start this program' }).click();
@@ -112,31 +112,27 @@ async function sessionScreens(page, prefix) {
   await shoot(page, `${prefix}-09-sheet`);
   await page.getByRole('button', { name: 'Close' }).click();
 
-  await page.getByRole('button', { name: 'Auto', exact: true }).click();
+  await page.getByRole('button', { name: 'Start auto' }).click();
   await shoot(page, `${prefix}-10-auto`);
 
-  await page.getByRole('button', { name: 'Pause' }).click();
-  await shoot(page, `${prefix}-11-paused`);
-  await page.getByRole('button', { name: 'Resume' }).click();
-
   await page.getByRole('button', { name: 'Done now' }).click();
-  await shoot(page, `${prefix}-12-rest`);
+  await shoot(page, `${prefix}-11-rest`);
   await page.getByRole('button', { name: 'Skip rest' }).click();
 
   // Two sets left in the first exercise: finish them to reach its break screen.
   await tap(page, ['Done now']);
   await tap(page, ['Skip rest']);
   await tap(page, ['Done now']);
-  await shoot(page, `${prefix}-13-exercise-break`);
+  await shoot(page, `${prefix}-12-exercise-break`);
   await page.getByRole('button', { name: 'End' }).click();
   await page.getByRole('button', { name: 'Finish & save' }).click();
   await page.waitForURL(/#\/summary\//);
   await page.waitForTimeout(600);
   await page.reload();
   await page.waitForSelector('a[aria-label="Back to Home"]');
-  await shoot(page, `${prefix}-14-summary`);
+  await shoot(page, `${prefix}-13-summary`);
   await page.goto(`${BASE}/#/`);
-  await shoot(page, `${prefix}-15-home-after`);
+  await shoot(page, `${prefix}-14-home-after`);
 }
 
 async function run(viewport, prefix, { all = true } = {}) {
