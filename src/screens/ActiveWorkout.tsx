@@ -567,9 +567,13 @@ export function ActiveWorkout() {
         className="shrink-0 border-t border-line bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
       >
         {isReady && (
-          <Button variant="primary" className="h-14 w-full text-base" onClick={startWorkout}>
-            Start
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="primary" className={PRIMARY_BTN} onClick={startWorkout}>
+              Start
+            </Button>
+            {/* Keeps Start in the same slot as the set's primary button. */}
+            <div aria-hidden className="flex-1" />
+          </div>
         )}
 
         {state.status === 'exercise_active' && exercise && (
