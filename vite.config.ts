@@ -33,19 +33,11 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Every SVG is precached with a content revision, so art changes reach the
+        // phone on the next visit. A runtime CacheFirst image cache would pin the
+        // old art to a stable URL for a year, which is how a phone ends up showing
+        // drawings that no longer exist.
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2,webmanifest,md}'],
-        runtimeCaching: [
-          {
-            // Exercise images, fetched once on import and then served from the cache.
-            urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'workout-images',
-              expiration: { maxEntries: 200, maxAgeSeconds: 31_536_000 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],
