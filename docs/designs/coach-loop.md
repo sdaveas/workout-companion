@@ -144,21 +144,27 @@ this plan: it is the largest engine change on the list, it lands in the most del
 "skipped: Face Pull" next to "face pull pinched my shoulder" is most of the value at no engine
 cost. Revisit only if real sessions show people leaving notes empty.
 
-### 6. Two entry points, one copy action, no forced new chat
+### 6. Two entry points, one tap: open the chat with the brief already typed
 
-- **History → "Copy for my coach"**: brief for the program of the **most recently trained
-  session** — the one the question is about — plus its sessions. No program at all only when
-  nothing has ever been trained.
-- **Program detail → "Copy for my coach"** (replaces today's "Copy for ChatGPT"): brief with that
-  program plus its sessions.
+- **History → "Open ChatGPT with this program"**: brief for the program of the **most recently
+  trained session** — the one the question is about — plus its sessions.
+- **Program detail → "Open ChatGPT with this program"** (replaces today's "Copy for ChatGPT"):
+  brief with that program plus its sessions.
 
-Both copy the brief and open `https://chatgpt.com` **bare**. They never force `?q=`: that starts a
-new thread and throws away the coaching conversation the user has been building. One line of
-nearby text tells the user what to do next ("Paste it into your coach chat; ask for the updated
-program when you want one").
+One button, and two ways it works:
 
-The `?q=` builders stay for first contact (`chatPrompt()`), which genuinely is a new conversation.
-The 1500-character guard on that URL stays as it is.
+- Brief ≤ 6 KB: it rides in `?q=`, so the chat opens with the whole thing already in the box. Tap
+  the app, tap the button, press send. Nothing to paste.
+- Brief > 6 KB (a long history): a URL that size gets trimmed by some browsers and lingers in chat
+  history, so the chat opens with a one-line instruction and the brief goes to the clipboard —
+  one paste, and the app says so.
+
+`briefChatUrl()` / `briefNeedsPaste()` in `src/lib/chatPrompt.ts` hold that threshold. The brief
+also carries the `coach.md` URL in its own first line, so a chat that has never seen the file knows
+what protocol it is being handed. A "Copy it only" link stays for the thread already open.
+
+This replaced the earlier "copy the brief, then open a bare chat" pair: two buttons for one
+intention, and the second tap did nothing the first could not.
 
 ## Alternatives
 

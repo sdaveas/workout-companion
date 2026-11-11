@@ -3,7 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { describeError, parseProgram } from '../schemas/program';
 import { EXERCISE_LIBRARY } from '../data/exercises';
 import { ownFigure } from '../data/exerciseFigures';
-import { COACH_FILE, COACH_URL, chatPrompt, chatUrl, extractJsonBlocks } from './chatPrompt';
+import {
+  BRIEF_URL_MAX,
+  COACH_FILE,
+  COACH_URL,
+  briefChatUrl,
+  briefNeedsPaste,
+  chatPrompt,
+  chatUrl,
+  extractJsonBlocks,
+} from './chatPrompt';
 
 /**
  * The instructions are a file in the repo, not a string in the app: a chat assistant
@@ -28,6 +37,23 @@ describe('the prompt handed to a chat model', () => {
   it('asks for the one thing the answer must say', () => {
     expect(prompt).toMatch(/Interview complete/);
     expect(prompt).toMatch(/one card per training day/);
+  });
+});
+
+describe('opening the coach with a brief', () => {
+  it('puts a short brief straight into the box', () => {
+    const brief = '## Program\nid: upper-a\n\n## History\nNothing logged yet.';
+    const url = briefChatUrl(brief);
+    expect(decodeURIComponent(url.split('?q=')[1])).toContain('## Program');
+    expect(briefNeedsPaste(brief)).toBe(false);
+  });
+
+  it('keeps a long history off the URL and leaves it for the clipboard', () => {
+    const long = 'x'.repeat(BRIEF_URL_MAX + 1);
+    const url = briefChatUrl(long);
+    expect(url.length).toBeLessThan(600);
+    expect(decodeURIComponent(url.split('?q=')[1])).toContain('clipboard');
+    expect(briefNeedsPaste(long)).toBe(true);
   });
 });
 

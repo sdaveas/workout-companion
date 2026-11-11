@@ -1108,13 +1108,27 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('edit-day', 'Edit Day', 'monday', [ex('sq', 'Squat'), ex('row', 'Row')]));
 
   await page.goto(`${BASE}/#/program/edit-day`);
-  await page.getByRole('button', { name: 'Copy for my coach' }).click();
-  await page.getByText('Copied — paste it in ChatGPT').waitFor();
+  // One tap: the chat opens with the brief already typed in, and it is on the clipboard too.
+  let chatRequest = '';
+  await context.route('https://chatgpt.com/**', (route) => {
+    chatRequest = route.request().url();
+    route.abort();
+  });
+  const popup = context.waitForEvent('page');
+  await page.getByRole('button', { name: 'Open ChatGPT with this program' }).click();
+  await popup;
+  await page.waitForTimeout(400);
   const sent = await page.evaluate(() => navigator.clipboard.readText());
-  expect(sent.includes('edit-day'), 'the saved program travels to the chat');
+  expect(sent.includes('edit-day'), 'the saved program travels to the clipboard as well');
   expect(/## Program/.test(sent), 'the brief names the program block the coach reads');
   expect(/## History/.test(sent), 'the brief carries what happened in the gym');
   expect(/## What I want/.test(sent), 'the brief says what is wanted back');
+  const opened = decodeURIComponent(chatRequest);
+  expect(opened.startsWith('https://chatgpt.com/?q='), 'one tap opens the chat');
+  expect(
+    opened.includes('## Program') && opened.includes('## History'),
+    'the chat opens with the brief already typed in',
+  );
 
   // The coach answers with the same program, one exercise lighter: that is an edit.
   await page.goto(`${BASE}/#/paste`);

@@ -8,6 +8,7 @@ import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
 import { Banner } from '../components/ui/Banner';
 import { formatDays, formatWeight } from '../lib/format';
 import { BRIEF_MAX_SESSIONS, coachBrief } from '../lib/coachBrief';
+import { briefChatUrl, briefNeedsPaste } from '../lib/chatPrompt';
 import { stashProgram } from '../lib/briefSnapshot';
 
 /**
@@ -23,21 +24,41 @@ export function ProgramDetail({ id }: { id: string }) {
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const [blocked, setBlocked] = useState('');
+  const [needsPaste, setNeedsPaste] = useState(false);
 
-  async function copyForCoach() {
-    if (!program) return;
-    const brief = coachBrief({ program, sessions: history });
+  function currentBrief(): string {
+    if (!program) return '';
     // Baselines the diff: the coach's reply is compared with what was actually sent.
     stashProgram(window.localStorage, program);
+    return coachBrief({ program, sessions: history });
+  }
+
+  async function copyBrief(brief: string) {
     try {
       await navigator.clipboard.writeText(brief);
       setCopied('yes');
       setBlocked('');
+      return true;
     } catch {
       // No clipboard permission: the brief goes on screen to select by hand.
       setCopied('no');
       setBlocked(brief);
+      return false;
     }
+  }
+
+  /** One tap: the chat opens, and the brief is already typed into it when it fits. */
+  async function openCoach() {
+    const brief = currentBrief();
+    if (!brief) return;
+    setNeedsPaste(briefNeedsPaste(brief));
+    await copyBrief(brief);
+    window.open(briefChatUrl(brief), '_blank', 'noopener');
+  }
+
+  async function copyOnly() {
+    const brief = currentBrief();
+    if (brief) await copyBrief(brief);
   }
 
   async function start() {
@@ -125,38 +146,44 @@ export function ProgramDetail({ id }: { id: string }) {
       <section className="mt-4 rounded-xl border border-line bg-surface p-4">
         <h2 className="text-sm font-semibold">Change it with a coach</h2>
         <p className="mt-1 text-xs text-muted">
-          Copies this program and the last {BRIEF_MAX_SESSIONS} sessions of it — what you skipped,
-          how hard it felt, what you wrote. Paste it into your coach chat and ask for the updated
-          program; paste that reply back in Programs → + → Talk to a ChatGPT.
+          Sends this program and its last {BRIEF_MAX_SESSIONS} sessions to your coach — what you
+          skipped, how hard it felt, what you wrote. Paste the answer back in Programs → + → Talk to
+          a ChatGPT and it says what changed.
         </p>
         <button
           type="button"
-          onClick={() => void copyForCoach()}
-          className="mt-3 h-12 w-full rounded-xl border border-line text-sm font-semibold"
+          onClick={() => void openCoach()}
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-accent text-sm font-semibold text-ink"
         >
-          {copied === 'yes' ? 'Copied — paste it in ChatGPT' : 'Copy for my coach'}
+          {copied === 'yes' ? 'Open ChatGPT again' : 'Open ChatGPT with this program'}
         </button>
+        {copied === 'yes' && (
+          <p role="status" className="mt-2 text-xs text-accent">
+            {needsPaste
+              ? 'Copied too — this program’s history is long, so paste it as your next message.'
+              : 'It is already in the box. Add anything you want, then send.'}
+          </p>
+        )}
         {copied === 'no' && (
           <>
             <p className="mt-2 text-xs text-muted">
-              Copying is blocked here. Select the text below and copy it by hand.
+              Copying is blocked here. Select the brief below and paste it by hand.
             </p>
             <textarea
               readOnly
               value={blocked}
               onFocus={(e) => e.currentTarget.select()}
-              className="mt-2 h-40 w-full rounded-xl border border-line bg-ink p-2 text-xs"
+              className="mt-2 h-40 w-full rounded-xl border border-line bg-field p-2 text-xs"
             />
           </>
         )}
-        <a
-          href="https://chatgpt.com"
-          target="_blank"
-          rel="noreferrer"
-          className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-sm font-semibold"
+        <button
+          type="button"
+          onClick={() => void copyOnly()}
+          className="mt-2 h-11 w-full text-xs text-muted underline"
         >
-          Open ChatGPT
-        </a>
+          Copy it only (for the chat you already have open)
+        </button>
       </section>
     </main>
   );

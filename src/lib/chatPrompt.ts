@@ -28,6 +28,27 @@ export function chatUrl(): string {
 }
 
 /**
+ * A brief is up to 8 KB, and a URL that size is a bad idea: some browsers trim it,
+ * chat history keeps it, and a shared link leaks the training log. So the brief rides
+ * in `?q=` only while it is small enough to be safe; past that the chat opens with a
+ * short instruction and the clipboard carries the weight.
+ */
+export const BRIEF_URL_MAX = 6000;
+
+export function briefChatUrl(brief: string): string {
+  const prompt =
+    brief.length <= BRIEF_URL_MAX
+      ? `${brief}\n\nDo not print links.`
+      : `Open ${COACH_URL} and follow its review protocol. My brief is on the clipboard — paste it as your next message.`;
+  return `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+}
+
+/** True when the brief itself was too big to travel in the URL. */
+export function briefNeedsPaste(brief: string): boolean {
+  return brief.length > BRIEF_URL_MAX;
+}
+
+/**
  * Chat answers arrive wrapped in fences and prose, and a split arrives as several
  * programs. Walk every balanced object, keep the ones that look like a program, and
  * let the importer report what is wrong with the inside of each.

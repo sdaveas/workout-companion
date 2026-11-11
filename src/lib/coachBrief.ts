@@ -2,6 +2,7 @@ import { summarize } from '../engine/summary';
 import type { Program } from '../engine/types';
 import type { SessionRow } from '../storage/db';
 import { formatDate, formatDuration } from './format';
+import { COACH_URL } from './chatPrompt';
 
 /** A coach reads the last few weeks, not the whole archive. */
 export const BRIEF_MAX_SESSIONS = 12;
@@ -106,7 +107,9 @@ export function coachBrief({
     ? '## What I want\nChange the program so it survives what the history shows.'
     : '## What I want\nTell me what the history says, then what you would change.';
 
-  const head = `Follow the review protocol in the coach instructions. Today is ${formatDate(now)}.`;
+  // The URL travels in the brief, so a coach that has never seen the file still knows
+  // the protocol it is being asked to follow.
+  const head = `Open ${COACH_URL} and follow its review protocol. Today is ${formatDate(now)}.`;
   return [head, ...blocks, historyBlock, want].join('\n\n');
 }
 
