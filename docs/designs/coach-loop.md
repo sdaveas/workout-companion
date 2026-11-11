@@ -73,8 +73,8 @@ Rules the brief follows:
 - Streak/no-history cases degrade to `## History\nNothing logged yet.`
 - Header names the program id once, so a reply that keeps ids can be matched.
 
-The brief is what the user copies. It replaces the program-only `editPrompt()` body; the
-existing `editPrompt()` stays as the raw-JSON fallback for the "copy the old thing" case.
+The brief is what the user copies. It replaces `editPrompt()`, which is deleted: a program with
+no history in it was never the thing this loop needed.
 
 ### 2. Review protocol in `public/coach.md`
 
@@ -193,7 +193,7 @@ matter (skipped, RPE, note).
 | `src/lib/coachBrief.test.ts` | new — empty history, one clean session, skips named, notes quoted, ended-early labelled, 30 sessions sample to 12, brief stays under 8 KB |
 | `src/lib/diffProgram.ts` | new — exercise added/removed, sets/reps/weight/rest changed |
 | `src/lib/diffProgram.test.ts` | new — no-change returns `[]`, rename-only, reorder-only |
-| `src/lib/chatPrompt.ts` | `reviewPrompt()` for `?q=`; keep `chatPrompt()`/`editPrompt()` |
+| `src/lib/chatPrompt.ts` | delete `editPrompt()`; keep `chatPrompt()` and `chatUrl()` |
 | `public/coach.md` | new `## Reviewing a program` section |
 | `src/screens/PasteProgram.tsx` | same-name match branch, diff card, update button label |
 | `src/screens/ProgramDetail.tsx` | "Copy for my coach" → brief + open chat |

@@ -1108,11 +1108,13 @@ const auditScreen = async (page, screen) => {
   await saveProgram(page, program('edit-day', 'Edit Day', 'monday', [ex('sq', 'Squat'), ex('row', 'Row')]));
 
   await page.goto(`${BASE}/#/program/edit-day`);
-  await page.getByRole('button', { name: 'Copy for ChatGPT' }).click();
-  await page.getByText('Copied the program').waitFor();
+  await page.getByRole('button', { name: 'Copy for my coach' }).click();
+  await page.getByText('Copied — paste it in ChatGPT').waitFor();
   const sent = await page.evaluate(() => navigator.clipboard.readText());
   expect(sent.includes('edit-day'), 'the saved program travels to the chat');
-  expect(/Ask me what I want to change/.test(sent), 'the message asks for a change, not a fresh plan');
+  expect(/## Program/.test(sent), 'the brief names the program block the coach reads');
+  expect(/## History/.test(sent), 'the brief carries what happened in the gym');
+  expect(/## What I want/.test(sent), 'the brief says what is wanted back');
 
   // The coach answers with the same program, one exercise lighter: that is an edit.
   await page.goto(`${BASE}/#/paste`);

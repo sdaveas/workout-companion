@@ -4,6 +4,7 @@ import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
 import { COACH_FILE, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
+import { NO_PROGRAM_HINT } from '../lib/coachBrief';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { withDays } from '../lib/schedule';
@@ -13,7 +14,7 @@ import { usePrograms } from '../store/programsStore';
 function readPrograms(text: string): { programs: Program[]; error: string | null } {
   const blocks = extractJsonBlocks(text);
   if (blocks.length === 0) {
-    return { programs: [], error: 'No program in there. Paste the whole answer, json blocks included.' };
+    return { programs: [], error: NO_PROGRAM_HINT };
   }
   const programs: Program[] = [];
   const problems: string[] = [];

@@ -55,6 +55,14 @@ describe('the coach file', () => {
     expect(coach).not.toContain('#/p/');
   });
 
+  it('tells a reviewing coach to keep the ids, so the update lands in place', () => {
+    expect(coach).toContain('## Reviewing a program');
+    expect(coach).toMatch(/keep the program `id`, its `name`, and the `id` of every exercise/);
+    // Prose first: a diagnosis with no program in it is the normal shape of a reply,
+    // and the app cannot paste it.
+    expect(coach).toMatch(/same reply/);
+  });
+
   it('names the exercises that have a drawing, and only those', () => {
     const list = coach.slice(coach.indexOf('Exercise names with drawings'));
     for (const exercise of EXERCISE_LIBRARY.filter((e) => ownFigure(e.name))) {

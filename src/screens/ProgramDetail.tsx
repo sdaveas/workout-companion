@@ -7,7 +7,7 @@ import { figureSlug } from '../data/exerciseFigures';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
 import { Banner } from '../components/ui/Banner';
 import { formatDays, formatWeight } from '../lib/format';
-import { editPrompt } from '../lib/chatPrompt';
+import { BRIEF_MAX_SESSIONS, coachBrief } from '../lib/coachBrief';
 
 /**
  * A saved program, read-only: what is in it, what it looks like, and a way to start.
@@ -18,16 +18,22 @@ export function ProgramDetail({ id }: { id: string }) {
   const prepareWorkout = useSession((s) => s.prepareWorkout);
   const error = useSession((s) => s.error);
   const clearError = useSession((s) => s.clearError);
+  const history = useSession((s) => s.history);
   const [starting, setStarting] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
+  const [blocked, setBlocked] = useState('');
 
   async function copyForCoach() {
     if (!program) return;
+    const brief = coachBrief({ program, sessions: history });
     try {
-      await navigator.clipboard.writeText(editPrompt(program));
-      setCopied(true);
+      await navigator.clipboard.writeText(brief);
+      setCopied('yes');
+      setBlocked('');
     } catch {
-      setCopied(false);
+      // No clipboard permission: the brief goes on screen to select by hand.
+      setCopied('no');
+      setBlocked(brief);
     }
   }
 
@@ -116,16 +122,38 @@ export function ProgramDetail({ id }: { id: string }) {
       <section className="mt-4 rounded-xl border border-line bg-surface p-4">
         <h2 className="text-sm font-semibold">Change it with a coach</h2>
         <p className="mt-1 text-xs text-muted">
-          Copies this program and a message for ChatGPT. Paste the reply back in Programs → + → Talk
-          to a ChatGPT, and it offers to update this one instead of adding a copy.
+          Copies this program and the last {BRIEF_MAX_SESSIONS} sessions of it — what you skipped,
+          how hard it felt, what you wrote. Paste it into your coach chat and ask for the updated
+          program; paste that reply back in Programs → + → Talk to a ChatGPT.
         </p>
         <button
           type="button"
           onClick={() => void copyForCoach()}
           className="mt-3 h-12 w-full rounded-xl border border-line text-sm font-semibold"
         >
-          {copied ? 'Copied the program and the message' : 'Copy for ChatGPT'}
+          {copied === 'yes' ? 'Copied — paste it in ChatGPT' : 'Copy for my coach'}
         </button>
+        {copied === 'no' && (
+          <>
+            <p className="mt-2 text-xs text-muted">
+              Copying is blocked here. Select the text below and copy it by hand.
+            </p>
+            <textarea
+              readOnly
+              value={blocked}
+              onFocus={(e) => e.currentTarget.select()}
+              className="mt-2 h-40 w-full rounded-xl border border-line bg-ink p-2 text-xs"
+            />
+          </>
+        )}
+        <a
+          href="https://chatgpt.com"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-sm font-semibold"
+        >
+          Open ChatGPT
+        </a>
       </section>
     </main>
   );
