@@ -203,7 +203,9 @@ function completeSet(
     exerciseRecords: records,
     undoStack: withUndo(s),
     currentSetIndex: index + 1,
-    draft: draftFor(exercise),
+    // The next set starts from what was just lifted, not the prescription: a weight
+    // bumped on set 1 should not need bumping again on every set after it.
+    draft: { reps, weightKg },
     status: rest.restStartedAt != null ? 'resting' : 'exercise_active',
     ...rest,
     ...stage,

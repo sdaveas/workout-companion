@@ -19,24 +19,18 @@ export function ScreenHeader({
   title,
   actions,
   children,
-  /** Slightly tighter top padding; exactly one pt-* class is emitted, so the override
-      does not depend on stylesheet order. */
-  dense = false,
+  /** Padding is the screen's: every other screen's <main> already carries it, and a
+      second copy here indented the header past the content below it. */
   className = '',
 }: {
   back?: Back;
   title?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
-  dense?: boolean;
   className?: string;
 }) {
   return (
-    <header
-      className={`shrink-0 px-5 ${
-        dense ? 'pt-[max(0.75rem,env(safe-area-inset-top))]' : 'pt-[max(1rem,env(safe-area-inset-top))]'
-      } ${className}`}
-    >
+    <header className={`shrink-0 ${className}`}>
       <div className="flex min-h-11 items-center gap-2">
         {back && (
           <a

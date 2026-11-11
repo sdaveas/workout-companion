@@ -17,7 +17,11 @@ export function useHashRoute(): Route {
   const [route, setRoute] = useState(() => parse(location.hash));
 
   useEffect(() => {
-    const onChange = () => setRoute(parse(location.hash));
+    const onChange = () => {
+      setRoute(parse(location.hash));
+      // A hash change keeps the old scroll offset; a new screen should open at its top.
+      scrollTo(0, 0);
+    };
     addEventListener('hashchange', onChange);
     return () => removeEventListener('hashchange', onChange);
   }, []);

@@ -101,7 +101,8 @@ export function History() {
                   <p className="shrink-0 text-xs text-muted">{formatDate(row.finishedAt)}</p>
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  {formatDuration(s.durationMs)} · {s.setsCompleted} sets · {Math.round(s.volumeKg)} kg
+                  {formatDuration(s.durationMs)} · {s.setsCompleted} sets
+                  {s.volumeKg > 0 && ` · ${Math.round(s.volumeKg)} kg`}
                   {s.endedEarly && <span className="text-danger"> · ended early</span>}
                 </p>
               </a>

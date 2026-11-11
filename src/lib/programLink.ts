@@ -12,3 +12,11 @@ export function decodeLinkPayload(param: string): string {
     return param;
   }
 }
+
+/**
+ * The `#/add/…` hash of a friend's share link inside pasted text, or null. Pasting
+ * the link in the app opens it there, in the app's own storage.
+ */
+export function addLinkHash(text: string): string | null {
+  return text.match(/#\/add\/[\w-]+/)?.[0] ?? null;
+}

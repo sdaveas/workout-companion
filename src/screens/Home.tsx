@@ -194,7 +194,8 @@ export function Home() {
         </section>
       )}
 
-      {programs.length > 0 && (
+      {/* With no program on a fixed day the week is seven "Rest" rows, which is wrong. */}
+      {programs.some((p) => p.scheduleDays.length > 0) && (
         <section className="mt-8">
           <p className="text-xs uppercase tracking-widest text-muted">This week</p>
           <ul className="mt-3 space-y-1">

@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { parkSharedText } from './lib/device';
 import './index.css';
+
+parkSharedText();
 
 // Ask the browser to keep IndexedDB out of eviction (iOS honours this for installed PWAs).
 // ponytail: best-effort; if it is refused, History → Export is the backup path.

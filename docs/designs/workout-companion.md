@@ -753,6 +753,12 @@ design and rejected alternatives: `docs/designs/agent-bridge.md`.
 
 ---
 
+**2026-11-11 — the next set's draft starts from the set just logged.** §4 reset `draft`
+to the new set's prescription, so a weight bumped on set 1 fell back on every later set.
+`completeSet` now seeds the draft with the reps and weight just recorded; a new exercise
+still starts from `draftFor`. Summary no longer offers to rewrite the program after an
+early finish: `finish` marks every unreached lift skipped, which read as "remove it".
+
 ## 3. Alternatives
 
 **XState for the machine.** Rejected. Seven states and 19 events fit in a 250-line

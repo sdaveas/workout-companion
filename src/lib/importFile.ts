@@ -13,7 +13,9 @@ export async function importBackupFile(file: File): Promise<string> {
   const counts = await mergeBackup(parsed.programs, parsed.sessions);
   await usePrograms.getState().load();
   await useSession.getState().loadHistory();
-  return `Imported ${counts.programs} program${counts.programs === 1 ? '' : 's'} and ${
-    counts.sessions
-  } session${counts.sessions === 1 ? '' : 's'}.`;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  // A single program file carries no sessions; "and 0 sessions" only reads as a loss.
+  return counts.sessions === 0
+    ? `Imported ${plural(counts.programs, 'program')}.`
+    : `Imported ${plural(counts.programs, 'program')} and ${plural(counts.sessions, 'session')}.`;
 }

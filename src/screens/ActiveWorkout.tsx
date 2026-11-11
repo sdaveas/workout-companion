@@ -15,7 +15,7 @@ import { remainingMs } from '../engine/rest';
 import { elapsedMs, estimatedRemainingMs } from '../engine/time';
 import { formatClock, formatDuration, formatSet, formatSetNumber, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
-import type { ProgramExercise, WorkoutAction, WorkoutState } from '../engine/types';
+import type { ProgramExercise, SetRecord, WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
@@ -30,6 +30,9 @@ const RUNNING: WorkoutState['status'][] = ['exercise_active', 'resting', 'exerci
 /** A double-tap on the preview's Start must not land on the set's primary button. */
 const STAGE_GUARD_MS = 700;
 
+/** How many upcoming exercises the break between exercises lists. */
+const BREAK_LIST_MAX = 3;
+
 /** How long the closing hand stays ticked before the rest screen takes over. */
 const HAND_TICK_MS = 600;
 
@@ -37,7 +40,7 @@ const TRANSPORT_BTN =
   'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-sm disabled:opacity-40';
 
 /** The primary action keeps the same size and type in every stage of the session. */
-const PRIMARY_BTN = 'h-14 flex-[3] font-gym text-base';
+const PRIMARY_BTN = 'h-14 w-full font-gym text-base';
 
 const AUTO_ON = 'border-accent bg-accent/10 text-accent';
 const AUTO_OFF = 'border-line text-muted';
@@ -45,7 +48,10 @@ const AUTO_OFF = 'border-line text-muted';
 /** "6–10", or just "6" when the prescription is a single number. */
 const repsText = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`);
 
-/** The mode toggle sits beside the primary action, where the set is won or lost. */
+/**
+ * A mode, not a per-set action: it lives in the header beside End, so the button hit
+ * twenty times a session never shares its row with a switch flipped once.
+ */
 function AutoToggle({
   auto,
   dispatch,
@@ -59,9 +65,7 @@ function AutoToggle({
       aria-label={auto ? 'Stop auto' : 'Start auto'}
       aria-pressed={auto}
       onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-      className={`flex h-14 flex-1 items-center justify-center rounded-xl border font-gym text-sm ${
-        auto ? AUTO_ON : AUTO_OFF
-      }`}
+      className={`h-11 shrink-0 rounded-xl border px-3 font-gym text-sm ${auto ? AUTO_ON : AUTO_OFF}`}
     >
       auto
     </button>
@@ -113,6 +117,56 @@ function ExerciseOverview({
   );
 }
 
+/**
+ * "SETS" plus one pip per set, in the progress bar's colours: done is accent, the current
+ * set is white, a skipped one is dimmed. The word is what makes the pips read as sets on
+ * a first visit; the pips carry the count. A one-hand movement gets one pip per pair of
+ * hands. Screen readers get the count in words.
+ */
+function SetPips({ sets, current, perHand }: { sets: SetRecord[]; current: number; perHand: boolean }) {
+  const step = perHand ? 2 : 1;
+  const pips: string[] = [];
+  for (let i = 0; i < sets.length; i += step) {
+    const pair = sets.slice(i, i + step);
+    pips.push(
+      pair.every((x) => x.completed)
+        ? 'bg-accent'
+        : pair.every((x) => x.completed || x.skipped)
+          ? 'bg-muted/40'
+          : current >= i && current < i + step
+            ? 'bg-white'
+            : 'bg-line',
+    );
+  }
+  const position = formatSetNumber(perHand, current + 1, sets.length);
+  return (
+    <div role="img" aria-label={`Set ${position}`} className="flex shrink-0 items-center gap-2">
+      <span className="text-xs uppercase tracking-[0.2em] text-muted">Sets</span>
+      <span className="flex gap-1">
+        {pips.map((color, i) => (
+          <span key={i} className={`h-1.5 w-4 rounded-full ${color}`} />
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** The set's target as a headline: poster digits, a lime dash, a quiet unit. */
+function RepsTarget({ reps }: { reps: { min: number; max: number } }) {
+  return (
+    <>
+      {reps.min}
+      {reps.min !== reps.max && (
+        <>
+          <span className="text-accent">–</span>
+          {reps.max}
+        </>
+      )}
+      <span className="ml-2 text-xl text-muted">reps</span>
+    </>
+  );
+}
+
 /** The session transport: previous set, then skip the set or restart the break. */
 function TransportRow({
   state,
@@ -142,17 +196,17 @@ function TransportRow({
           }}
           className={`${TRANSPORT_BTN} border-line text-muted`}
         >
-          next
+          skip
         </button>
       ) : (
         state.restStartedAt != null ? (
           <button
             type="button"
-            aria-label="Restart rest"
+            aria-label="Reset rest timer"
             onClick={() => dispatch({ type: 'RESTART_REST' })}
             className={`${TRANSPORT_BTN} border-line text-muted`}
           >
-            restart
+            reset timer
           </button>
         ) : (
           // No break to restart (the last set): hold the slot so previous stays put.
@@ -170,7 +224,7 @@ export function ActiveWorkout() {
   const dispatch = useSession((s) => s.dispatch);
   const reset = useSession((s) => s.reset);
   const startWorkout = useSession((s) => s.startWorkout);
-  const [ending, setEnding] = useState(false);
+  const endDialog = useRef<HTMLDialogElement>(null);
   // The right hand ends a two-hand set: hold the screen briefly so the tick is seen.
   const [flashDone, setFlashDone] = useState(false);
   // A second tap during the hold must not queue a second completion.
@@ -240,9 +294,8 @@ export function ActiveWorkout() {
   // together instead of drifting apart.
   const restLeft = remainingMs(state, now);
   const setLeft = autoRemainingMs(state, now);
-  const metaLine = `Set ${formatSetNumber(exercise?.perHand ?? false, state.currentSetIndex + 1, record?.sets.length ?? 0)} · Ex ${
-    state.currentExerciseIndex + 1
-  } / ${state.program.exercises.length}`;
+  // The set count lives in the pips beside the exercise name.
+  const metaLine = `Exercise ${state.currentExerciseIndex + 1} of ${state.program.exercises.length}`;
   const breakSource = state.status === 'paused' ? state.pausedFrom : state.status;
   const inStandingRest = breakSource === 'resting';
   const inExerciseBreak = breakSource === 'exercise_complete';
@@ -259,6 +312,11 @@ export function ActiveWorkout() {
           state.currentSetIndex - (state.currentSetIndex % 2) + 2,
         )
       : null;
+
+  const laterCount = Math.max(
+    0,
+    state.program.exercises.length - (state.currentExerciseIndex + 1) - BREAK_LIST_MAX,
+  );
 
   const slug = exercise ? figureSlug(exercise.name) : null;
   const nextSlug = nextExercise ? figureSlug(nextExercise.name) : null;
@@ -317,7 +375,7 @@ export function ActiveWorkout() {
   return (
     <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden">
       <ScreenHeader
-        dense
+        className="px-5 pt-[max(0.75rem,env(safe-area-inset-top))]"
         back={{
           to: '#/',
           label: 'Home',
@@ -339,14 +397,17 @@ export function ActiveWorkout() {
         }
         actions={
           !isReady ? (
-            <button
-              type="button"
-              onClick={() => setEnding((v) => !v)}
-              aria-expanded={ending}
-              className="h-11 shrink-0 rounded-xl border border-line px-3 font-gym text-sm text-muted"
-            >
-              End
-            </button>
+            <>
+              {RUNNING.includes(state.status) && <AutoToggle auto={auto} dispatch={dispatch} />}
+              <button
+                type="button"
+                onClick={() => endDialog.current?.showModal()}
+                aria-haspopup="dialog"
+                className="h-11 shrink-0 rounded-xl border border-line px-3 font-gym text-sm text-muted"
+              >
+                End
+              </button>
+            </>
           ) : undefined
         }
       >
@@ -389,13 +450,18 @@ export function ActiveWorkout() {
         data-testid="stage"
         className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-2 pt-3"
       >
-        <p className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
+          {(inSet || isReady) && exercise && exercise.sets > 1 && record && (
+            <SetPips sets={record.sets} current={state.currentSetIndex} perHand={exercise.perHand} />
+          )}
+        </div>
 
         {/* The −15s/+15s pair hugs the clock it moves, so a short screen keeps its rows. */}
         <div className="mt-1 flex shrink-0 items-center gap-2">
           {bigSlot && (
-            <p data-testid="stage-big" className={`font-semibold tabular-nums ${bigClass}`} role="status">
-              {bigSlot}
+            <p data-testid="stage-big" className={`font-gym tabular-nums ${bigClass}`} role="status">
+              {exercise && bigSlot === repsText(exercise.reps) ? <RepsTarget reps={exercise.reps} /> : bigSlot}
             </p>
           )}
           {state.status === 'exercise_active' && auto && (
@@ -442,11 +508,6 @@ export function ActiveWorkout() {
             >
               {exercise.name}
             </h1>
-            {exercise.sets > 1 && (
-              <span className="shrink-0 text-sm tabular-nums text-muted">
-                [{formatSetNumber(exercise.perHand, state.currentSetIndex + 1, record?.sets.length ?? 0)}]
-              </span>
-            )}
             {canExplain && (
               <button
                 type="button"
@@ -459,7 +520,9 @@ export function ActiveWorkout() {
             )}
           </div>
         )}
-        {(inSet || isReady) && exercise && (
+        {/* A manual set already says this: the reps are the big number, the weight is in
+            the stepper. Auto (a clock up there) and the preview still need the line. */}
+        {(inSet || isReady) && exercise && bigSlot !== repsText(exercise.reps) && (
           <p className="shrink-0 truncate text-sm text-muted">
             {repsText(exercise.reps)} · {formatWeight(exercise.weightKg, exercise.perHand)}
           </p>
@@ -534,30 +597,39 @@ export function ActiveWorkout() {
           </div>
         )}
 
-        {/* The exercise break previews the next lift: its drawing, plus the same
-            plan the ready screen shows, with the next exercise lit up. */}
+        {/* The exercise break previews the next lift: the plan with the next exercise lit
+            up, then its drawing under that label. The drawing takes whatever height the
+            list leaves, so a short list does not leave a void and a long one still fits. */}
         {inExerciseBreak && nextExercise && (
           <div data-testid="rest-cue" className="mt-2 flex min-h-0 flex-1 flex-col">
             {restIsTimed && (
               <p className="text-3xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
             )}
+            {/* The next three are enough to plan the break; the rest would squeeze the
+                drawing to a smudge on a small phone. The ready screen has the full plan. */}
+            <ExerciseOverview
+              className="mt-2 shrink-0"
+              exercises={state.program.exercises.slice(
+                state.currentExerciseIndex + 1,
+                state.currentExerciseIndex + 1 + BREAK_LIST_MAX,
+              )}
+              firstNumber={state.currentExerciseIndex + 2}
+              activeId={nextExercise.id}
+            />
+            {laterCount > 0 && (
+              <p className="shrink-0 pt-1 text-xs text-muted">+{laterCount} more</p>
+            )}
             <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
               {nextSlug ? (
-                <ExerciseMotion slug={nextSlug} className="h-full max-h-32 w-full" />
+                <ExerciseMotion slug={nextSlug} className="h-full max-h-56 w-full" />
               ) : (
                 <ExerciseImage
                   src={nextExercise.imageUrl}
                   alt={nextExercise.name}
-                  className="h-full max-h-32 w-full"
+                  className="h-full max-h-56 w-full"
                 />
               )}
             </div>
-            <ExerciseOverview
-              className="mt-2"
-              exercises={state.program.exercises.slice(state.currentExerciseIndex + 1)}
-              firstNumber={state.currentExerciseIndex + 2}
-              activeId={nextExercise.id}
-            />
           </div>
         )}
 
@@ -579,13 +651,9 @@ export function ActiveWorkout() {
         className="shrink-0 border-t border-line bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
       >
         {isReady && (
-          <div className="flex gap-2">
-            <Button variant="primary" className={PRIMARY_BTN} onClick={startWorkout}>
-              Start
-            </Button>
-            {/* Keeps Start in the same slot as the set's primary button. */}
-            <div aria-hidden className="flex-1" />
-          </div>
+          <Button variant="primary" className={PRIMARY_BTN} onClick={startWorkout}>
+            Start
+          </Button>
         )}
 
         {state.status === 'exercise_active' && exercise && (
@@ -614,7 +682,6 @@ export function ActiveWorkout() {
               >
                 {auto ? 'Done now' : side ? `Complete ${side} hand` : 'Complete set'}
               </Button>
-              <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
             <TransportRow state={state} dispatch={dispatch} />
           </div>
@@ -636,7 +703,6 @@ export function ActiveWorkout() {
                   Skip rest
                 </Button>
               )}
-              <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
             <TransportRow state={state} dispatch={dispatch} />
           </div>
@@ -662,16 +728,23 @@ export function ActiveWorkout() {
               >
                 {nextExercise ? 'Continue' : 'Finish workout'}
               </Button>
-              <AutoToggle auto={auto} dispatch={dispatch} />
             </div>
             <TransportRow state={state} dispatch={dispatch} />
           </div>
         )}
       </footer>
 
-      {ending && (
-        <div className="absolute inset-x-5 bottom-44 z-30 rounded-2xl border border-line bg-surface p-3">
-          <p className="mb-2 text-xs text-muted">End this session?</p>
+      {/* A native modal: it dims the screen, traps focus, and Esc or a tap outside closes it. */}
+      <dialog
+        ref={endDialog}
+        aria-label="End this session?"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) e.currentTarget.close();
+        }}
+        className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-white"
+      >
+        <div className="p-4">
+          <p className="mb-3 text-sm font-semibold">End this session?</p>
           <div className="flex gap-2">
             <Button className="flex-1 font-gym" onClick={() => dispatch({ type: 'FINISH' })}>
               Finish &amp; save
@@ -688,8 +761,15 @@ export function ActiveWorkout() {
               Abandon
             </Button>
           </div>
+          <Button
+            variant="ghost"
+            className="mt-2 w-full"
+            onClick={() => endDialog.current?.close()}
+          >
+            Keep going
+          </Button>
         </div>
-      )}
+      </dialog>
 
       {howTo && exercise && (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-ink px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">

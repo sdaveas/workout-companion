@@ -29,8 +29,11 @@ const check = (cond, msg) => {
   console.log('ok:', msg);
 };
 const body = async () => (await page.textContent('body')).replace(/\s+/g, ' ');
+// The set count is the pips' label ("Set 2 / 3") beside the exercise name.
 const setPos = async () => {
-  const m = (await body()).match(/Set\s*(\d+)\s*\/\s*(\d+)/);
+  const pips = page.locator('[role=img][aria-label^="Set "]').first();
+  const label = (await pips.count()) ? await pips.getAttribute('aria-label') : '';
+  const m = (label ?? '').match(/Set\s*(\d+)\s*\/\s*(\d+)/);
   return m ? { set: Number(m[1]), total: Number(m[2]) } : null;
 };
 const visible = (name) =>

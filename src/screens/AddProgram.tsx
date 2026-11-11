@@ -1,11 +1,34 @@
 import { useRef, useState } from 'react';
 import { usePrograms } from '../store/programsStore';
 import { importBackupFile } from '../lib/importFile';
+import { addLinkHash } from '../lib/programLink';
+import { parkText } from '../lib/device';
 
 /**
- * The three ways a program gets here, behind the list's "+": a coach that interviews
- * you, a builder, or a file. Each one is a destination, so this screen is just a door.
+ * The ways a program gets here, behind the list's "+": a coach that interviews you, a
+ * builder, a link someone sent, or a file. Each one is a destination, so this screen
+ * is just a door.
  */
+
+/**
+ * One tap reads the clipboard: a friend's share link opens in this app's storage, and
+ * anything else (a program, a chat reply, a ChatGPT link) goes to the paste screen.
+ */
+async function pasteLink() {
+  let text = '';
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {
+    // Refused or unsupported: the paste screen's box takes a long-press paste.
+  }
+  const link = addLinkHash(text);
+  if (link) {
+    window.location.hash = link;
+    return;
+  }
+  if (text.trim()) parkText(text);
+  window.location.hash = '#/paste';
+}
 export function AddProgram() {
   const load = usePrograms((s) => s.load);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -34,7 +57,7 @@ export function AddProgram() {
         className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3"
       >
         <span>
-          <span className="block font-medium">Talk to a ChatGPT</span>
+          <span className="block font-medium">Talk to ChatGPT</span>
           <span className="block text-xs text-muted">
             It interviews you, then writes a program for each training day.
           </span>
@@ -43,6 +66,22 @@ export function AddProgram() {
           →
         </span>
       </a>
+
+      <button
+        type="button"
+        onClick={() => void pasteLink()}
+        className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left"
+      >
+        <span>
+          <span className="block font-medium">Paste a link</span>
+          <span className="block text-xs text-muted">
+            A program someone shared with you. Copy the link first.
+          </span>
+        </span>
+        <span aria-hidden className="text-muted">
+          →
+        </span>
+      </button>
 
       <a
         href="#/programs/build"

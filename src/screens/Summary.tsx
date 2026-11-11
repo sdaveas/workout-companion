@@ -69,9 +69,14 @@ export function Summary() {
   const liveJustFinished = live != null && live.sessionId === param && updateState === 'idle';
   const storedProgram = source ? (programs.find((p) => p.id === source.programId) ?? null) : null;
   // Auto sessions record the timed target, not measured reps: offering to rewrite the
-  // program from them would bake a budget into the prescription.
+  // program from them would bake a budget into the prescription. An early finish marks
+  // every lift not reached as skipped, which would read as "remove it" for each one.
   const update =
-    liveJustFinished && source?.status === 'completed' && source.mode !== 'auto' && storedProgram
+    liveJustFinished &&
+    source?.status === 'completed' &&
+    source.mode !== 'auto' &&
+    !source.endedEarly &&
+    storedProgram
       ? planProgramUpdate(source, storedProgram)
       : null;
 
@@ -163,7 +168,9 @@ export function Summary() {
       </section>
 
       {summary.setsSkipped > 0 && (
-        <p className="mt-3 text-sm text-muted">{summary.setsSkipped} sets skipped.</p>
+        <p className="mt-3 text-sm text-muted">
+          {summary.setsSkipped} sets {summary.endedEarly ? 'not done' : 'skipped'}.
+        </p>
       )}
 
       <section className="mt-6">
@@ -176,7 +183,11 @@ export function Summary() {
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-medium">{ex.name}</p>
                   <p className="shrink-0 text-xs text-muted">
-                    {ex.skipped ? 'skipped' : `${done} / ${ex.sets.length} sets`}
+                    {ex.skipped
+                      ? summary.endedEarly && done === 0
+                        ? 'not done'
+                        : 'skipped'
+                      : `${done} / ${ex.sets.length} sets`}
                   </p>
                 </div>
                 {!ex.skipped && (

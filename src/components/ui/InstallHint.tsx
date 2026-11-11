@@ -1,19 +1,14 @@
 import { useState } from 'react';
+import { isIOS, isStandalone } from '../../lib/device';
 
 const KEY = 'wc:installHintDismissed';
-
-function isInstalled(): boolean {
-  return (
-    matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 /** iOS install instructions + the limits that matter (no JS while suspended). */
 export function InstallHint() {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(KEY) === '1');
 
-  if (dismissed || isInstalled()) return null;
+  // The steps (Share → Add to Home Screen) are iOS's; elsewhere the browser offers install.
+  if (dismissed || !isIOS() || isStandalone()) return null;
 
   return (
     <section className="mt-8 border-t border-line pt-4">

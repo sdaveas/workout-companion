@@ -347,10 +347,10 @@ const auditScreen = async (page, screen) => {
   await page.getByRole('button', { name: /Start/ }).click();
   await beginFromPreview(page);
   await page.getByRole('button', { name: 'Skip set' }).click();
-  await page.waitForSelector('text=2 / 2');
+  await page.waitForSelector('[aria-label="Set 2 / 2"]');
   expect(true, 'Skip set advances to the next set of the same exercise');
   await page.reload();
-  await page.waitForSelector('text=2 / 2');
+  await page.waitForSelector('[aria-label="Set 2 / 2"]');
   expect(true, 'the skipped-set position survives a reload');
   const afterSkipSet = await progress(page);
   expect(/skipped/.test(afterSkipSet), `the progress label says how many sets were skipped (${afterSkipSet})`);
@@ -593,8 +593,11 @@ const auditScreen = async (page, screen) => {
 
   await b.goto(link);
   await b.getByRole('button', { name: 'Add to my routines' }).click();
-  await b.waitForSelector('text=Saved (1)');
-  expect(true, 'adding a shared program saves it');
+  await b.waitForURL(/#\/program\//);
+  expect(
+    (await b.locator('h1').textContent()) === 'Leg Day',
+    'adding a shared program saves it and opens its page',
+  );
 
   // The same link again clashes: ask for another name, never overwrite.
   await b.goto(link);
@@ -602,6 +605,8 @@ const auditScreen = async (page, screen) => {
   const suggested = await b.getByLabel('New name').inputValue();
   expect(suggested === 'Leg Day (2)', `the clash suggests a free name (${suggested})`);
   await b.getByRole('button', { name: 'Save with this name' }).click();
+  await b.waitForURL(/#\/program\//);
+  await b.goto(`${BASE}/#/programs`);
   await b.waitForSelector('text=Saved (2)');
   expect(await b.getByText('Leg Day (2)', { exact: true }).isVisible(), 'the copy lands beside the original');
 
@@ -812,12 +817,9 @@ const auditScreen = async (page, screen) => {
   const figure = (await page.locator('.exercise-flip').getAttribute('style')) ?? '';
   expect(figure.includes('exercises/'), 'the workout shows an exercise figure');
   expect(figure.includes('dumbbell-row'), 'Dumbbell Row shows the row poses');
-  const titleBlock = await page.locator('[data-testid="stage"] h1').locator('xpath=..').textContent();
-  expect(titleBlock?.includes('[1 / 3]'), 'the workout names the set it is on');
-  const target = await page
-    .locator('[data-testid="stage"] h1')
-    .locator('xpath=following::p[1]')
-    .textContent();
+  const pips = await page.locator('[data-testid="stage"] [role="img"][aria-label^="Set "]').getAttribute('aria-label');
+  expect(pips === 'Set 1 / 3', 'the workout names the set it is on');
+  const target = await page.locator('[data-testid="stage-big"]').textContent();
   expect(target?.includes('8–12'), 'the workout names the reps it wants');
   await auditScreen(page, 'workout/motion');
   await context.close();
@@ -873,7 +875,7 @@ const auditScreen = async (page, screen) => {
   const { context, page } = await fresh();
   await page.goto(`${BASE}/#/programs`);
   await page.getByRole('link', { name: 'Add a program' }).click();
-  await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
+  await page.getByRole('link', { name: /Talk to ChatGPT/ }).click();
   await page.getByLabel("The coach's answer").waitFor();
   await auditScreen(page, 'paste');
 
@@ -1056,7 +1058,7 @@ const auditScreen = async (page, screen) => {
 
   const doors = await page.textContent('body');
   expect(
-    ['Talk to a ChatGPT', 'Build your own', 'Import a program'].every((name) => doors.includes(name)),
+    ['Talk to ChatGPT', 'Build your own', 'Import a program'].every((name) => doors.includes(name)),
     'all three doors are named',
   );
 
@@ -1089,9 +1091,9 @@ const auditScreen = async (page, screen) => {
   expect(page.url().endsWith('#/programs'), 'the builder leads back to the list');
 
   await page.goto(`${BASE}/#/programs/new`);
-  await page.getByRole('link', { name: /Talk to a ChatGPT/ }).click();
+  await page.getByRole('link', { name: /Talk to ChatGPT/ }).click();
   await page.getByLabel("The coach's answer").waitFor();
-  expect(page.url().endsWith('#/paste'), 'Talk to a ChatGPT opens the interview');
+  expect(page.url().endsWith('#/paste'), 'Talk to ChatGPT opens the interview');
   await context.close();
 }
 
@@ -1124,8 +1126,9 @@ const auditScreen = async (page, screen) => {
   expect(/## History/.test(sent), 'the brief carries what happened in the gym');
   expect(/## What I want/.test(sent), 'the brief says what is wanted back');
   expect(
-    await page.getByRole('link', { name: /Paste the coach/ }).isVisible(),
-    'the way back to the paste box sits on the same screen',
+    (await page.evaluate(() => location.hash)) === '#/paste' &&
+      (await page.getByRole('button', { name: 'Paste from clipboard' }).isVisible()),
+    'the app waits on the paste step while the chat is open',
   );
   const opened = decodeURIComponent(chatRequest);
   expect(opened.startsWith('https://chatgpt.com/?q='), 'one tap opens the chat');
@@ -1139,6 +1142,18 @@ const auditScreen = async (page, screen) => {
   expect(
     await page.getByText('Last sent to your coach: «Edit Day»').isVisible(),
     'the paste box names the program the coach was given',
+  );
+
+  // Back from the chat: one tap reads the reply off the clipboard.
+  await page.evaluate(
+    (reply) => navigator.clipboard.writeText(`Here you go:\n${reply}`),
+    program('edit-day', 'Edit Day', 'monday', [ex('sq', 'Squat')]),
+  );
+  await page.getByRole('button', { name: 'Paste from clipboard' }).click();
+  await page.waitForTimeout(300);
+  expect(
+    await page.getByRole('button', { name: 'Update "Edit Day"' }).isVisible(),
+    'Paste from clipboard reads the reply in one tap',
   );
 
   // The coach answers with the same program, one exercise lighter: that is an edit.

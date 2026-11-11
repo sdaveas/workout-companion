@@ -452,11 +452,11 @@ describe('annotations', () => {
 });
 
 describe('draft', () => {
-  it('persists in-progress reps and resets on set advance', () => {
+  it('persists in-progress reps and carries them into the next set', () => {
     let s = reduce(started(), { type: 'SET_DRAFT', now: T0, reps: 7, weightKg: null });
     expect(s.draft).toEqual({ reps: 7, weightKg: null });
     s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 7, weightKg: null });
-    expect(s.draft).toEqual({ reps: 6, weightKg: null });
+    expect(s.draft).toEqual({ reps: 7, weightKg: null });
   });
 });
 

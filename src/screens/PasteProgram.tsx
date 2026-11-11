@@ -11,6 +11,10 @@ import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { withDays } from '../lib/schedule';
 import { usePrograms } from '../store/programsStore';
+import { takeSharedText } from '../lib/device';
+import { addLinkHash } from '../lib/programLink';
+import { ADD_PRIMARY, ADD_SECONDARY, CopyForApp, showCopyForApp } from '../components/ui/CopyForApp';
+
 
 /** Every json block in the text, read as a program. Errors come back as words. */
 function readPrograms(text: string): { programs: Program[]; error: string | null } {
@@ -65,11 +69,10 @@ export function PasteProgram({ initial }: { initial?: string }) {
   // A trip to ChatGPT is why Step 2 exists; mark it so the way back is obvious.
   const [sent, setSent] = useState(false);
   const answer = useRef<HTMLTextAreaElement>(null);
-  // A chat app opens links in its own browser; an installed app has its own storage.
-  const standalone =
-    typeof window !== 'undefined' &&
-    (window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as { standalone?: boolean }).standalone === true);
+  // A link opened outside the home-screen app on iOS may be in the wrong storage: ask
+  // first; "here" makes Add the main action again.
+  const [here, setHere] = useState(false);
+  const bridge = !!initial && showCopyForApp() && !here;
 
   async function copy() {
     try {
@@ -93,11 +96,38 @@ export function PasteProgram({ initial }: { initial?: string }) {
     }
   }
 
-  function read() {
-    const result = readPrograms(text);
+  /** Read a reply, a program, or a program link — whatever came in. */
+  function take(raw: string) {
+    // A friend's share link (`#/add/…`) is opened here, in this app's storage.
+    const link = addLinkHash(raw);
+    if (link) {
+      window.location.hash = link;
+      return;
+    }
+    setText(raw);
+    const result = readPrograms(raw);
     setOffers(result.programs);
     setError(result.error);
   }
+
+  const read = () => take(text);
+
+  /** One tap back from the chat: iOS shows its own "Paste" bubble to allow it. */
+  async function pasteClipboard() {
+    try {
+      take(await navigator.clipboard.readText());
+    } catch {
+      // Refused or unsupported: the box takes a long-press paste.
+      answer.current?.focus();
+    }
+  }
+
+  // What Android's share sheet handed the installed app (see `parkSharedText`).
+  useEffect(() => {
+    const shared = takeSharedText();
+    if (shared) take(shared);
+    // ponytail: run once on arrival; `take` only sets state
+  }, []);
 
   /** A coach reply for a program already saved here: same id means a change, not a copy. */
   const updating =
@@ -262,12 +292,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
         </section>
       )}
 
-      {initial && !standalone && (
-        <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-          This opened in a browser. A program added here stays in this browser, which may not be
-          the copy your home-screen app uses. To keep it, paste the answer into the app instead.
-        </p>
-      )}
+      {bridge && <CopyForApp onHere={() => setHere(true)} />}
 
       {initial && error && (
         <section className="mt-5 rounded-xl border border-line bg-surface p-4">
@@ -292,15 +317,22 @@ export function PasteProgram({ initial }: { initial?: string }) {
       {!initial && (
         <section
           className={`mt-4 rounded-xl border bg-surface p-4 ${
-            sent && !text ? 'border-accent ring-2 ring-accent' : 'border-line'
+            (sent || updateTarget) && !text ? 'border-accent ring-2 ring-accent' : 'border-line'
           }`}
         >
           <p className="text-[10px] uppercase tracking-widest text-accent">Step 2</p>
           <h2 className="mt-1 text-lg font-semibold">Paste the answer</h2>
           <p className="mt-1 text-sm text-muted">
-            The whole answer: every program in it is read, however it arrives. A three-day week
-            goes in one go.
+            Copy the whole answer in ChatGPT, then tap below. Every program in it is read, a
+            three-day week in one go.
           </p>
+          <button
+            type="button"
+            onClick={() => void pasteClipboard()}
+            className="mt-3 h-12 w-full rounded-xl bg-accent font-semibold text-ink"
+          >
+            Paste from clipboard
+          </button>
           <textarea
             ref={answer}
             value={text}
@@ -324,7 +356,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
             type="button"
             disabled={!text.trim()}
             onClick={read}
-            className="mt-3 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+            className="mt-3 h-12 w-full rounded-xl border border-line text-sm font-semibold disabled:text-muted"
           >
             Read it
           </button>
@@ -388,7 +420,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
             type="button"
             disabled={busy}
             onClick={() => void add(updating ? 'update' : 'copy')}
-            className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+            className={bridge ? ADD_SECONDARY : ADD_PRIMARY}
           >
             {updating
               ? `Update "${updating.name}"`

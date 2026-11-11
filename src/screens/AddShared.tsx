@@ -9,6 +9,8 @@ import { saveProgram } from '../storage/programs';
 import { exerciseCount, formatDay } from '../lib/format';
 import { withDays } from '../lib/schedule';
 import { NameConflict } from '../components/programs/NameConflict';
+import { ADD_PRIMARY, ADD_SECONDARY, CopyForApp, showCopyForApp } from '../components/ui/CopyForApp';
+
 
 const DAYS: Weekday[] = [
   'monday',
@@ -77,6 +79,9 @@ function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[
  * user says so, and the week is theirs to choose: links never carry a schedule.
  */
 export function AddShared({ payload }: { payload: string }) {
+  // On iOS outside the home-screen app this may be the wrong storage: ask first.
+  const [here, setHere] = useState(false);
+  const bridge = showCopyForApp() && !here;
   const programs = usePrograms((s) => s.programs);
   const loaded = usePrograms((s) => s.loaded);
   const load = usePrograms((s) => s.load);
@@ -118,8 +123,8 @@ export function AddShared({ payload }: { payload: string }) {
       }
       await saveProgram(withDays(target, days));
       await load();
-      usePrograms.setState({ notice: `Added “${target.name}” to your routines.` });
-      location.hash = '#/programs';
+      // Its own page: what is in it, and Start pinned at the bottom.
+      location.hash = `#/program/${target.id}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -166,6 +171,8 @@ export function AddShared({ payload }: { payload: string }) {
         }
       />
 
+      {state.kind === 'ready' && bridge && <CopyForApp onHere={() => setHere(true)} />}
+
       {error && (
         <p role="alert" className="mt-4 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
@@ -204,7 +211,7 @@ export function AddShared({ payload }: { payload: string }) {
             type="button"
             disabled={busy}
             onClick={() => void addAll()}
-            className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+            className={bridge ? ADD_SECONDARY : ADD_PRIMARY}
           >
             Add all {shared.length}
           </button>
@@ -241,7 +248,7 @@ export function AddShared({ payload }: { payload: string }) {
             type="button"
             disabled={busy}
             onClick={() => void add(single)}
-            className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+            className={bridge ? ADD_SECONDARY : ADD_PRIMARY}
           >
             Add to my routines
           </button>

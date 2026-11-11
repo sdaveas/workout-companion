@@ -56,8 +56,9 @@ for (let i = 0; i < 8; i++) {
   break;
 }
 states.later = { footer: await snap(), page: await metrics(), at: await where() };
-if (states.set.footer.length !== 4) problems.push(`set state has ${states.set.footer.length} footer buttons, expected 4`);
-if (states.rest.footer.length !== 4) problems.push(`rest state has ${states.rest.footer.length} footer buttons, expected 4`);
+// Primary + previous + skip/reset timer; Auto lives in the header.
+if (states.set.footer.length !== 3) problems.push(`set state has ${states.set.footer.length} footer buttons, expected 3`);
+if (states.rest.footer.length !== 3) problems.push(`rest state has ${states.rest.footer.length} footer buttons, expected 3`);
 
 const fontStatus = await page.evaluate(async () => {
   await document.fonts.load('600 16px "Barlow Condensed"');

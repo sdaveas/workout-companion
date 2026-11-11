@@ -21,6 +21,13 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#0b0b0d',
         theme_color: '#0b0b0d',
+        // Android lists the installed app in the share sheet: ChatGPT → Share → Workout.
+        // iOS has no share targets for web apps; there the clipboard is the way back.
+        share_target: {
+          action: './',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

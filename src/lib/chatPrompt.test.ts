@@ -72,7 +72,7 @@ describe('the coach file', () => {
 
   it('says how a program gets back into the app', () => {
     // The reliable route on a phone: the answer travels by clipboard, not by link.
-    expect(coach).toMatch(/paste it into Programs → \+ → Talk to a ChatGPT/);
+    expect(coach).toMatch(/paste it into Programs → \+ → Talk to ChatGPT/);
     expect(coach).toContain('Interview complete');
     expect(coach).toMatch(/one fenced code block tagged json/);
     expect(coach).toMatch(/one array/);

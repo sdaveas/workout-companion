@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { APP_URL, decodeLinkPayload } from './programLink';
+import { APP_URL, addLinkHash, decodeLinkPayload } from './programLink';
 import { parseProgram } from '../schemas/program';
 
 /** The exact link a chat client produced, tracking parameters and all. */
@@ -29,6 +29,13 @@ describe('a program carried in a link', () => {
     expect(parsed.program.scheduleDays).toEqual(['monday']);
     expect(parsed.program.exercises).toHaveLength(2);
     expect(parsed.program.exercises[1].restSeconds).toBe(60);
+  });
+
+  it('finds a share link pasted into the app, and only that', () => {
+    expect(addLinkHash(`${APP_URL}#/add/AbC-12_x`)).toBe('#/add/AbC-12_x');
+    expect(addLinkHash(`Here: [Workout](${APP_URL}#/add/AbC-12_x) enjoy`)).toBe('#/add/AbC-12_x');
+    expect(addLinkHash(`${APP_URL}#/p/{"id":"x"}`)).toBeNull();
+    expect(addLinkHash('no link here')).toBeNull();
   });
 
   it('points at the deployed app', () => {
