@@ -184,6 +184,18 @@ export function ProgramDetail({ id }: { id: string }) {
         >
           Copy it only (for the chat you already have open)
         </button>
+
+        <p className="mt-4 text-[10px] uppercase tracking-widest text-accent">Step 2</p>
+        <h3 className="mt-1 text-sm font-semibold">When the coach answers</h3>
+        <p className="mt-1 text-xs text-muted">
+          Paste its reply and the app lists what changed before touching this program.
+        </p>
+        <a
+          href="#/paste"
+          className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-sm font-semibold"
+        >
+          Paste the coach’s reply
+        </a>
       </section>
     </main>
   );

@@ -1,12 +1,12 @@
 import { ScreenHeader } from '../components/ui/ScreenHeader';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
 import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
 import { COACH_FILE, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
 import { NO_PROGRAM_HINT } from '../lib/coachBrief';
 import { diffPrograms } from '../lib/diffProgram';
-import { stashedProgram } from '../lib/briefSnapshot';
+import { stashedId, stashedProgram } from '../lib/briefSnapshot';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { withDays } from '../lib/schedule';
@@ -102,6 +102,17 @@ export function PasteProgram({ initial }: { initial?: string }) {
   /** A coach reply for a program already saved here: same id means a change, not a copy. */
   const updating =
     offers.length === 1 ? (programs.find((p) => p.id === offers[0].id) ?? null) : null;
+
+  /** The program whose brief was copied last: arriving here is usually about updating it. */
+  const updateTarget = useMemo(() => {
+    const id = stashedId(window.localStorage);
+    return id ? (programs.find((p) => p.id === id) ?? null) : null;
+  }, [programs]);
+
+  // The reply is the only thing to do on this visit; the coach card above is history.
+  useEffect(() => {
+    if (updateTarget) answer.current?.scrollIntoView({ block: 'center' });
+  }, [updateTarget]);
 
   /** What the reply would change, against the program as it was when the brief was copied. */
   const changes = useMemo(() => {
@@ -269,6 +280,13 @@ export function PasteProgram({ initial }: { initial?: string }) {
             Paste it by hand instead
           </a>
         </section>
+      )}
+
+      {!initial && updateTarget && (
+        <p className="mt-4 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-xs">
+          Last sent to your coach: «{updateTarget.name}». A reply that keeps its id updates it —
+          you see what changes first. Anything else is added as a copy.
+        </p>
       )}
 
       {!initial && (

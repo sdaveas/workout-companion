@@ -17,6 +17,16 @@ export function stashProgram(store: Storage, program: Program): void {
   }
 }
 
+/** Which program the last brief was about, without parsing it. */
+export function stashedId(store: Storage): string | null {
+  try {
+    const value = JSON.parse(store.getItem(KEY) ?? 'null') as { id?: unknown } | null;
+    return typeof value?.id === 'string' ? value.id : null;
+  } catch {
+    return null;
+  }
+}
+
 export function stashedProgram(store: Storage, id: string): Program | null {
   try {
     const value = JSON.parse(store.getItem(KEY) ?? 'null') as { id?: string; raw?: string } | null;

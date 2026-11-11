@@ -1123,11 +1123,22 @@ const auditScreen = async (page, screen) => {
   expect(/## Program/.test(sent), 'the brief names the program block the coach reads');
   expect(/## History/.test(sent), 'the brief carries what happened in the gym');
   expect(/## What I want/.test(sent), 'the brief says what is wanted back');
+  expect(
+    await page.getByRole('link', { name: /Paste the coach/ }).isVisible(),
+    'the way back to the paste box sits on the same screen',
+  );
   const opened = decodeURIComponent(chatRequest);
   expect(opened.startsWith('https://chatgpt.com/?q='), 'one tap opens the chat');
   expect(
     opened.includes('## Program') && opened.includes('## History'),
     'the chat opens with the brief already typed in',
+  );
+
+  // The reply has to come back somewhere obvious; the paste box names the program.
+  await page.goto(`${BASE}/#/paste`);
+  expect(
+    await page.getByText('Last sent to your coach: «Edit Day»').isVisible(),
+    'the paste box names the program the coach was given',
   );
 
   // The coach answers with the same program, one exercise lighter: that is an edit.
