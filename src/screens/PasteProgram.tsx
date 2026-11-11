@@ -5,6 +5,8 @@ import type { Program } from '../engine/types';
 import { uniqueId, uniqueName, withIdentity } from '../lib/identity';
 import { COACH_FILE, chatPrompt, chatUrl, extractJsonBlocks } from '../lib/chatPrompt';
 import { NO_PROGRAM_HINT } from '../lib/coachBrief';
+import { diffPrograms } from '../lib/diffProgram';
+import { stashedProgram } from '../lib/briefSnapshot';
 import { formatDays } from '../lib/format';
 import { saveProgram } from '../storage/programs';
 import { withDays } from '../lib/schedule';
@@ -100,6 +102,13 @@ export function PasteProgram({ initial }: { initial?: string }) {
   /** A coach reply for a program already saved here: same id means a change, not a copy. */
   const updating =
     offers.length === 1 ? (programs.find((p) => p.id === offers[0].id) ?? null) : null;
+
+  /** What the reply would change, against the program as it was when the brief was copied. */
+  const changes = useMemo(() => {
+    if (!updating || offers.length !== 1) return null;
+    const before = stashedProgram(window.localStorage, updating.id) ?? updating;
+    return diffPrograms(before, offers[0]);
+  }, [updating, offers]);
 
   async function add(mode: 'update' | 'copy' = 'update') {
     if (offers.length === 0) return;
@@ -335,9 +344,27 @@ export function PasteProgram({ initial }: { initial?: string }) {
             ))}
           </ul>
           {updating && (
-            <p className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs">
-              This replaces the copy saved here. The days you picked stay as they are.
-            </p>
+            <>
+              {changes && (
+                <div className="mt-3 rounded-lg border border-line bg-field px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-widest text-muted">What changes</p>
+                  {changes.length === 0 ? (
+                    <p className="mt-1 text-xs text-muted">
+                      Nothing. This is the program you sent, written back as it was.
+                    </p>
+                  ) : (
+                    <ul className="mt-1 space-y-1 text-xs">
+                      {changes.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              <p className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs">
+                This replaces the copy saved here. The days you picked stay as they are.
+              </p>
+            </>
           )}
           <button
             type="button"

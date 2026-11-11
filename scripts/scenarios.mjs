@@ -1126,6 +1126,10 @@ const auditScreen = async (page, screen) => {
     await page.getByRole('button', { name: 'Update "Edit Day"' }).isVisible(),
     'a program already saved here is offered as an update',
   );
+  expect(
+    await page.getByText('Row: removed').isVisible(),
+    'the update says what changes before anything is written',
+  );
   await page.getByRole('button', { name: 'Update "Edit Day"' }).click();
   await page.waitForSelector('text=updated');
   expect(await page.getByText('Saved (1)').isVisible(), 'it replaces instead of piling up a copy');

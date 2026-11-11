@@ -8,6 +8,7 @@ import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
 import { Banner } from '../components/ui/Banner';
 import { formatDays, formatWeight } from '../lib/format';
 import { BRIEF_MAX_SESSIONS, coachBrief } from '../lib/coachBrief';
+import { stashProgram } from '../lib/briefSnapshot';
 
 /**
  * A saved program, read-only: what is in it, what it looks like, and a way to start.
@@ -26,6 +27,8 @@ export function ProgramDetail({ id }: { id: string }) {
   async function copyForCoach() {
     if (!program) return;
     const brief = coachBrief({ program, sessions: history });
+    // Baselines the diff: the coach's reply is compared with what was actually sent.
+    stashProgram(window.localStorage, program);
     try {
       await navigator.clipboard.writeText(brief);
       setCopied('yes');
