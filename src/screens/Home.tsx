@@ -152,7 +152,12 @@ export function Home() {
 
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
         <section>
-          <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
+            <a href="#/programs" className="text-xs text-accent underline underline-offset-4">
+              Manage programs
+            </a>
+          </div>
           {programs.length === 0 ? (
             <a
               href="#/programs/new"
@@ -180,12 +185,6 @@ export function Home() {
               ))}
             </ul>
           )}
-          <a
-            href="#/programs"
-            className="mt-1 flex h-9 items-center justify-center text-xs text-muted underline"
-          >
-            Manage programs
-          </a>
         </section>
 
         <section className="mt-3">
