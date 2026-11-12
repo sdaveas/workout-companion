@@ -196,31 +196,32 @@ export function DriveSpike() {
         <button
           type="button"
           disabled={busy || !clientId}
-          onClick={() => void run('Request token', withToken(false, async (t) => `ok, ${t.length} chars`))}
+          onClick={() => void run('1 Request token', withToken(false, async (t) => `ok, ${t.length} chars`))}
           className="h-12 rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
         >
-          Request token
+          1 · Request token (first time here)
         </button>
         <button
           type="button"
           disabled={busy || !clientId}
-          onClick={() => void run('Silent re-auth', withToken(true, async (t) => `ok, ${t.length} chars`))}
+          onClick={() => void run('2 Silent re-auth', withToken(true, async (t) => `ok, ${t.length} chars`))}
           className="h-12 rounded-xl border border-line text-sm disabled:opacity-50"
         >
-          Silent re-auth
+          2 · Silent re-auth (only after a reload)
         </button>
         <button
           type="button"
           disabled={busy || !clientId}
-          onClick={() => void run('Drive write and read', withToken(true, driveTest))}
+          onClick={() => void run('3 Drive write and read', withToken(true, driveTest))}
           className="h-12 rounded-xl border border-line text-sm disabled:opacity-50"
         >
-          Write and read a test file
+          3 · Write and read a test file
         </button>
       </div>
 
       <p className="mt-3 text-xs text-muted">
-        Request token first, then reload the app and press Silent re-auth. Then Write and read.
+        Press <strong>1</strong> first. It is the only one that can work before this device has
+        ever asked Google for permission.
       </p>
 
       <pre className="mt-4 whitespace-pre-wrap break-words rounded-xl border border-line bg-surface p-3 text-[11px] leading-relaxed">
