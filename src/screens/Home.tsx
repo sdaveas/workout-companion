@@ -192,8 +192,16 @@ export function Home() {
       <InstallHint />
 
       {/* Pinned: the shape of the last months, the last thing done, and the way in. */}
-      <div className="mt-2 shrink-0">
-        <ActivityGrid sessions={history} now={now} />
+      <div className="mt-3 shrink-0">
+        <div className="flex items-baseline justify-between">
+          <p className="text-xs uppercase tracking-widest text-muted">History</p>
+          <a href="#/history" className="text-xs text-muted underline underline-offset-4">
+            Manage
+          </a>
+        </div>
+        <div className="mt-2">
+          <ActivityGrid sessions={history} now={now} />
+        </div>
         {latest && (
           <ul className="mt-2">
             <SessionRow row={latest} actions={false} />
@@ -202,12 +210,6 @@ export function Home() {
         {loaded && !latest && (
           <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
         )}
-        <a
-          href="#/history"
-          className="mt-2 flex h-11 items-center justify-center rounded-xl border border-line text-sm text-muted"
-        >
-          Manage
-        </a>
       </div>
 
       {sheet && <TransferSheet mode={sheet} now={now} onClose={() => setSheet(null)} />}
