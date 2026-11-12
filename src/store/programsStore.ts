@@ -82,6 +82,10 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
       }
     }
 
+    // The stamp lives outside `raw`: the program schema is strict, so an extra field
+    // inside the file would make a program that this app itself wrote fail to import.
+    target = { ...target, updatedAt: Date.now() };
+
     try {
       await saveProgram(target, { replace: update });
       prefetchImages(target);

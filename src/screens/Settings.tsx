@@ -7,10 +7,20 @@ import { importBackupFile } from '../lib/importFile';
 import { downloadJson } from '../lib/exportHistory';
 import { countSessions, loadAllSessions } from '../storage/sessions';
 import { Banner } from '../components/ui/Banner';
+import {
+  EMPTY_STATE,
+  forgetToken,
+  readState,
+  requestToken,
+  writeState,
+  type DriveState,
+} from '../lib/drive/auth';
 
 export function Settings() {
   const programs = usePrograms((s) => s.programs);
   const [sessions, setSessions] = useState<number | null>(null);
+  const [drive, setDrive] = useState<DriveState>(readState);
+  const [driveBusy, setDriveBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -49,6 +59,30 @@ export function Settings() {
     }
   }
 
+  async function connectDrive() {
+    setError(null);
+    setNotice(null);
+    setDriveBusy(true);
+    try {
+      await requestToken({ silent: false });
+      const next = { ...readState(), connected: true, lastError: null };
+      writeState(next);
+      setDrive(next);
+      setNotice('Connected to Google Drive.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDriveBusy(false);
+    }
+  }
+
+  function disconnectDrive() {
+    forgetToken();
+    writeState(EMPTY_STATE);
+    setDrive(EMPTY_STATE);
+    setNotice('Disconnected. The copy in Drive was left alone.');
+  }
+
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <ScreenHeader
@@ -65,6 +99,43 @@ export function Settings() {
         <p className="mt-1 text-xs text-muted">
           Everything is stored locally. A backup is the only way to move it.
         </p>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-line bg-surface p-5">
+        <p className="text-xs uppercase tracking-widest text-muted">Google Drive</p>
+        {drive.connected ? (
+          <>
+            <p className="mt-2 text-sm">Connected</p>
+            <p className="mt-1 text-xs text-muted">
+              {drive.lastSyncedAt
+                ? `Last synced ${new Date(drive.lastSyncedAt).toLocaleString()}.`
+                : 'Not synced yet.'}{' '}
+              This phone keeps the real copy; Drive holds a mirror.
+            </p>
+            <button
+              type="button"
+              onClick={disconnectDrive}
+              className="mt-4 h-12 w-full rounded-xl border border-line text-sm"
+            >
+              Disconnect
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-muted">
+              Keeps a copy of your programs and sessions in your own Google Drive, so every device
+              shows the same thing. This phone stays the master copy.
+            </p>
+            <button
+              type="button"
+              disabled={driveBusy}
+              onClick={() => void connectDrive()}
+              className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
+            >
+              {driveBusy ? 'Connecting…' : 'Connect Google Drive'}
+            </button>
+          </>
+        )}
       </section>
 
       <section className="mt-4 rounded-2xl border border-line bg-surface p-5">
@@ -115,12 +186,6 @@ export function Settings() {
           {notice}
         </p>
       )}
-
-      {/* Temporary: the only way into the spike from an installed app, which has no
-          address bar. Delete with src/screens/DriveSpike.tsx after Phase 0. */}
-      <a href="#/drive-spike" className="mt-6 flex h-11 items-center justify-center text-xs text-muted underline">
-        Drive spike (temporary)
-      </a>
 
       <a href="#/credits" className="mt-2 flex h-11 items-center justify-center text-xs text-muted underline">
         Credits

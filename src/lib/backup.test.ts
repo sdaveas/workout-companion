@@ -30,6 +30,14 @@ function row(): SessionRow {
 }
 
 describe('backup files', () => {
+  it('carries each program edit time outside the program itself', () => {
+    const backup = buildBackup([{ ...program, updatedAt: 1234 }], [], 5000);
+    expect(backup.programUpdatedAt).toEqual({ [program.id]: 1234 });
+    // Not inside the program, or re-import would fail the strict schema.
+    expect(JSON.stringify(backup.programs)).not.toContain('updatedAt');
+    expect(buildBackup([program], [], 5000).programUpdatedAt).toEqual({});
+  });
+
   it('round trips programs and sessions', () => {
     const text = JSON.stringify(buildBackup([program], [row()], 5000));
     const result = parseBackup(text);

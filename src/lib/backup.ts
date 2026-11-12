@@ -9,6 +9,11 @@ export interface Backup {
   format: typeof BACKUP_FORMAT;
   version: 1;
   exportedAt: number;
+  /**
+   * Program id → when it was last edited here. It cannot ride inside a program:
+   * the program schema is strict, so an extra field would break re-import.
+   */
+  programUpdatedAt?: Record<string, number>;
   /** The program exactly as it was imported (snake_case), so a backup re-imports. */
   programs: unknown[];
   sessions: SessionRow[];
@@ -19,10 +24,15 @@ export type ParsedBackup =
   | { ok: false; error: string };
 
 export function buildBackup(programs: Program[], sessions: SessionRow[], now: number): Backup {
+  const programUpdatedAt: Record<string, number> = {};
+  for (const program of programs) {
+    if (program.updatedAt != null) programUpdatedAt[program.id] = program.updatedAt;
+  }
   return {
     format: BACKUP_FORMAT,
     version: 1,
     exportedAt: now,
+    programUpdatedAt,
     programs: programs.map((p) => JSON.parse(p.raw) as unknown),
     sessions,
   };

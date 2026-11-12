@@ -31,6 +31,8 @@ export interface Program {
   estimatedDurationMinutes: number | null;
   exercises: ProgramExercise[];
   raw: string;
+  /** When this program was last edited here. Stamped on save; used only to merge with Drive. */
+  updatedAt?: number;
 }
 
 export type WorkoutStatus =

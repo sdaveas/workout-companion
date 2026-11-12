@@ -54,11 +54,12 @@ Hard constraints, in order:
    - Scope: `https://www.googleapis.com/auth/drive.file` — files this app
      creates, nothing else.
    - No client secret: a static page cannot hold one and this flow does not need
-     one. The client ID is public by design, comes from the repo variable
-     `VITE_GOOGLE_CLIENT_ID` (passed by `deploy.yml`, which today passes only
-     `BASE`), and both `http://localhost:5173` and the Pages origin are
-     registered as authorised JS origins. **When the variable is unset the Drive
-     card is not rendered at all.**
+     one. The client ID is public by design and lives in
+     `src/lib/drive/config.ts`, hardcoded, and both `http://localhost:5173` and
+     the Pages origin are registered as authorised JS origins. (Deviation from
+     the first draft, which wanted a `VITE_GOOGLE_CLIENT_ID` repo variable: a
+     public string baked into the bundle gains nothing from CI plumbing and
+     would break every local run where the variable is unset.)
    - The GIS script (`accounts.google.com/gsi/client`) is **injected on demand**,
      never at boot: Workbox precaches local assets only, so a boot-time
      cross-origin script would fail offline and stall startup. It is injected
@@ -220,9 +221,28 @@ origin.
 
 ## Phase 0 answers
 
-Not yet run. Fill in before Phase 1:
+Run on an iPhone (iOS 18.7) against the installed home-screen app, 2026-11-12:
 
-- Popup returns a token in the installed PWA: —
-- Silent re-auth after a cold start: —
-- Drive write then read: —
-- Popup after an async script load: —
+- Popup returns a token in the installed PWA: **yes** — 338 chars in 1.8 s, no
+  consent UI (the grant already existed on the Google account from an earlier
+  Safari-tab run, so the popup was invisible).
+- Silent re-auth after a cold start: **yes** — 1.95 s, then 1.8 s on a second
+  cold start, no consent UI.
+- Drive write then read: **yes** — 45 bytes written and read back in 5.3 s, with
+  the `Workout Companion` folder created on the first call.
+- Popup after an async script load: **yes** — the GIS script is injected on
+  demand and the token still came back.
+
+Consequence: the route is alive, and the popup is not the risk it was assumed to
+be. Phase 1 proceeds.
+
+## Deviations
+
+- **Client ID hardcoded** in `src/lib/drive/config.ts` instead of a
+  `VITE_GOOGLE_CLIENT_ID` repo variable. It is public by design; a variable
+  would only add a way for local builds to come up without a Drive card.
+- **The program stamp is written by `store/programsStore.ts`**, which is a
+  fourth file in the project clock guard (`grep Date.now src`). The guard's
+  intent — screens never read the clock, the store stamps — holds; the file
+  list in `docs/phase-status.md` §3 now needs this entry. The token TTL uses
+  `performance.now()` instead, which is the correct clock for a TTL anyway.

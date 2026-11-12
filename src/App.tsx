@@ -3,7 +3,6 @@ import { useHashRoute } from './hooks/useHashRoute';
 import { ActiveWorkout } from './screens/ActiveWorkout';
 import { AddShared } from './screens/AddShared';
 import { Credits } from './screens/Credits';
-import { DriveSpike } from './screens/DriveSpike';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { PasteProgram } from './screens/PasteProgram';
@@ -27,7 +26,6 @@ const KNOWN = new Set([
   'history',
   'settings',
   'credits',
-  'drive-spike',
 ]);
 
 export function App() {
@@ -55,7 +53,6 @@ export function App() {
       {route.name === 'history' && <History />}
       {route.name === 'settings' && <Settings />}
       {route.name === 'credits' && <Credits />}
-      {route.name === 'drive-spike' && <DriveSpike />}
       {(route.name === 'home' || route.name === '') && <Home />}
       {!KNOWN.has(route.name) && route.name !== 'home' && (
         <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">

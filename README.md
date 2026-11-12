@@ -9,9 +9,11 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 - `src/fixtures/workout-b.json` — Workout B, the primary test fixture.
 
 Status: six phases done — import, engine, UI, recovery, PWA, auto mode (timed sets,
-one non-scrolling workout screen, a back control on every view) — plus phase 7 step 1:
+one non-scrolling workout screen, a back control on every view) — plus phase 7 steps 1–2:
 a program can copy itself and its recent history as one brief for a coach chat, and the
-reply pastes back in. See `docs/phase-status.md`. Programs are built with the in-app form (Programs) or imported
+reply pastes back in through a diff before anything is applied. Google Drive sync is being
+added in phases: connect is in, the sync engine is next
+(`docs/designs/google-drive-sync.md`). See `docs/phase-status.md`. Programs are built with the in-app form (Programs) or imported
 from a program JSON / backup file (Settings → **Import a file**).
 
 Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
