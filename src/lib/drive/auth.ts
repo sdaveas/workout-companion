@@ -95,17 +95,12 @@ export function forgetToken(): void {
 
 export interface DriveState {
   connected: boolean;
-  /** Set on the first sync, then reused so the file is found without a search. */
-  folderId: string | null;
-  fileId: string | null;
   lastSyncedAt: number | null;
   lastError: string | null;
 }
 
 export const EMPTY_STATE: DriveState = {
   connected: false,
-  folderId: null,
-  fileId: null,
   lastSyncedAt: null,
   lastError: null,
 };

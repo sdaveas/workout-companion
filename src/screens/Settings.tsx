@@ -15,12 +15,14 @@ import {
   writeState,
   type DriveState,
 } from '../lib/drive/auth';
+import { sync } from '../lib/drive/sync';
 
 export function Settings() {
   const programs = usePrograms((s) => s.programs);
   const [sessions, setSessions] = useState<number | null>(null);
   const [drive, setDrive] = useState<DriveState>(readState);
   const [driveBusy, setDriveBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -59,16 +61,31 @@ export function Settings() {
     }
   }
 
+  async function syncNow() {
+    setError(null);
+    setNotice(null);
+    setSyncing(true);
+    try {
+      const result = await sync();
+      setDrive(readState());
+      if (result.status === 'failed') setError(result.error);
+      else if (result.status === 'offline') setNotice('Offline — nothing was synced.');
+      else if (result.pulled) setNotice('Synced. Newer items from Drive were added.');
+      else setNotice('Synced. This phone was already up to date.');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   async function connectDrive() {
     setError(null);
     setNotice(null);
     setDriveBusy(true);
     try {
       await requestToken({ silent: false });
-      const next = { ...readState(), connected: true, lastError: null };
-      writeState(next);
-      setDrive(next);
-      setNotice('Connected to Google Drive.');
+      writeState({ ...readState(), connected: true, lastError: null });
+      setDrive(readState());
+      await syncNow();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -112,10 +129,19 @@ export function Settings() {
                 : 'Not synced yet.'}{' '}
               This phone keeps the real copy; Drive holds a mirror.
             </p>
+            {drive.lastError && <p className="mt-2 text-xs text-red-400">{drive.lastError}</p>}
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={() => void syncNow()}
+              className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
+            >
+              {syncing ? 'Syncing…' : 'Sync now'}
+            </button>
             <button
               type="button"
               onClick={disconnectDrive}
-              className="mt-4 h-12 w-full rounded-xl border border-line text-sm"
+              className="mt-2 h-12 w-full rounded-xl border border-line text-sm"
             >
               Disconnect
             </button>

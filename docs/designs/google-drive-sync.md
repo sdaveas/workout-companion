@@ -241,8 +241,15 @@ be. Phase 1 proceeds.
 - **Client ID hardcoded** in `src/lib/drive/config.ts` instead of a
   `VITE_GOOGLE_CLIENT_ID` repo variable. It is public by design; a variable
   would only add a way for local builds to come up without a Drive card.
-- **The program stamp is written by `store/programsStore.ts`**, which is a
-  fourth file in the project clock guard (`grep Date.now src`). The guard's
-  intent — screens never read the clock, the store stamps — holds; the file
-  list in `docs/phase-status.md` §3 now needs this entry. The token TTL uses
-  `performance.now()` instead, which is the correct clock for a TTL anyway.
+- **`engine/ids.ts` gained `now()`**, the one wall clock, and both the program
+  stamp and `lastSyncedAt` import it. No new file reads `Date.now` directly, so
+  the clock guard keeps its three allowed files plus the phase-7
+  `lib/coachBrief.ts` deviation. The token TTL uses `performance.now()`, which
+  is the correct clock for a TTL anyway.
+- **The Drive file is found by name on every sync**, not by an id cached in
+  `wc:drive` (the first draft cached `folderId`/`fileId`). Two searches cost
+  nothing at this frequency and make a deleted or renamed folder self-healing
+  instead of a permanent failure.
+- **The push is a plain `uploadType=media` PATCH**, not `multipart/related`:
+  only the bytes change, the name and parent never do, and the conditional
+  `If-Match` works the same.

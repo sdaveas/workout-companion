@@ -25,11 +25,10 @@
    For phases 3–5 one clause is manual and must be recorded here verbatim, e.g.
    `manual: start→finish Workout B in preview; reload mid-rest at set 4 → Resume showed 7s`.
    A green triad alone is **not** a completed phase once the UI exists.
-3. **Clock guard**: `grep -rn -F "Date.now" src` must hit only `engine/ids.ts`,
-   `hooks/useNow.ts` (display-only repaint tick, §2.18) and `store/sessionStore.ts`,
-   plus the two recorded deviations: `lib/coachBrief.ts` (the "Today is …" line of a
-   copied brief, display only) and `store/programsStore.ts` (the program edit stamp,
-   `docs/designs/google-drive-sync.md` §Deviations).
+3. **Clock guard**: `grep -rn -F "Date.now" src` must hit only `engine/ids.ts`
+   (which also exports `now()`, the one wall clock), `hooks/useNow.ts` (display-only
+   repaint tick, §2.18) and `store/sessionStore.ts`, plus the one recorded deviation:
+   `lib/coachBrief.ts` (the "Today is …" line of a copied brief, display only).
    Zero hits in `screens/` — the store stamps `now`, nothing else.
 4. **Record**: update the table above and the README `Status:` line. Nothing else.
 5. **Commit + tag**: one commit named `phase N: <name>` whose body carries the gate evidence

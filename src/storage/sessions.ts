@@ -1,5 +1,6 @@
 import { db, type SessionRow, type SettingRow } from './db';
 import type { WorkoutState } from '../engine/types';
+import { scheduleSync } from '../lib/drive/sync';
 
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -68,6 +69,9 @@ export function saveSession(state: WorkoutState): Promise<void> {
         await db.settings.put({ key: 'activeSessionId', value: row.id });
       }
     });
+
+    // Two seconds after the last write, one sync. No-op when Drive is not connected.
+    scheduleSync();
   });
 }
 

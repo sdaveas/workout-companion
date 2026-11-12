@@ -11,6 +11,7 @@ import { Programs } from './screens/Programs';
 import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
 import { decodeLinkPayload } from './lib/programLink';
+import { sync } from './lib/drive/sync';
 import { usePrograms } from './store/programsStore';
 import { useSession } from './store/sessionStore';
 import { ScreenHeader } from './components/ui/ScreenHeader';
@@ -36,7 +37,11 @@ export function App() {
 
   useEffect(() => {
     void load();
-    void recover();
+    // After the local state is settled, not before: a sync that lands first would
+    // be overwritten by recovery's own load.
+    void recover().then(() => {
+      void sync();
+    });
   }, [load, recover]);
 
   if (restoring) return <div className="min-h-dvh bg-ink" />;
