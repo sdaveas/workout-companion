@@ -3,11 +3,11 @@ import { useHashRoute } from './hooks/useHashRoute';
 import { ActiveWorkout } from './screens/ActiveWorkout';
 import { AddShared } from './screens/AddShared';
 import { Credits } from './screens/Credits';
+import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { PasteProgram } from './screens/PasteProgram';
 import { ProgramDetail } from './screens/ProgramDetail';
 import { Programs } from './screens/Programs';
-import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
 import { decodeLinkPayload } from './lib/programLink';
 import { usePrograms } from './store/programsStore';
@@ -22,7 +22,7 @@ const KNOWN = new Set([
   'program',
   'session',
   'summary',
-  'settings',
+  'history',
   'credits',
 ]);
 
@@ -48,7 +48,7 @@ export function App() {
       {route.name === 'program' && <ProgramDetail id={route.param ?? ''} />}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
-      {route.name === 'settings' && <Settings />}
+      {route.name === 'history' && <History />}
       {route.name === 'credits' && <Credits />}
       {(route.name === 'home' || route.name === '') && <Home />}
       {!KNOWN.has(route.name) && route.name !== 'home' && (

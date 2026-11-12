@@ -11,24 +11,20 @@ Personal workout execution PWA. Import a program as JSON, run it set by set, off
 Status: six phases done — import, engine, UI, recovery, PWA, auto mode (timed sets,
 one non-scrolling workout screen, a back control on every view) — plus phase 7 steps 1–2:
 a program can copy itself and its recent history as one brief for a coach chat, and the
-reply pastes back in through a diff before anything is applied. Google Drive sync is being
-added in phases: connect is in, the sync engine is next
-(`docs/designs/google-drive-sync.md`). See `docs/phase-status.md`. Programs are built with the in-app form (Programs) or imported
-from a program JSON / backup file (Settings → **Import a file**).
+reply pastes back in through a diff before anything is applied. One page holds the next
+workout, every program and the last few sessions; history and import/export sit behind it.
+See `docs/phase-status.md`.
 
 Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
 localStorage mirror of the active session. No server. A fresh profile starts empty: Home
 sends you to Programs.
 
-Google Drive (optional): Settings → **Save to Google Drive** writes one
-`Workout Companion/workout-companion-backup.json` to your own Drive, and **Load from Google
-Drive** merges that file back — the same path as importing a file. It is a copy, not a sync:
-nothing happens on its own, and the file is yours to download or delete. Design, and the
-reason sync was dropped: `docs/designs/google-drive-sync.md`.
-
-Backup: Settings → **Export backup** writes one JSON with every program and every session;
-**Import a file** merges by id (new items added, matching ones updated, nothing deleted) and
-also accepts a single program JSON. Design: `docs/designs/backup-and-settings.md`.
+Moving data: **Import** / **Export** in the header. Tick programs, history, or both, then
+Google Drive or a file. A copy, not a sync: nothing happens on its own, and the file is
+yours to download or delete. Importing merges by id (new items added, matching ones
+updated, nothing deleted) and also accepts a single program JSON. Each subset has its own
+file name, so a programs-only save cannot overwrite the copy that holds history. Design,
+and the reason Drive sync was dropped: `docs/designs/google-drive-sync.md`.
 
 ## Agent bridge (MCP)
 

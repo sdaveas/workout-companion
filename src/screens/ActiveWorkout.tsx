@@ -18,6 +18,7 @@ import { remainingMs } from '../engine/rest';
 import { elapsedMs, estimatedRemainingMs } from '../engine/time';
 import { formatClock, formatDuration, formatSet, formatSetNumber, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
+import { shareProgram } from '../lib/shareProgram';
 import type { ProgramExercise, SetRecord, WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
@@ -350,6 +351,7 @@ export function ActiveWorkout() {
   const [howTo, setHowTo] = useState(false);
   const [keepAwake, toggleKeepAwake] = useKeepAwake();
   const { sound, vibrate, toggleSound, toggleVibrate } = useCues();
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   const status = state?.status;
   const autoMode = state?.mode === 'auto';
@@ -432,6 +434,16 @@ export function ActiveWorkout() {
   }, [state, tickNow]);
 
   if (!state) return null;
+
+  async function share() {
+    if (!state) return;
+    try {
+      const note = await shareProgram(state.program);
+      if (note) setShareNote(note);
+    } catch (err) {
+      setShareNote(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   const exercise = getCurrentExercise(state);
   const record = getCurrentRecord(state);
@@ -551,14 +563,23 @@ export function ActiveWorkout() {
           </div>
         }
         actions={
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => menuDialog.current?.showModal()}
-            className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
-          >
-            Settings
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void share()}
+              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => menuDialog.current?.showModal()}
+              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+            >
+              Settings
+            </button>
+          </>
         }
       >
         {!isReady && (
@@ -589,6 +610,12 @@ export function ActiveWorkout() {
           </>
         )}
       </ScreenHeader>
+
+      {shareNote && (
+        <p role="status" className="mt-1 text-xs text-accent">
+          {shareNote}
+        </p>
+      )}
 
       {error && (
         <div className="absolute inset-x-5 bottom-44 z-30">

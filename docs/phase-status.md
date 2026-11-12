@@ -18,6 +18,8 @@
 
 | D4 Drive: sync removed, manual copy kept | done | 248 tests (28 files), typecheck, build; the three Drive phases above are superseded. `src/lib/drive/` is now `config.ts`, `auth.ts` (token for this visit only, never stored), `files.ts` (save = overwrite one file, load = read it); Settings has **Save to Google Drive** / **Load from Google Drive**, and Load goes through `importBackupFile`, so it merges exactly like a picked file. Deleted: `drive/sync.ts`, `mergeNewest`, `parseRemote`, `Program.updatedAt`, `Backup.programUpdatedAt`, the sync triggers, the persisted token, and `engine/ids.ts`'s `now()`. Why: an installed iOS app cannot get a token without a tap, so background sync only worked within an hour of the last tap. | this commit |
 
+| D5 One page, Import/Export sheet, tappable grid | done | 250 tests (29 files), typecheck, build. Home is "My Workouts": next-workout card, every program, the last three sessions, **Manage history**. Settings is gone — its Drive and backup work became one **Import / Export** sheet in the header (tick programs and/or history, then Drive or file; one Drive file name per subset, so a programs-only save cannot overwrite the one with history). History is its own view with an 18-week grid on top: months and Mon/Wed/Fri labelled, each day tappable to filter the list. Share moved into the workout header, left of Settings. `scripts/scenarios.mjs` still points at the old Settings screen and is stale. | this commit |
+
 ## Phase gate (run before starting the next phase)
 
 0. **Delegate the verdict**: `Use the phase-gate subagent` (`.opencode/agents/phase-gate.md`,

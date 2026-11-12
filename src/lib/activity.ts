@@ -4,7 +4,7 @@ export interface DayCell {
   count: number;
 }
 
-function dayKey(ms: number): number {
+export function dayKey(ms: number): number {
   const d = new Date(ms);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -24,7 +24,7 @@ function addDays(day: number, n: number): number {
 export function activityGrid(
   sessions: Array<{ finishedAt: number | null }>,
   now: number,
-  weeks = 24,
+  weeks = 18,
 ): DayCell[][] {
   const counts = new Map<number, number>();
   for (const s of sessions) {
@@ -43,4 +43,21 @@ export function activityGrid(
       return { day, count: counts.get(day) ?? 0 };
     }),
   );
+}
+
+/** The month a column starts in, once per month, so the axis stays readable. */
+export function monthLabels(grid: DayCell[][]): Array<{ index: number; label: string }> {
+  const labels: Array<{ index: number; label: string }> = [];
+  let last = -1;
+  for (const [index, column] of grid.entries()) {
+    const first = column[0].day;
+    const month = new Date(first).getMonth();
+    if (month === last) continue;
+    labels.push({
+      index,
+      label: new Date(first).toLocaleDateString(undefined, { month: 'short' }),
+    });
+    last = month;
+  }
+  return labels;
 }

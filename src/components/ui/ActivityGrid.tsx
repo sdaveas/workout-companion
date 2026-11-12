@@ -1,6 +1,8 @@
-import { activityGrid, type DayCell } from '../../lib/activity';
+import { activityGrid, dayKey, monthLabels, type DayCell } from '../../lib/activity';
 
 const TONES = ['bg-line', 'bg-accent/30', 'bg-accent/60', 'bg-accent'] as const;
+const WEEKS = 18;
+const CELL = 14;
 
 function tone(count: number): string {
   return TONES[Math.min(count, TONES.length - 1)];
@@ -12,42 +14,79 @@ function label(cell: DayCell): string {
   return `${date} · ${cell.count} session${cell.count === 1 ? '' : 's'}`;
 }
 
+const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+
 /**
- * Training days, GitHub style: one column per week, Monday at the top. It sits at
- * the end of the page and never scrolls, so a glance says whether the week
- * happened.
+ * Training days, GitHub style: one column per week, Monday at the top, months
+ * along the top edge. A cell is a button: tapping a day filters the list under
+ * it, tapping it again clears.
  */
 export function ActivityGrid({
   sessions,
   now,
-  weeks = 24,
+  selected,
+  onSelect,
 }: {
   sessions: Array<{ finishedAt: number | null }>;
   now: number;
-  weeks?: number;
+  selected: number | null;
+  onSelect: (day: number) => void;
 }) {
-  const grid = activityGrid(sessions, now, weeks);
-  const total = sessions.filter((s) => s.finishedAt != null).length;
+  const grid = activityGrid(sessions, now, WEEKS);
+  const months = monthLabels(grid);
+  const today = dayKey(now);
 
   return (
-    <section aria-label="Training days" className="shrink-0 border-t border-line pt-3">
-      <div className="flex items-baseline justify-between">
-        <p className="text-xs uppercase tracking-widest text-muted">Last {weeks} weeks</p>
-        <p className="text-xs text-muted">
-          {total} session{total === 1 ? '' : 's'}
-        </p>
-      </div>
-      <div
-        className="mt-2 grid grid-flow-col justify-start gap-[3px]"
-        style={{ gridTemplateRows: 'repeat(7, 10px)' }}
-      >
-        {grid.flat().map((cell) => (
+    <section aria-label="Training days" className="shrink-0">
+      <div className="flex gap-2">
+        <div
+          className="flex flex-col gap-[2px] pt-[18px] text-[10px] leading-none text-muted"
+          aria-hidden
+        >
+          {WEEKDAYS.map((name, i) => (
+            <span key={i} style={{ height: CELL }} className="flex items-center">
+              {name}
+            </span>
+          ))}
+        </div>
+
+        <div className="min-w-0">
           <div
-            key={cell.day}
-            title={label(cell)}
-            className={`h-2.5 w-2.5 rounded-[2px] ${tone(cell.count)}`}
-          />
-        ))}
+            className="grid h-4 gap-[2px] text-[10px] leading-none text-muted"
+            style={{ gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)` }}
+            aria-hidden
+          >
+            {months.map((month) => (
+              <span
+                key={month.index}
+                style={{ gridColumn: `${month.index + 1} / span 3` }}
+                className="whitespace-nowrap"
+              >
+                {month.label}
+              </span>
+            ))}
+          </div>
+
+          <div
+            className="grid grid-flow-col gap-[2px]"
+            style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}
+          >
+            {grid.flat().map((cell) => (
+              <button
+                key={cell.day}
+                type="button"
+                disabled={cell.day > today}
+                onClick={() => onSelect(cell.day)}
+                aria-label={label(cell)}
+                aria-pressed={selected === cell.day}
+                style={{ width: CELL, height: CELL }}
+                className={`rounded-[3px] ${tone(cell.count)} ${
+                  selected === cell.day ? 'ring-1 ring-accent' : ''
+                } ${cell.day > today ? 'invisible' : ''}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

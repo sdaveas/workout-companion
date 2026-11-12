@@ -1,4 +1,4 @@
-import { FILE_NAME, FOLDER_NAME } from './config';
+import { FOLDER_NAME } from './config';
 
 const FILES = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
@@ -27,8 +27,8 @@ async function findFolder(token: string): Promise<string | null> {
   );
 }
 
-/** Overwrites the one file in Drive, or creates it. This is a copy, so a blind overwrite is the point. */
-export async function saveBackup(token: string, body: string): Promise<void> {
+/** Overwrites the named file in Drive, or creates it. This is a copy, so a blind overwrite is the point. */
+export async function saveBackup(token: string, name: string, body: string): Promise<void> {
   let folderId = await findFolder(token);
   if (!folderId) {
     const res = await fetch(FILES, {
@@ -42,7 +42,7 @@ export async function saveBackup(token: string, body: string): Promise<void> {
 
   const fileId = await findId(
     token,
-    `'${folderId}' in parents and name = '${FILE_NAME}' and trashed = false`,
+    `'${folderId}' in parents and name = '${name}' and trashed = false`,
   );
 
   if (fileId) {
@@ -60,7 +60,7 @@ export async function saveBackup(token: string, body: string): Promise<void> {
     `--${boundary}`,
     'Content-Type: application/json; charset=UTF-8',
     '',
-    JSON.stringify({ name: FILE_NAME, parents: [folderId], mimeType: 'application/json' }),
+    JSON.stringify({ name, parents: [folderId], mimeType: 'application/json' }),
     `--${boundary}`,
     'Content-Type: application/json',
     '',
@@ -77,14 +77,14 @@ export async function saveBackup(token: string, body: string): Promise<void> {
   if (!res.ok) await failed('save to Drive', res);
 }
 
-/** The text of the copy in Drive, or null when there is no copy yet. */
-export async function loadBackup(token: string): Promise<string | null> {
+/** The text of the named copy in Drive, or null when there is no copy yet. */
+export async function loadBackup(token: string, name: string): Promise<string | null> {
   const folderId = await findFolder(token);
   if (!folderId) return null;
 
   const fileId = await findId(
     token,
-    `'${folderId}' in parents and name = '${FILE_NAME}' and trashed = false`,
+    `'${folderId}' in parents and name = '${name}' and trashed = false`,
   );
   if (!fileId) return null;
 

@@ -11,4 +11,3 @@ export const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 /** One visible folder, so the copy can be found, downloaded or deleted by hand. */
 export const FOLDER_NAME = 'Workout Companion';
-export const FILE_NAME = 'workout-companion-backup.json';
