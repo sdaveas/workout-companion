@@ -106,17 +106,45 @@ export function Home() {
           <>
             <button
               type="button"
+              aria-label="Import"
               onClick={() => setSheet('import')}
-              className="h-11 rounded-xl border border-line px-3 text-xs text-muted"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
             >
-              Import
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="h-5 w-5"
+              >
+                <path d="M12 3v10" />
+                <path d="m8 9 4 4 4-4" />
+                <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+              </svg>
             </button>
             <button
               type="button"
+              aria-label="Export"
               onClick={() => setSheet('export')}
-              className="h-11 rounded-xl border border-line px-3 text-xs text-muted"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
             >
-              Export
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="h-5 w-5"
+              >
+                <path d="M12 14V3" />
+                <path d="m8 7 4-4 4 4" />
+                <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+              </svg>
             </button>
           </>
         }
