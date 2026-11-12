@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
 import { navigate } from '../hooks/useHashRoute';
 import { useAutoAdvance } from '../hooks/useAutoAdvance';
 import { useNow } from '../hooks/useNow';
-import { useWakeLock } from '../hooks/useWakeLock';
+import { useWakeLock, type WakeState } from '../hooks/useWakeLock';
 import { canKeepAwake, useKeepAwake } from '../hooks/useKeepAwake';
 import { useCues } from '../hooks/useCues';
 import { canVibrate, cue } from '../lib/cues';
@@ -59,6 +59,7 @@ function SessionMenu({
   autoAvailable,
   started,
   keepAwake,
+  wake,
   onKeepAwake,
   onAuto,
   onEnd,
@@ -74,6 +75,8 @@ function SessionMenu({
   /** Nothing to restart or end before the first set. */
   started: boolean;
   keepAwake: boolean;
+  /** What the platform actually did with the lock. */
+  wake: WakeState;
   onKeepAwake: () => void;
   onAuto: () => void;
   onEnd: () => void;
@@ -96,7 +99,13 @@ function SessionMenu({
         {(canKeepAwake() || autoAvailable) && (
           <MenuGroup label="Modes">
             {canKeepAwake() && (
-              <MenuRow label="Keep screen on" on={keepAwake} onClick={onKeepAwake} />
+              <MenuRow
+                label="Keep screen on"
+                on={keepAwake}
+                // Say what the phone did: a refused lock is not a broken switch.
+                note={keepAwake && wake === 'blocked' ? 'blocked' : undefined}
+                onClick={onKeepAwake}
+              />
             )}
             {autoAvailable && <MenuRow label="Auto" on={auto} onClick={onAuto} />}
             {/* Nested under Auto: they only matter while it is running the clock. */}
@@ -151,12 +160,15 @@ function MenuRow({
   on,
   onClick,
   sub = false,
+  note,
 }: {
   label: string;
   on: boolean;
   onClick: () => void;
   /** Indented under the switch it belongs to. */
   sub?: boolean;
+  /** Replaces the on/off word when the platform said no. */
+  note?: string;
 }) {
   return (
     <button
@@ -168,8 +180,12 @@ function MenuRow({
       }`}
     >
       <span>{label}</span>
-      <span className={`font-gym text-xs ${on ? 'text-accent' : 'text-muted'}`}>
-        {on ? 'on' : 'off'}
+      <span
+        className={`font-gym text-xs ${
+          note ? 'text-danger' : on ? 'text-accent' : 'text-muted'
+        }`}
+      >
+        {note ?? (on ? 'on' : 'off')}
       </span>
     </button>
   );
@@ -361,7 +377,7 @@ export function ActiveWorkout() {
     if (status === 'abandoned') navigate('#/');
   }, [status, state?.sessionId]);
 
-  useWakeLock(
+  const wake = useWakeLock(
     keepAwake && !!state && (RUNNING.includes(state.status) || state.status === 'paused'),
   );
 
@@ -876,6 +892,7 @@ export function ActiveWorkout() {
         autoAvailable={!!state && RUNNING.includes(state.status)}
         started={!isReady}
         keepAwake={keepAwake}
+        wake={wake}
         onKeepAwake={toggleKeepAwake}
         onAuto={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
         sound={sound}

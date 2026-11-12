@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook } from '@testing-library/react';
+import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWakeLock } from './useWakeLock';
 
@@ -28,6 +28,7 @@ describe('useWakeLock', () => {
   });
 
   afterEach(() => {
+    cleanup();
     Reflect.deleteProperty(navigator, 'wakeLock');
     vi.restoreAllMocks();
   });
@@ -45,6 +46,16 @@ describe('useWakeLock', () => {
     renderHook(() => useWakeLock(false));
     await Promise.resolve();
     expect(request).not.toHaveBeenCalled();
+  });
+
+  it('reports the real state: blocked when the platform refuses', async () => {
+    Object.defineProperty(navigator, 'wakeLock', {
+      value: { request: async () => Promise.reject(new Error('denied')) },
+      configurable: true,
+    });
+    const { result } = renderHook(() => useWakeLock(true));
+    await vi.waitFor(() => expect(result.current).toBe('blocked'));
+    Reflect.deleteProperty(navigator, 'wakeLock');
   });
 
   it('re-acquires after the browser releases the lock and the page is visible again', async () => {
