@@ -55,7 +55,7 @@ function readPrograms(text: string): { programs: Program[]; error: string | null
  * `initial` is a program carried in a shared link: the second card is skipped and the
  * preview opens straight away.
  */
-export function PasteProgram({ initial }: { initial?: string }) {
+export function PasteProgram({ initial, from }: { initial?: string; from?: string }) {
   const programs = usePrograms((s) => s.programs);
   const load = usePrograms((s) => s.load);
   const prompt = useMemo(chatPrompt, []);
@@ -197,7 +197,13 @@ export function PasteProgram({ initial }: { initial?: string }) {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={initial ? { to: '#/', label: 'Programs' } : { to: '#/programs', label: 'Programs' }}
+        back={
+          initial
+            ? { to: '#/', label: 'Home', compact: true }
+            : from
+              ? { to: `#/program/${from}`, label: 'Program', compact: true }
+              : { to: '#/programs', label: 'Programs', compact: true }
+        }
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
             {initial ? 'Shared program' : 'Paste a program'}

@@ -43,7 +43,7 @@ export function App() {
     <div className="min-h-dvh bg-ink text-[15px]">
       {route.name === 'programs' && <Programs />}
       {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
-      {route.name === 'paste' && <PasteProgram />}
+      {route.name === 'paste' && <PasteProgram from={route.param ?? undefined} />}
       {route.name === 'p' && <PasteProgram initial={decodeLinkPayload(route.param ?? '')} />}
       {route.name === 'program' && <ProgramDetail id={route.param ?? ''} />}
       {route.name === 'session' && <ActiveWorkout />}

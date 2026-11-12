@@ -66,7 +66,7 @@ export function ProgramDetail({ id }: { id: string }) {
     window.open(briefChatUrl(brief), '_blank', 'noopener');
     // The way back is a paste, so the app waits on the paste step. When copying was
     // refused the brief is on this screen to select by hand, so stay.
-    if (copied) navigate('#/paste');
+    if (copied && program) navigate(`#/paste/${program.id}`);
   }
 
   async function copyOnly() {
@@ -216,7 +216,7 @@ export function ProgramDetail({ id }: { id: string }) {
           Paste its reply and the app lists what changed before touching this program.
         </p>
         <a
-          href="#/paste"
+          href={`#/paste/${program.id}`}
           className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-sm font-semibold"
         >
           Paste the coach’s reply
