@@ -31,7 +31,8 @@ export function Settings() {
 
   useEffect(() => {
     void countSessions().then(setSessions).catch(() => setSessions(null));
-  }, [programs.length]);
+    // A sync can add rows without changing the program count.
+  }, [programs.length, drive.lastSyncedAt]);
 
   async function exportBackup() {
     setError(null);
