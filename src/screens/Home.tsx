@@ -236,6 +236,12 @@ export function Home() {
           {loaded && !latest && (
             <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
           )}
+          <a
+            href="#/credits"
+            className="mt-4 flex h-8 items-center justify-center text-xs text-muted underline"
+          >
+            Credits
+          </a>
         </section>
       </div>
 

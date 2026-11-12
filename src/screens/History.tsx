@@ -86,13 +86,6 @@ export function History() {
           <SessionRow key={row.id} row={row} />
         ))}
       </ul>
-
-      <a
-        href="#/credits"
-        className="mt-1 flex h-8 shrink-0 items-center justify-center text-xs text-muted underline"
-      >
-        Credits
-      </a>
     </main>
   );
 }
