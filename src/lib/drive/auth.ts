@@ -1,4 +1,5 @@
-import { CLIENT_ID, SCOPE, STATE_KEY } from './config';
+import { now } from '../../engine/ids';
+import { CLIENT_ID, SCOPE, STATE_KEY, TOKEN_KEY } from './config';
 
 /**
  * Google Identity Services, loaded on demand.
@@ -49,15 +50,45 @@ function loadGis(): Promise<void> {
 }
 
 /**
- * Tokens last about an hour. Kept in memory only, so a cold start asks Google
- * again — silently, which Phase 0 measured at under 2 seconds.
+ * Tokens last about an hour, so they are kept in localStorage: an app opened
+ * within the hour then syncs without touching Google at all. In an installed
+ * iOS app there is no other way — see `NeedsTap`.
  */
 const TOKEN_TTL_MS = 50 * 60_000;
 let cached: { value: string; expiresAt: number } | null = null;
 
+/** Google's popup needs a tap. A cold start has none, so this is not an error. */
+export class NeedsTap extends Error {
+  constructor() {
+    super('Tap Sync now to reconnect to Google Drive.');
+  }
+}
+
+function hasActivation(): boolean {
+  const ua = (navigator as Navigator & { userActivation?: { isActive?: boolean } }).userActivation;
+  return ua?.isActive !== false;
+}
+
+function stored(): { value: string; expiresAt: number } | null {
+  if (cached) return cached;
+  try {
+    const raw = localStorage.getItem(TOKEN_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { value?: unknown; expiresAt?: unknown };
+    if (typeof parsed.value !== 'string' || typeof parsed.expiresAt !== 'number') return null;
+    if (now() >= parsed.expiresAt) return null;
+    cached = { value: parsed.value, expiresAt: parsed.expiresAt };
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
 /** `silent: true` shows no consent UI; it only works once this Google account has granted access. */
 export async function requestToken(opts: { silent: boolean }): Promise<string> {
-  if (cached && performance.now() < cached.expiresAt) return cached.value;
+  const existing = stored();
+  if (existing) return existing.value;
+  if (opts.silent && !hasActivation()) throw new NeedsTap();
 
   await loadGis();
   const value = await new Promise<string>((resolve, reject) => {
@@ -77,20 +108,31 @@ export async function requestToken(opts: { silent: boolean }): Promise<string> {
       },
       error_callback: (e) => {
         window.clearTimeout(timer);
+        // A blocked popup is not a failure the user can act on beyond tapping again.
+        if (e.type === 'popup_closed' || e.type === 'popup_failed_to_open') return reject(new NeedsTap());
         reject(new Error(`${e.type ?? 'error'}: ${e.message ?? 'no message'}`));
       },
     });
     client.requestAccessToken({ prompt: opts.silent ? 'none' : '' });
   });
 
-  // performance.now(), not the wall clock: a TTL wants a monotonic clock.
-  cached = { value, expiresAt: performance.now() + TOKEN_TTL_MS };
+  cached = { value, expiresAt: now() + TOKEN_TTL_MS };
+  try {
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(cached));
+  } catch {
+    // Private mode: the token still works until this page goes away.
+  }
   return value;
 }
 
 /** Called when Drive answers 401: the token died early, ask again. */
 export function forgetToken(): void {
   cached = null;
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // Nothing to clear.
+  }
 }
 
 export interface DriveState {

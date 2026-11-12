@@ -3,7 +3,7 @@ import { now } from '../../engine/ids';
 import { listPrograms } from '../../storage/programs';
 import { loadAllSessions } from '../../storage/sessions';
 import { mergeBackup } from '../../storage/backup';
-import { readState, requestToken, writeState } from './auth';
+import { NeedsTap, readState, requestToken, writeState } from './auth';
 import { Conflict, createFile, download, locate, updateFile } from './files';
 
 /**
@@ -12,7 +12,7 @@ import { Conflict, createFile, download, locate, updateFile } from './files';
  */
 
 export type SyncResult =
-  | { status: 'not-connected' | 'offline' | 'ok'; pulled: boolean }
+  | { status: 'not-connected' | 'offline' | 'needs-tap' | 'ok'; pulled: boolean }
   | { status: 'failed'; pulled: false; error: string };
 
 /** `exportedAt` is stamped on every build, so comparing raw text would never match. */
@@ -85,6 +85,8 @@ async function runOnce(): Promise<SyncResult> {
     writeState({ ...readState(), lastSyncedAt: now(), lastError: null });
     return { status: 'ok', pulled };
   } catch (err) {
+    // A cold start has no tap, so Google cannot open its popup. Nothing to report.
+    if (err instanceof NeedsTap) return { status: 'needs-tap', pulled: false };
     const error = err instanceof Error ? err.message : String(err);
     writeState({ ...readState(), lastError: error });
     return { status: 'failed', pulled: false, error };

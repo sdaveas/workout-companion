@@ -13,5 +13,6 @@ export const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 export const FOLDER_NAME = 'Workout Companion';
 export const FILE_NAME = 'workout-companion-backup.json';
 
-/** localStorage key holding the connected state and the Drive ids. */
+/** localStorage keys: the connected state, and the access token with its expiry. */
 export const STATE_KEY = 'wc:drive';
+export const TOKEN_KEY = 'wc:driveToken';

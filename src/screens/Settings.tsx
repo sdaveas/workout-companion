@@ -72,6 +72,7 @@ export function Settings() {
       setDrive(readState());
       if (result.status === 'failed') setError(result.error);
       else if (result.status === 'offline') setNotice('Offline — nothing was synced.');
+      else if (result.status === 'needs-tap') setNotice('Tap Sync now again to reach Google.');
       else if (result.pulled) setNotice('Synced. Newer items from Drive were added.');
       else setNotice('Synced. This phone was already up to date.');
     } finally {

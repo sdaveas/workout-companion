@@ -115,7 +115,8 @@ Hard constraints, in order:
      `bulkPut`** — the user picked that file on purpose; sync is the only caller
      of `mergeNewest`.
 
-4. **When it runs.** After `recover()` resolves on app open when connected;
+4. **When it runs.** After `recover()` resolves on app open when connected and
+   a token is still cached;
    two seconds after any `saveSession` write (which covers the finish transition
    and later RPE/note edits through `editStored`); and on a manual `Sync now`.
    One sync in flight at a time — a module-level promise; a trigger during a
@@ -263,3 +264,12 @@ be. Phase 1 proceeds.
   the JSON body, so `updateFile` compares it one request before the write. The
   window is one request wide; a lost race is not fatal, because the merge is a
   union and the next sync from either device puts the missing rows back.
+- **The access token is persisted** (`wc:driveToken`, ~50 min) and a silent
+  request with no cached token and no user activation throws `NeedsTap` instead
+  of opening a popup. Measured on the phone: an installed iOS app that syncs on
+  a cold start has no user gesture, so Google's popup is blocked and GIS
+  answers `popup_closed`. Sync treats that as "nothing to report" — it is not
+  a failure and does not write `lastError`. Consequence: an app opened more than
+  an hour after the last sync does not sync by itself; the first tap (Sync now,
+  or any workout write) does. This is the honest limit of iOS standalone PWAs,
+  not a bug to chase.
