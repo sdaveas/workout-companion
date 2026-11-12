@@ -42,7 +42,7 @@ export function History() {
   return (
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={{ to: '#/', label: 'Programs' }}
+        back={{ to: '#/', label: 'Home', compact: true }}
         title={<h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>}
         actions={
           history.length > 0 ? (

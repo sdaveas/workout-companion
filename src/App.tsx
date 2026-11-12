@@ -53,7 +53,7 @@ export function App() {
       {(route.name === 'home' || route.name === '') && <Home />}
       {!KNOWN.has(route.name) && route.name !== 'home' && (
         <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <ScreenHeader back={{ to: '#/', label: 'Programs' }} />
+          <ScreenHeader back={{ to: '#/', label: 'Home', compact: true }} />
           <p className="mt-16 text-center text-muted">That page is not here.</p>
           <div className="mt-4 text-center">
             <a href="#/" className="text-sm text-accent underline underline-offset-4">

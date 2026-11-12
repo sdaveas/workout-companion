@@ -163,7 +163,7 @@ export function AddShared({ payload }: { payload: string }) {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={{ to: '#/', label: 'Programs' }}
+        back={{ to: '#/', label: 'Home', compact: true }}
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
             {shared.length > 1 ? 'Shared programs' : 'Shared program'}
