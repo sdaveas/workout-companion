@@ -126,8 +126,11 @@ Hard constraints, in order:
    `sessionStore.loadHistory`, or Home and History stay stale.
 
 5. **Write safety.** Pull → merge → push the merged whole, conditional on the
-   file's `etag` (`If-Match`). On 412 the retry is a **full second pass**
-   (pull → merge → push), not a blind re-upload. If the merged body equals the
+   file's revision: the `headRevisionId` from the search is compared with the
+   one read immediately before the write. On a mismatch the retry is a **full
+   second pass** (pull → merge → push), not a blind re-upload. (`If-Match` on
+   the ETag was the first choice; see Deviations — a browser cannot read that
+   header.) If the merged body equals the
    remote body **ignoring `exportedAt`**, skip the push: an app open must not
    burn a write. `buildBackup` stamps `exportedAt` on every call, so comparing
    raw strings would never match.
@@ -183,9 +186,9 @@ Settings card between "On this phone" and "Backup": `Connect Google Drive` →
 `Connected` + `Disconnect`. Nothing syncs yet.
 
 **Phase 2 — sync engine (3–4 h).**
-`src/lib/drive/files.ts`: `findOrCreate()`, `download()`, `upload(etag)` (one
-`multipart/related` PATCH to `/upload/drive/v3/files/{id}?uploadType=multipart`
-with a quoted `If-Match`). `src/lib/drive/sync.ts`: `sync()` = refresh token →
+`src/lib/drive/files.ts`: `locate()` (folder then file, both by name),
+`download()`, `createFile()` (`multipart/related`) and
+`updateFile(expectedRevision)` (one media PATCH, guarded by a revision check). `src/lib/drive/sync.ts`: `sync()` = refresh token →
 pull → `mergeNewest` → persist → push, with the 412 second pass and the
 in-flight guard. `mergeNewest` is pure and lives in `src/lib/backup.ts`.
 
@@ -253,3 +256,10 @@ be. Phase 1 proceeds.
 - **The push is a plain `uploadType=media` PATCH**, not `multipart/related`:
   only the bytes change, the name and parent never do, and the conditional
   `If-Match` works the same.
+- **Conditional writes use `headRevisionId`, not `If-Match`/ETag.** Drive does
+  return an ETag header, but a browser cannot read it: CORS exposes only a
+  small safelisted set and Drive does not add ETag to it. The first deployed
+  sync failed with "Drive returned no ETag" on the phone. The revision id is in
+  the JSON body, so `updateFile` compares it one request before the write. The
+  window is one request wide; a lost race is not fatal, because the merge is a
+  union and the next sync from either device puts the missing rows back.

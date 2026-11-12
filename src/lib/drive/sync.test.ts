@@ -85,17 +85,21 @@ function stubDrive(handler: Handler) {
   return calls;
 }
 
-/** Folder search, file search, then the media download. */
-function located(remote: { text: string; etag: string } | null): Handler {
+/** Folder search, file search, media download, revision check, then the write. */
+function located(remote: { text: string; revision?: string } | null): Handler {
+  const revision = remote?.revision ?? 'r1';
   return (url) => {
     if (url.startsWith(`${FILES}?q=`)) {
       if (url.includes('application%2Fvnd.google-apps.folder')) {
         return { body: { files: [{ id: 'folder' }] } };
       }
-      return { body: { files: remote ? [{ id: 'file' }] : [] } };
+      return { body: { files: remote ? [{ id: 'file', headRevisionId: revision }] : [] } };
+    }
+    if (url.startsWith(`${FILES}/file?fields=headRevisionId`)) {
+      return { body: { headRevisionId: revision } };
     }
     if (url.startsWith(`${FILES}/file?alt=media`)) {
-      return remote ? { text: remote.text, etag: remote.etag } : { status: 404, text: 'gone' };
+      return remote ? { text: remote.text } : { status: 404, text: 'gone' };
     }
     if (url.startsWith(UPLOAD)) return { body: { id: 'file' } };
     return { status: 404, text: `unexpected ${url}` };
@@ -125,7 +129,7 @@ describe('sync', () => {
   });
 
   it('refuses to overwrite a remote file it cannot read', async () => {
-    const calls = stubDrive(located({ text: 'not a backup', etag: '"a"' }));
+    const calls = stubDrive(located({ text: 'not a backup' }));
     const result = await sync();
     expect(result.status).toBe('failed');
     if (result.status === 'failed') expect(result.error).toContain('Left the Drive copy alone');
@@ -136,7 +140,7 @@ describe('sync', () => {
   it('skips the push when only exportedAt differs', async () => {
     await db.programs.put(program);
     const remote = buildBackup([program], [], 999);
-    const calls = stubDrive(located({ text: JSON.stringify(remote), etag: '"a"' }));
+    const calls = stubDrive(located({ text: JSON.stringify(remote) }));
 
     const result = await sync();
 
@@ -148,7 +152,7 @@ describe('sync', () => {
   it('pushes once when the remote is behind', async () => {
     await db.programs.put(program);
     const remote = buildBackup([], [], 999);
-    const calls = stubDrive(located({ text: JSON.stringify(remote), etag: '"a"' }));
+    const calls = stubDrive(located({ text: JSON.stringify(remote) }));
 
     const result = await sync();
 
@@ -159,28 +163,31 @@ describe('sync', () => {
     expect(sent[0].body).toContain(program.id);
   });
 
-  it('answers 412 with one full second pass that re-merges', async () => {
+  it('answers a moved revision with one full second pass that re-merges', async () => {
     await db.programs.put(program);
     const first = buildBackup([], [], 999);
     const second = buildBackup([], [sessionRow('s-late', 5000)], 1000);
 
+    // The file moves after the first pass has read it: the revision check is
+    // what catches that, and the answer is a whole second pass.
     let downloads = 0;
-    const calls = stubDrive((url, method) => {
+    let fileSearches = 0;
+    const calls = stubDrive((url) => {
       if (url.startsWith(`${FILES}?q=`)) {
-        return url.includes('application%2Fvnd.google-apps.folder')
-          ? { body: { files: [{ id: 'folder' }] } }
-          : { body: { files: [{ id: 'file' }] } };
+        if (url.includes('application%2Fvnd.google-apps.folder')) {
+          return { body: { files: [{ id: 'folder' }] } };
+        }
+        fileSearches += 1;
+        return { body: { files: [{ id: 'file', headRevisionId: fileSearches === 1 ? 'r1' : 'r2' }] } };
+      }
+      if (url.startsWith(`${FILES}/file?fields=headRevisionId`)) {
+        return { body: { headRevisionId: 'r2' } };
       }
       if (url.startsWith(`${FILES}/file?alt=media`)) {
         downloads += 1;
-        return {
-          text: JSON.stringify(downloads === 1 ? first : second),
-          etag: downloads === 1 ? '"a"' : '"b"',
-        };
+        return { text: JSON.stringify(downloads === 1 ? first : second) };
       }
-      if (url.startsWith(UPLOAD)) {
-        return downloads === 1 ? { status: 412, text: 'precondition failed' } : { body: { id: 'file' } };
-      }
+      if (url.startsWith(UPLOAD)) return { body: { id: 'file' } };
       return { status: 404, text: `unexpected ${url}` };
     });
 
@@ -189,9 +196,11 @@ describe('sync', () => {
     expect(result).toMatchObject({ status: 'ok', pulled: true });
     expect(downloads).toBe(2);
     const sent = uploads(calls);
-    expect(sent).toHaveLength(2);
-    // The retry pushed the merged body, not the body that lost the race.
-    expect(sent[1].body).toContain('s-late');
+    // The first pass wrote nothing (the revision had moved); the second pushed the
+    // merged body, so the row that arrived late is not dropped.
+    expect(sent).toHaveLength(1);
+    expect(sent[0].body).toContain('s-late');
+    expect(sent[0].body).toContain(program.id);
     expect(await db.sessions.get('s-late')).toBeTruthy();
   });
 });

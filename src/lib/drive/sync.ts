@@ -42,17 +42,14 @@ async function persist(merged: Backup): Promise<void> {
 
 async function pass(): Promise<{ pulled: boolean }> {
   const token = await requestToken({ silent: true });
-  const { folderId, fileId } = await locate(token);
+  const { folderId, fileId, revisionId } = await locate(token);
 
   let remote: Backup | null = null;
-  let etag = '';
   if (fileId) {
-    const got = await download(token, fileId);
-    const parsed = parseRemote(got.text);
+    const parsed = parseRemote(await download(token, fileId));
     // A file this app cannot read is never overwritten: that is how data is lost.
     if (!parsed.ok) throw new Error(`Left the Drive copy alone: ${parsed.error}`);
     remote = parsed.backup;
-    etag = got.etag;
   }
 
   const local = buildBackup(await listPrograms(), await loadAllSessions(), now());
@@ -60,7 +57,7 @@ async function pass(): Promise<{ pulled: boolean }> {
 
   if (!remote || !sameIgnoringStamp(merged, remote)) {
     const body = JSON.stringify(merged);
-    if (fileId) await updateFile(token, fileId, etag, body);
+    if (fileId) await updateFile(token, fileId, revisionId ?? '', body);
     else await createFile(token, folderId, body);
   }
 

@@ -244,8 +244,11 @@ on iPhone; engine tests pass.
 
 ## 15. Out of scope for 1.0
 
-Accounts, cloud sync, AI coaching, natural-language input, nutrition, social, sharing,
-Apple Watch, wearables, auto exercise recognition, video recording, payments.
+Accounts, AI coaching, natural-language input, nutrition, social, sharing, Apple Watch,
+wearables, auto exercise recognition, video recording, payments.
+
+(Cloud sync shipped after 1.0 as an optional replica in the user's own Google Drive —
+no account of ours, no server. See `docs/designs/google-drive-sync.md`.)
 
 ## 16. Fixture — Workout B, Full Body
 

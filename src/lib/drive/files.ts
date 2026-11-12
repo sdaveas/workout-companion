@@ -16,23 +16,27 @@ async function failed(what: string, res: Response): Promise<never> {
   throw new Error(`${what}: ${res.status} ${(await res.text()).slice(0, 300)}`);
 }
 
-async function search(token: string, q: string): Promise<string | null> {
+type Found = { id: string; headRevisionId?: string };
+
+async function search(token: string, q: string, fields = 'files(id)'): Promise<Found | null> {
   const res = await fetch(
-    `${FILES}?q=${encodeURIComponent(q)}&fields=files(id)&orderBy=modifiedTime desc&pageSize=10`,
+    `${FILES}?q=${encodeURIComponent(q)}&fields=${fields}&orderBy=modifiedTime desc&pageSize=10`,
     { headers: auth(token) },
   );
   if (!res.ok) await failed('search Drive', res);
-  const body = (await res.json()) as { files?: Array<{ id: string }> };
-  return body.files?.[0]?.id ?? null;
+  const body = (await res.json()) as { files?: Found[] };
+  return body.files?.[0] ?? null;
 }
 
 /**
  * Everything is found by name, not by a cached id: the user can delete or rename
  * the folder or the file in Drive, and a stale id would then fail forever.
  */
-export async function locate(token: string): Promise<{ folderId: string; fileId: string | null }> {
+export async function locate(
+  token: string,
+): Promise<{ folderId: string; fileId: string | null; revisionId: string | null }> {
   const folderQuery = `name = '${FOLDER_NAME}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
-  let folderId = await search(token, folderQuery);
+  let folderId = (await search(token, folderQuery))?.id ?? null;
   if (!folderId) {
     const res = await fetch(FILES, {
       method: 'POST',
@@ -43,29 +47,28 @@ export async function locate(token: string): Promise<{ folderId: string; fileId:
     folderId = ((await res.json()) as { id: string }).id;
   }
 
-  const fileId = await search(
+  const file = await search(
     token,
     `'${folderId}' in parents and name = '${FILE_NAME}' and trashed = false`,
+    'files(id,headRevisionId)',
   );
-  return { folderId, fileId };
+  return { folderId, fileId: file?.id ?? null, revisionId: file?.headRevisionId ?? null };
 }
 
-/** The ETag is what the write is made conditional on, so it is required, not optional. */
-async function etagOf(token: string, fileId: string): Promise<string> {
-  const res = await fetch(`${FILES}/${fileId}?fields=id`, { headers: auth(token) });
+/**
+ * A browser cannot read Drive's ETag header (CORS does not expose it), so the
+ * concurrency token is the revision id from the JSON body instead.
+ */
+async function revisionOf(token: string, fileId: string): Promise<string> {
+  const res = await fetch(`${FILES}/${fileId}?fields=headRevisionId`, { headers: auth(token) });
   if (!res.ok) await failed('read the Drive copy', res);
-  const etag = res.headers.get('etag');
-  if (!etag) throw new Error('Drive returned no ETag, so nothing was written.');
-  return etag;
+  return ((await res.json()) as { headRevisionId?: string }).headRevisionId ?? '';
 }
 
-export async function download(
-  token: string,
-  fileId: string,
-): Promise<{ text: string; etag: string }> {
+export async function download(token: string, fileId: string): Promise<string> {
   const res = await fetch(`${FILES}/${fileId}?alt=media`, { headers: auth(token) });
   if (!res.ok) await failed('read the Drive copy', res);
-  return { text: await res.text(), etag: res.headers.get('etag') ?? (await etagOf(token, fileId)) };
+  return res.text();
 }
 
 export async function createFile(
@@ -98,14 +101,17 @@ export async function createFile(
 export async function updateFile(
   token: string,
   fileId: string,
-  etag: string,
+  expectedRevision: string,
   body: string,
 ): Promise<void> {
+  // Check-then-write, one request wide. A lost race is not fatal: the merge is a
+  // union, so the next sync from either side puts the missing rows back.
+  if ((await revisionOf(token, fileId)) !== expectedRevision) throw new Conflict();
+
   const res = await fetch(`${UPLOAD}/${fileId}?uploadType=media&fields=id`, {
     method: 'PATCH',
-    headers: { ...auth(token), 'Content-Type': 'application/json', 'If-Match': etag },
+    headers: { ...auth(token), 'Content-Type': 'application/json' },
     body,
   });
-  if (res.status === 412) throw new Conflict();
   if (!res.ok) await failed('write the Drive copy', res);
 }
