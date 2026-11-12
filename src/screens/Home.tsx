@@ -104,7 +104,20 @@ export function Home() {
   return (
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        title={<h1 className="text-sm font-semibold uppercase tracking-widest">My Workouts</h1>}
+        title={
+          <div className="flex items-center gap-2">
+            <a
+              href="#/credits"
+              aria-label="Credits"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-lg text-muted"
+            >
+              <span aria-hidden>ℹ️</span>
+            </a>
+            <h1 className="truncate text-sm font-semibold uppercase tracking-widest">
+              My Workouts
+            </h1>
+          </div>
+        }
         actions={
           <>
             <button
@@ -236,12 +249,6 @@ export function Home() {
           {loaded && !latest && (
             <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
           )}
-          <a
-            href="#/credits"
-            className="mt-4 flex h-8 items-center justify-center text-xs text-muted underline"
-          >
-            Credits
-          </a>
         </section>
       </div>
 
