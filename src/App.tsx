@@ -11,8 +11,6 @@ import { Programs } from './screens/Programs';
 import { Settings } from './screens/Settings';
 import { Summary } from './screens/Summary';
 import { decodeLinkPayload } from './lib/programLink';
-import { hasToken, readState } from './lib/drive/auth';
-import { sync } from './lib/drive/sync';
 import { usePrograms } from './store/programsStore';
 import { useSession } from './store/sessionStore';
 import { ScreenHeader } from './components/ui/ScreenHeader';
@@ -38,23 +36,8 @@ export function App() {
 
   useEffect(() => {
     void load();
-    // After the local state is settled, not before: a sync that lands first would
-    // be overwritten by recovery's own load.
-    void recover().then(() => {
-      void sync();
-    });
+    void recover();
   }, [load, recover]);
-
-  // iOS opens Google's popup only during a tap. Without a cached token, the
-  // first tap anywhere in the app does the sync, so nobody has to go to Settings.
-  useEffect(() => {
-    if (!readState().connected || hasToken()) return;
-    const tap = () => {
-      void sync();
-    };
-    document.addEventListener('pointerdown', tap, { once: true, passive: true });
-    return () => document.removeEventListener('pointerdown', tap);
-  }, []);
 
   if (restoring) return <div className="min-h-dvh bg-ink" />;
 

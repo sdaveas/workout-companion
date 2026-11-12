@@ -1,6 +1,6 @@
 # Phase status
 
-`current: Google Drive sync phases 1–3 done and verified against the live Drive. Phase 7 steps 1–2 done, gate uncommitted.` · protocol below is the phase gate.
+`current: Google Drive is a manual save/load copy (sync was built and removed the same day — see the design doc's Reversal). Phase 7 steps 1–2 done, gate uncommitted.` · protocol below is the phase gate.
 
 | Phase | Status | Evidence | Commit |
 |---|---|---|---|
@@ -15,6 +15,8 @@
 | D1 Drive sync: connect | done | 246 tests, typecheck, build; `src/lib/drive/{config,auth}.ts` (lazy GIS, `requestToken({silent})`, in-memory token, `wc:drive` state); `Program.updatedAt` stamped in `store/programsStore.ts`; `Backup.programUpdatedAt` filled by `buildBackup` (+1 test); Settings card between "On this phone" and "Backup": Connect → Connected + Disconnect; Phase 0 spike deleted, so `grep Date.now` has zero `screens/` hits (five hits: the three allowed files plus the two recorded deviations). Nothing syncs yet. | `drive-sync-phase-1` |
 
 | D2–D3 Drive sync: engine, surface, tests | done | 262 tests (29 files), typecheck, build; `mergeNewest`/`parseRemote` (8 tests) and five sync tests with `fetch` + GIS stubbed: not connected does nothing, an unreadable remote never uploads, only-`exportedAt`-differs skips the push, a remote behind gets one PATCH, a moved revision runs a full second pass that re-merges; `grep Date.now` = `engine/ids.ts` (`now()`), `hooks/useNow.ts`, `store/sessionStore.ts`, `lib/coachBrief.ts`, zero in `screens/`. Manual, live Pages build `82a7417`, headed Chrome, real Google account: Connect returned a token with no consent UI; the first sync found the Phase 0 spike's junk file and refused it (`Left the Drive copy alone: The Drive file is not a Workout Companion backup`), which is the never-overwrite rule working; after deleting that file, **Sync now** created `Workout Companion/workout-companion-backup.json` — 85 545 bytes, `format: workout-companion-backup`, `version: 1`, 2 programs, 2 sessions; deleted a session in History, **Sync now** → `Synced. Newer items from Drive were added.`, the session was back in History, and the file's `headRevisionId` was unchanged, so the pull did not write. | `drive-sync-phase-3` |
+
+| D4 Drive: sync removed, manual copy kept | done | 248 tests (28 files), typecheck, build; the three Drive phases above are superseded. `src/lib/drive/` is now `config.ts`, `auth.ts` (token for this visit only, never stored), `files.ts` (save = overwrite one file, load = read it); Settings has **Save to Google Drive** / **Load from Google Drive**, and Load goes through `importBackupFile`, so it merges exactly like a picked file. Deleted: `drive/sync.ts`, `mergeNewest`, `parseRemote`, `Program.updatedAt`, `Backup.programUpdatedAt`, the sync triggers, the persisted token, and `engine/ids.ts`'s `now()`. Why: an installed iOS app cannot get a token without a tap, so background sync only worked within an hour of the last tap. | this commit |
 
 ## Phase gate (run before starting the next phase)
 

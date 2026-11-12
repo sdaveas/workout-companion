@@ -2,7 +2,6 @@ import { parseBackup } from './backup';
 import { mergeBackup } from '../storage/backup';
 import { usePrograms } from '../store/programsStore';
 import { useSession } from '../store/sessionStore';
-import { scheduleSync } from './drive/sync';
 
 /**
  * Merge a file the user picked — a whole backup or a single program — and say what
@@ -14,7 +13,6 @@ export async function importBackupFile(file: File): Promise<string> {
   const counts = await mergeBackup(parsed.programs, parsed.sessions);
   await usePrograms.getState().load();
   await useSession.getState().loadHistory();
-  scheduleSync();
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   // A single program file carries no sessions; "and 0 sessions" only reads as a loss.
   return counts.sessions === 0

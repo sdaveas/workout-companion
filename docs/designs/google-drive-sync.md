@@ -273,3 +273,29 @@ be. Phase 1 proceeds.
   an hour after the last sync does not sync by itself; the first tap (Sync now,
   or any workout write) does. This is the honest limit of iOS standalone PWAs,
   not a bug to chase.
+
+## Reversal — shipped as sync, then cut to a manual copy
+
+Built in three phases (auth, merge engine, surface), verified against a real
+account, and removed the same day.
+
+The merge logic held up. The auth did not: an installed iOS app has **no
+gesture-free OAuth**. Google's popup is blocked on a cold start, so "sync on
+open" worked only inside the hour a cached token lived; after that every launch
+waited for a tap. A feature that is invisible only sometimes, and shows a red
+line the rest of the time, is worse than a button.
+
+What replaced it: Settings → Google Drive with two buttons.
+
+- **Save to Google Drive** — the whole backup to one file, blind overwrite.
+- **Load from Google Drive** — read that file and run it through
+  `importBackupFile`, so it merges by id exactly like picking a file does.
+
+No connection state, no token on the device, no background writes, no merge on
+open. Deleted with it: `drive/sync.ts`, `mergeNewest`, `parseRemote`,
+`Program.updatedAt`, `Backup.programUpdatedAt`, the session/program triggers and
+the token in localStorage. Kept: `drive/config.ts`, `drive/auth.ts`,
+`drive/files.ts`, the `drive.file` scope, and the visible folder and file.
+
+The ETag/CORS and revision-id notes above still stand for anyone who revisits
+this: a browser cannot read Drive's ETag header.

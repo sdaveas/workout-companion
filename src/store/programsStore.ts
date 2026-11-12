@@ -9,8 +9,6 @@ import {
   saveProgram,
 } from '../storage/programs';
 import { prefetchImages } from '../lib/images';
-import { now } from '../engine/ids';
-import { scheduleSync } from '../lib/drive/sync';
 
 interface ProgramsStore {
   programs: Program[];
@@ -84,14 +82,9 @@ export const usePrograms = create<ProgramsStore>((set, get) => ({
       }
     }
 
-    // The stamp lives outside `raw`: the program schema is strict, so an extra field
-    // inside the file would make a program that this app itself wrote fail to import.
-    target = { ...target, updatedAt: now() };
-
     try {
       await saveProgram(target, { replace: update });
       prefetchImages(target);
-      scheduleSync();
       set({ ...empty, notice: `Program "${target.name}" ${update ? 'updated' : 'added'}.` });
       await get().load();
       return true;

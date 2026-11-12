@@ -20,11 +20,11 @@ Storage: everything lives in this browser profile — IndexedDB (`workout-compan
 localStorage mirror of the active session. No server. A fresh profile starts empty: Home
 sends you to Programs.
 
-Drive sync (optional): Settings → **Connect Google Drive** keeps one
-`Workout Companion/workout-companion-backup.json` in your own Drive, so two devices show the
-same programs and history. IndexedDB stays the master copy; sync runs on app open, two
-seconds after a session write, and on **Sync now**. Deletes never propagate. Design:
-`docs/designs/google-drive-sync.md`.
+Google Drive (optional): Settings → **Save to Google Drive** writes one
+`Workout Companion/workout-companion-backup.json` to your own Drive, and **Load from Google
+Drive** merges that file back — the same path as importing a file. It is a copy, not a sync:
+nothing happens on its own, and the file is yours to download or delete. Design, and the
+reason sync was dropped: `docs/designs/google-drive-sync.md`.
 
 Backup: Settings → **Export backup** writes one JSON with every program and every session;
 **Import a file** merges by id (new items added, matching ones updated, nothing deleted) and

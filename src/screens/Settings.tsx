@@ -7,23 +7,13 @@ import { importBackupFile } from '../lib/importFile';
 import { downloadJson } from '../lib/exportHistory';
 import { countSessions, loadAllSessions } from '../storage/sessions';
 import { Banner } from '../components/ui/Banner';
-import { formatAgo } from '../lib/format';
-import {
-  EMPTY_STATE,
-  forgetToken,
-  readState,
-  requestToken,
-  writeState,
-  type DriveState,
-} from '../lib/drive/auth';
-import { sync } from '../lib/drive/sync';
+import { getToken } from '../lib/drive/auth';
+import { loadBackup, saveBackup } from '../lib/drive/files';
 
 export function Settings() {
   const programs = usePrograms((s) => s.programs);
   const [sessions, setSessions] = useState<number | null>(null);
-  const [drive, setDrive] = useState<DriveState>(readState);
-  const [driveBusy, setDriveBusy] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [driveBusy, setDriveBusy] = useState<'save' | 'load' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -31,8 +21,7 @@ export function Settings() {
 
   useEffect(() => {
     void countSessions().then(setSessions).catch(() => setSessions(null));
-    // A sync can add rows without changing the program count.
-  }, [programs.length, drive.lastSyncedAt]);
+  }, [programs.length]);
 
   async function exportBackup() {
     setError(null);
@@ -63,44 +52,44 @@ export function Settings() {
     }
   }
 
-  async function syncNow() {
+  async function saveToDrive() {
     setError(null);
     setNotice(null);
-    setSyncing(true);
+    setDriveBusy('save');
     try {
-      const result = await sync();
-      setDrive(readState());
-      if (result.status === 'failed') setError(result.error);
-      else if (result.status === 'offline') setNotice('Offline — nothing was synced.');
-      else if (result.status === 'needs-tap') setNotice('Tap Sync now again to reach Google.');
-      else if (result.pulled) setNotice('Synced. Newer items from Drive were added.');
-      else setNotice('Synced. This phone was already up to date.');
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  async function connectDrive() {
-    setError(null);
-    setNotice(null);
-    setDriveBusy(true);
-    try {
-      await requestToken({ silent: false });
-      writeState({ ...readState(), connected: true, lastError: null });
-      setDrive(readState());
-      await syncNow();
+      const token = await getToken();
+      const rows = await loadAllSessions();
+      await saveBackup(token, JSON.stringify(buildBackup(programs, rows, now)));
+      setNotice(
+        `Saved ${programs.length} program${programs.length === 1 ? '' : 's'} and ${rows.length} session${
+          rows.length === 1 ? '' : 's'
+        } to Google Drive.`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setDriveBusy(false);
+      setDriveBusy(null);
     }
   }
 
-  function disconnectDrive() {
-    forgetToken();
-    writeState(EMPTY_STATE);
-    setDrive(EMPTY_STATE);
-    setNotice('Disconnected. The copy in Drive was left alone.');
+  async function loadFromDrive() {
+    setError(null);
+    setNotice(null);
+    setDriveBusy('load');
+    try {
+      const text = await loadBackup(await getToken());
+      if (text === null) {
+        setNotice('There is no copy in Google Drive yet.');
+        return;
+      }
+      // Same path as picking a file: validate, merge by id, reload the screens.
+      setNotice(await importBackupFile(new File([text], 'workout-companion-backup.json')));
+      setSessions(await countSessions());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDriveBusy(null);
+    }
   }
 
   return (
@@ -123,48 +112,26 @@ export function Settings() {
 
       <section className="mt-4 rounded-2xl border border-line bg-surface p-5">
         <p className="text-xs uppercase tracking-widest text-muted">Google Drive</p>
-        {drive.connected ? (
-          <>
-            <p className="mt-2 text-sm">Connected</p>
-            <p className="mt-1 text-xs text-muted">
-              {drive.lastSyncedAt
-                ? `Last synced ${formatAgo(drive.lastSyncedAt, now)}.`
-                : 'Not synced yet.'}{' '}
-              This phone keeps the real copy; Drive holds a mirror.
-            </p>
-            {drive.lastError && <p className="mt-2 text-xs text-red-400">{drive.lastError}</p>}
-            <button
-              type="button"
-              disabled={syncing}
-              onClick={() => void syncNow()}
-              className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
-            >
-              {syncing ? 'Syncing…' : 'Sync now'}
-            </button>
-            <button
-              type="button"
-              onClick={disconnectDrive}
-              className="mt-2 h-12 w-full rounded-xl border border-line text-sm"
-            >
-              Disconnect
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="mt-2 text-sm text-muted">
-              Keeps a copy of your programs and sessions in your own Google Drive, so every device
-              shows the same thing. This phone stays the master copy.
-            </p>
-            <button
-              type="button"
-              disabled={driveBusy}
-              onClick={() => void connectDrive()}
-              className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
-            >
-              {driveBusy ? 'Connecting…' : 'Connect Google Drive'}
-            </button>
-          </>
-        )}
+        <p className="mt-2 text-sm text-muted">
+          A copy, not a sync: Save writes everything to one file in your own Drive, Load merges
+          that file back in. Nothing happens on its own.
+        </p>
+        <button
+          type="button"
+          disabled={driveBusy !== null}
+          onClick={() => void saveToDrive()}
+          className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:opacity-50"
+        >
+          {driveBusy === 'save' ? 'Saving…' : 'Save to Google Drive'}
+        </button>
+        <button
+          type="button"
+          disabled={driveBusy !== null}
+          onClick={() => void loadFromDrive()}
+          className="mt-2 h-12 w-full rounded-xl border border-line text-sm disabled:opacity-50"
+        >
+          {driveBusy === 'load' ? 'Loading…' : 'Load from Google Drive'}
+        </button>
       </section>
 
       <section className="mt-4 rounded-2xl border border-line bg-surface p-5">

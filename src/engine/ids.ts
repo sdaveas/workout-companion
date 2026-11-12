@@ -13,11 +13,3 @@ export function newSessionId(): string {
   counter += 1;
   return `s${Date.now().toString(36)}${counter}${Math.random().toString(36).slice(2, 8)}`;
 }
-
-/**
- * The one wall clock. Everything that stamps a time imports this, so
- * `grep Date.now src` stays a short list and a test can see where time enters.
- */
-export function now(): number {
-  return Date.now();
-}
