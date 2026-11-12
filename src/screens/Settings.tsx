@@ -116,7 +116,13 @@ export function Settings() {
         </p>
       )}
 
-      <a href="#/credits" className="mt-6 flex h-11 items-center justify-center text-xs text-muted underline">
+      {/* Temporary: the only way into the spike from an installed app, which has no
+          address bar. Delete with src/screens/DriveSpike.tsx after Phase 0. */}
+      <a href="#/drive-spike" className="mt-6 flex h-11 items-center justify-center text-xs text-muted underline">
+        Drive spike (temporary)
+      </a>
+
+      <a href="#/credits" className="mt-2 flex h-11 items-center justify-center text-xs text-muted underline">
         Credits
       </a>
     </main>
