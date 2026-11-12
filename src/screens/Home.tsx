@@ -109,9 +109,12 @@ export function Home() {
             <a
               href="#/credits"
               aria-label="Credits"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-lg text-muted"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
             >
-              <span aria-hidden>ℹ️</span>
+              {/* A drawn glyph, not the emoji: Apple's ℹ️ is a blue tile that fights the theme. */}
+              <span aria-hidden className="font-serif text-xl italic leading-none">
+                i
+              </span>
             </a>
             <h1 className="truncate text-sm font-semibold uppercase tracking-widest">
               My Workouts
