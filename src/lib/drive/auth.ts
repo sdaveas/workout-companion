@@ -125,6 +125,11 @@ export async function requestToken(opts: { silent: boolean }): Promise<string> {
   return value;
 }
 
+/** True while a token from this session or the last hour is still good. */
+export function hasToken(): boolean {
+  return stored() !== null;
+}
+
 /** Called when Drive answers 401: the token died early, ask again. */
 export function forgetToken(): void {
   cached = null;
