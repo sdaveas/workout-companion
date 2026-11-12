@@ -153,14 +153,10 @@ export const useSession = create<SessionStore>((set, get) => ({
   restart() {
     const prev = get().state;
     if (!prev) return;
-    const now = Date.now();
-    const fresh = reduce(createSession(prev.program, now, newSessionId()), { type: 'START', now });
-    const started = autoWanted() ? reduce(fresh, { type: 'START_AUTO', now }) : fresh;
-    // The old row goes first: a restart throws the work away, and leaving a half
-    // session behind would only clutter recovery.
+    // Land back on the preview screen, not on the first set: a restart is a fresh
+    // start, and Start is the same button it was the first time. Nothing is written
+    // until that button is pressed, exactly like prepareWorkout.
     void deleteSession(prev.sessionId).catch(() => undefined);
-    set({ state: started, error: null });
-    writeSnapshot(started);
-    void saveSession(started).catch((err) => set({ error: `Not saving: ${message(err)}` }));
+    set({ state: createSession(prev.program, Date.now(), newSessionId()), error: null });
   },
 }));

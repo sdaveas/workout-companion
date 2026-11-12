@@ -6,6 +6,7 @@ class FakeAudioContext {
   currentTime = 0;
   destination = {};
   oscillators: number[] = [];
+  resumed = 0;
   createOscillator() {
     this.oscillators.push(1);
     return {
@@ -23,6 +24,7 @@ class FakeAudioContext {
     };
   }
   resume() {
+    this.resumed++;
     return Promise.resolve();
   }
 }
@@ -54,6 +56,24 @@ describe('cue', () => {
     cue('set');
     expect(vibrate).toHaveBeenCalledWith(120);
     expect(ctx.oscillators.length).toBe(1);
+  });
+
+  it('plays a forced cue even with both switches off', async () => {
+    const cue = await load();
+    localStorage.setItem('wc:sound', '0');
+    localStorage.setItem('wc:vibrate', '0');
+    cue('set', true);
+    expect(ctx.oscillators.length).toBe(1);
+    expect(vibrate).toHaveBeenCalledWith(120);
+  });
+
+  it('revives a suspended context on later taps, not only the first', async () => {
+    await load();
+    ctx.state = 'suspended';
+    window.dispatchEvent(new Event('pointerdown'));
+    expect(ctx.resumed).toBe(1);
+    window.dispatchEvent(new Event('pointerdown'));
+    expect(ctx.resumed).toBe(2);
   });
 
   it('counts down: two notes at ten, one per second at three, two and one', async () => {

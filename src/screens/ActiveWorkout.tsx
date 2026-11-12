@@ -56,7 +56,6 @@ const repsText = (r: { min: number; max: number }) => (r.min === r.max ? `${r.mi
 function SessionMenu({
   menuRef,
   auto,
-  autoAvailable,
   started,
   keepAwake,
   wake,
@@ -71,7 +70,6 @@ function SessionMenu({
 }: {
   menuRef: RefObject<HTMLDialogElement | null>;
   auto: boolean;
-  autoAvailable: boolean;
   /** Nothing to restart or end before the first set. */
   started: boolean;
   keepAwake: boolean;
@@ -96,49 +94,48 @@ function SessionMenu({
       className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-white"
     >
       <div className="p-2">
-        {(canKeepAwake() || autoAvailable) && (
-          <MenuGroup label="Modes">
-            {canKeepAwake() && (
-              <MenuRow
-                label="Keep screen on"
-                on={keepAwake}
-                // Say what the phone did: a refused lock is not a broken switch.
-                note={keepAwake && wake === 'blocked' ? 'blocked' : undefined}
-                onClick={onKeepAwake}
-              />
-            )}
-            {autoAvailable && <MenuRow label="Auto" on={auto} onClick={onAuto} />}
-            {/* Nested under Auto: they only matter while it is running the clock. */}
-            {auto && (
-              <>
-                {canVibrate() && (
-                  <MenuRow label="Vibrate" on={vibrate} onClick={onVibrate} sub />
-                )}
-                <MenuRow label="Sound" on={sound} onClick={onSound} sub />
-              </>
-            )}
-          </MenuGroup>
-        )}
+        <MenuGroup label="Modes">
+          {canKeepAwake() && (
+            <MenuRow
+              label="Keep screen on"
+              on={keepAwake}
+              // Say what the phone did: a refused lock is not a broken switch.
+              note={keepAwake && wake === 'blocked' ? 'blocked' : undefined}
+              onClick={onKeepAwake}
+            />
+          )}
+          <MenuRow label="Auto" on={auto} onClick={onAuto} />
+          {/* Nested under Auto: they only matter while it is running the clock. */}
+          {auto && (
+            <>
+              {canVibrate() && (
+                <MenuRow label="Vibrate" on={vibrate} onClick={onVibrate} sub />
+              )}
+              <MenuRow label="Sound" on={sound} onClick={onSound} sub />
+            </>
+          )}
+        </MenuGroup>
 
-        {/* Nothing to restart or end before the first set, so no empty heading. */}
-        {started && (
-          <MenuGroup label="Session">
-            <button
-              type="button"
-              onClick={onRestart}
-              className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
-            >
-              Restart
-            </button>
-            <button
-              type="button"
-              onClick={onEnd}
-              className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
-            >
-              End session
-            </button>
-          </MenuGroup>
-        )}
+        {/* Grey rather than gone: before the first set these exist, they just have
+            nothing to act on yet. */}
+        <MenuGroup label="Session">
+          <button
+            type="button"
+            disabled={!started}
+            onClick={onRestart}
+            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger disabled:text-muted disabled:opacity-50"
+          >
+            Restart
+          </button>
+          <button
+            type="button"
+            disabled={!started}
+            onClick={onEnd}
+            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger disabled:text-muted disabled:opacity-50"
+          >
+            End session
+          </button>
+        </MenuGroup>
       </div>
     </dialog>
   );
@@ -355,7 +352,11 @@ export function ActiveWorkout() {
   const { sound, vibrate, toggleSound, toggleVibrate } = useCues();
 
   const status = state?.status;
-  const auto = state?.mode === 'auto';
+  const autoMode = state?.mode === 'auto';
+  // Before the first set there is no clock to run, so Auto on the preview screen is the
+  // preference the session will start in — the same key startWorkout reads.
+  const [autoPref, setAutoPref] = useState(() => localStorage.getItem('wc:auto') === '1');
+  const auto = status === 'ready' ? autoPref : autoMode;
   const pausedInRest =
     status === 'paused' &&
     (state?.pausedFrom === 'resting' || state?.pausedFrom === 'exercise_complete');
@@ -364,7 +365,8 @@ export function ActiveWorkout() {
   // Sets, breaks and auto mode all need a finer tick; a plain manual set does not.
   const tickNow = useNow(
     250,
-    !!state && (status === 'resting' || status === 'exercise_complete' || pausedInRest || auto),
+    !!state &&
+      (status === 'resting' || status === 'exercise_complete' || pausedInRest || autoMode),
   );
   useAutoAdvance(state, tickNow);
 
@@ -549,18 +551,14 @@ export function ActiveWorkout() {
           </div>
         }
         actions={
-          // Nothing worth opening before the first set on a device with no switches
-          // of its own (a desktop: no wake lock, no vibration).
-          canKeepAwake() || !isReady ? (
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => menuDialog.current?.showModal()}
-              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
-            >
-              Settings
-            </button>
-          ) : undefined
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => menuDialog.current?.showModal()}
+            className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+          >
+            Settings
+          </button>
         }
       >
         {!isReady && (
@@ -889,23 +887,40 @@ export function ActiveWorkout() {
       <SessionMenu
         menuRef={menuDialog}
         auto={auto}
-        autoAvailable={!!state && RUNNING.includes(state.status)}
         started={!isReady}
         keepAwake={keepAwake}
         wake={wake}
         onKeepAwake={toggleKeepAwake}
-        onAuto={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+        onAuto={() => {
+          // On the preview screen this is only the preference; the clock starts later.
+          if (status === 'ready') {
+            const next = !autoPref;
+            setAutoPref(next);
+            localStorage.setItem('wc:auto', next ? '1' : '0');
+            return;
+          }
+          dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' });
+        }}
         sound={sound}
         vibrate={vibrate}
-        onSound={toggleSound}
-        onVibrate={toggleVibrate}
+        onSound={() => {
+          // Turning it on plays one cue: if the phone stays silent, that is the phone,
+          // not the switch. Forced, because the pref lands in localStorage on the next
+          // render.
+          if (!sound) cue('set', true);
+          toggleSound();
+        }}
+        onVibrate={() => {
+          if (!vibrate) cue('set', true);
+          toggleVibrate();
+        }}
         onEnd={() => {
           menuDialog.current?.close();
           endDialog.current?.showModal();
         }}
         onRestart={() => {
           menuDialog.current?.close();
-          if (confirm('Restart this workout from the first set? Today’s progress is lost.')) {
+          if (confirm('Restart this workout? Today’s progress is lost.')) {
             restart();
           }
         }}

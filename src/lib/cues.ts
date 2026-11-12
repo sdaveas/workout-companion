@@ -27,9 +27,11 @@ function context(): AudioContext | null {
 }
 
 if (typeof window !== 'undefined') {
+  // Stays attached on purpose: iOS suspends the context when the app is backgrounded
+  // (or after a call) and only a gesture can resume it, so the next tap has to revive
+  // it. Removing the listener after the first tap leaves the rest of the session mute.
   const unlock = () => {
     context();
-    window.removeEventListener('pointerdown', unlock);
   };
   window.addEventListener('pointerdown', unlock);
 }
@@ -83,10 +85,11 @@ function buzz(kind: Cue) {
   navigator.vibrate?.(BUZZ[kind]);
 }
 
-/** Both channels honour their own switch. */
-export function cue(kind: Cue): void {
-  if (enabled(VIBRATE)) buzz(kind);
-  if (enabled(SOUND)) tone(kind);
+/** Both channels honour their own switch. `force` is for the switch itself: turning
+    one on plays a cue before the new preference has reached localStorage. */
+export function cue(kind: Cue, force = false): void {
+  if (force || enabled(VIBRATE)) buzz(kind);
+  if (force || enabled(SOUND)) tone(kind);
 }
 
 export const canVibrate = () =>
