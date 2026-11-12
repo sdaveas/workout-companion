@@ -59,7 +59,7 @@ export function Programs() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
         back={
           building || adding
@@ -82,7 +82,7 @@ export function Programs() {
               href="#/programs/new"
               aria-label="Add a program"
               onClick={() => setEditing(null)}
-              className={`flex h-11 w-11 items-center justify-center rounded-lg border text-xl leading-none ${
+              className={`flex h-11 w-11 items-center justify-center rounded-xl border text-xl leading-none ${
                 programs.length === 0
                   ? 'border-accent bg-accent font-semibold text-ink'
                   : 'border-line text-accent'

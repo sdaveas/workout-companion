@@ -542,10 +542,10 @@ export function ActiveWorkout() {
   return (
     <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden">
       <ScreenHeader
-        className="px-5 pt-[max(0.75rem,env(safe-area-inset-top))]"
+        className="px-5 pt-[max(1rem,env(safe-area-inset-top))]"
         back={{
           to: '#/',
-          label: 'Programs',
+          label: 'Home',
           compact: true,
           onSelect: isReady
             ? () => {

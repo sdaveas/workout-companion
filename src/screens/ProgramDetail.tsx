@@ -84,7 +84,7 @@ export function ProgramDetail({ id }: { id: string }) {
 
   if (!program) {
     return (
-      <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+      <main className="mx-auto max-w-md px-5 pt-[max(1rem,env(safe-area-inset-top))]">
         <ScreenHeader back={{ to: '#/programs', label: 'Programs', compact: true }} />
         <p className="mt-6 text-sm text-muted">That program is not saved here.</p>
       </main>
@@ -94,7 +94,7 @@ export function ProgramDetail({ id }: { id: string }) {
   const sets = program.exercises.reduce((n, e) => n + e.sets, 0);
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
         back={{ to: '#/programs', label: 'Programs', compact: true }}
         actions={
