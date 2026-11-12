@@ -30,7 +30,7 @@ function ShareIcon() {
  * outlives its program, so a deleted or renamed program simply has no link to
  * send and the button disappears.
  */
-export function SessionRow({ row }: { row: Row }) {
+export function SessionRow({ row, actions = true }: { row: Row; actions?: boolean }) {
   const programs = usePrograms((s) => s.programs);
   const removeSession = useSession((s) => s.removeSession);
   const [note, setNote] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export function SessionRow({ row }: { row: Row }) {
 
   return (
     <li className="flex flex-col gap-1">
-      {note && (
+      {actions && note && (
         <p role="status" className="px-1 text-xs text-accent">
           {note}
         </p>
@@ -71,7 +71,7 @@ export function SessionRow({ row }: { row: Row }) {
             {summary.endedEarly && <span className="text-danger"> · ended early</span>}
           </p>
         </a>
-        {canShare && (
+        {actions && canShare && (
           <button
             type="button"
             aria-label={`Share ${row.programName} from ${formatDate(row.finishedAt)}`}
@@ -81,17 +81,19 @@ export function SessionRow({ row }: { row: Row }) {
             <ShareIcon />
           </button>
         )}
-        <button
-          type="button"
-          aria-label={`Delete ${row.programName} from ${formatDate(row.finishedAt)}`}
-          onClick={() => {
-            if (!confirm('Delete this session? It cannot be recovered.')) return;
-            void removeSession(row.id);
-          }}
-          className="w-11 shrink-0 rounded-xl border border-line bg-surface text-lg text-danger"
-        >
-          ×
-        </button>
+        {actions && (
+          <button
+            type="button"
+            aria-label={`Delete ${row.programName} from ${formatDate(row.finishedAt)}`}
+            onClick={() => {
+              if (!confirm('Delete this session? It cannot be recovered.')) return;
+              void removeSession(row.id);
+            }}
+            className="w-11 shrink-0 rounded-xl border border-line bg-surface text-lg text-danger"
+          >
+            ×
+          </button>
+        )}
       </div>
     </li>
   );

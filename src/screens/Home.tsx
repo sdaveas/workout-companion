@@ -11,10 +11,9 @@ import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { ActivityGrid } from '../components/ui/ActivityGrid';
 import { SessionRow } from '../components/ui/SessionRow';
 import { TransferSheet } from '../components/ui/TransferSheet';
-
-const RECENT = 3;
 
 /**
  * One page: what is on today, every program, the last few sessions, and two doors
@@ -45,6 +44,7 @@ export function Home() {
   const sessions = history.map((h) => ({ programId: h.programId, finishedAt: h.finishedAt }));
   const next = nextUp(programs, sessions, now, active ? { programId: active.programId } : null);
   const progress = active ? getWorkoutProgress(active) : null;
+  const latest = history[0] ?? null;
 
   const meta = (program: { exercises: unknown[]; estimatedDurationMinutes?: number | null }) =>
     `${exerciseCount(program.exercises.length)}${
@@ -154,8 +154,8 @@ export function Home() {
         <section>
           <div className="flex items-baseline justify-between">
             <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
-            <a href="#/programs" className="text-xs text-accent underline underline-offset-4">
-              Manage programs
+            <a href="#/programs" className="text-xs text-muted underline underline-offset-4">
+              Manage
             </a>
           </div>
           {programs.length === 0 ? (
@@ -187,25 +187,28 @@ export function Home() {
           )}
         </section>
 
-        <section className="mt-3">
-          <div className="flex items-baseline justify-between">
-            <p className="text-xs uppercase tracking-widest text-muted">History</p>
-            <a href="#/history" className="text-xs text-accent underline underline-offset-4">
-              Manage history
-            </a>
-          </div>
-          {loaded && history.length === 0 && (
-            <p className="mt-4 text-center text-sm text-muted">No finished sessions yet.</p>
-          )}
-          <ul className="mt-2 space-y-2">
-            {history.slice(0, RECENT).map((row) => (
-              <SessionRow key={row.id} row={row} />
-            ))}
-          </ul>
-        </section>
       </div>
 
       <InstallHint />
+
+      {/* Pinned: the shape of the last months, the last thing done, and the way in. */}
+      <div className="mt-2 shrink-0">
+        <ActivityGrid sessions={history} now={now} />
+        {latest && (
+          <ul className="mt-2">
+            <SessionRow row={latest} actions={false} />
+          </ul>
+        )}
+        {loaded && !latest && (
+          <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
+        )}
+        <a
+          href="#/history"
+          className="mt-2 flex h-11 items-center justify-center rounded-xl border border-line text-sm text-muted"
+        >
+          Manage
+        </a>
+      </div>
 
       {sheet && <TransferSheet mode={sheet} now={now} onClose={() => setSheet(null)} />}
     </main>

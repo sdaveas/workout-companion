@@ -24,13 +24,14 @@ const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
 export function ActivityGrid({
   sessions,
   now,
-  selected,
+  selected = null,
   onSelect,
 }: {
   sessions: Array<{ finishedAt: number | null }>;
   now: number;
-  selected: number | null;
-  onSelect: (day: number) => void;
+  selected?: number | null;
+  /** Absent means the grid is a picture, not a filter. */
+  onSelect?: (day: number) => void;
 }) {
   const grid = activityGrid(sessions, now, WEEKS);
   const months = monthLabels(grid);
@@ -71,20 +72,29 @@ export function ActivityGrid({
             className="grid grid-flow-col gap-[2px]"
             style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}
           >
-            {grid.flat().map((cell) => (
-              <button
-                key={cell.day}
-                type="button"
-                disabled={cell.day > today}
-                onClick={() => onSelect(cell.day)}
-                aria-label={label(cell)}
-                aria-pressed={selected === cell.day}
-                style={{ width: CELL, height: CELL }}
-                className={`rounded-[3px] ${tone(cell.count)} ${
-                  selected === cell.day ? 'ring-1 ring-accent' : ''
-                } ${cell.day > today ? 'invisible' : ''}`}
-              />
-            ))}
+            {grid.flat().map((cell) => {
+              const look = `rounded-[3px] ${tone(cell.count)} ${
+                selected === cell.day ? 'ring-1 ring-accent' : ''
+              } ${cell.day > today ? 'invisible' : ''}`;
+              return onSelect ? (
+                <button
+                  key={cell.day}
+                  type="button"
+                  onClick={() => onSelect(cell.day)}
+                  aria-label={label(cell)}
+                  aria-pressed={selected === cell.day}
+                  style={{ width: CELL, height: CELL }}
+                  className={look}
+                />
+              ) : (
+                <div
+                  key={cell.day}
+                  title={label(cell)}
+                  style={{ width: CELL, height: CELL }}
+                  className={look}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
