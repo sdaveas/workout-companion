@@ -20,6 +20,9 @@ import { TransferSheet } from '../components/ui/TransferSheet';
  * for moving data. The page does not scroll; the middle column does, so the card
  * and the header stay put.
  */
+/** Rows before the list would push history off the page. Manage holds the rest. */
+const SHOWN_PROGRAMS = 4;
+
 export function Home() {
   const programs = usePrograms((s) => s.programs);
   const state = useSession((s) => s.state);
@@ -195,7 +198,7 @@ export function Home() {
             </a>
           ) : (
             <ul className="mt-2 space-y-2">
-              {programs.map((p) => (
+              {programs.slice(0, SHOWN_PROGRAMS).map((p) => (
                 <li key={p.id}>
                   <Button
                     className="flex h-12 w-full items-center justify-between"
@@ -215,30 +218,28 @@ export function Home() {
           )}
         </section>
 
+        <section className="mt-5 pb-2">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs uppercase tracking-widest text-muted">History</p>
+            <a href="#/history" className="text-xs text-muted underline underline-offset-4">
+              Manage
+            </a>
+          </div>
+          <div className="mt-2">
+            <ActivityGrid sessions={history} now={now} />
+          </div>
+          {latest && (
+            <ul className="mt-2">
+              <SessionRow row={latest} actions={false} />
+            </ul>
+          )}
+          {loaded && !latest && (
+            <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
+          )}
+        </section>
       </div>
 
       <InstallHint />
-
-      {/* Pinned: the shape of the last months, the last thing done, and the way in. */}
-      <div className="mt-3 shrink-0">
-        <div className="flex items-baseline justify-between">
-          <p className="text-xs uppercase tracking-widest text-muted">History</p>
-          <a href="#/history" className="text-xs text-muted underline underline-offset-4">
-            Manage
-          </a>
-        </div>
-        <div className="mt-2">
-          <ActivityGrid sessions={history} now={now} />
-        </div>
-        {latest && (
-          <ul className="mt-2">
-            <SessionRow row={latest} actions={false} />
-          </ul>
-        )}
-        {loaded && !latest && (
-          <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
-        )}
-      </div>
 
       {sheet && <TransferSheet mode={sheet} now={now} onClose={() => setSheet(null)} />}
     </main>
