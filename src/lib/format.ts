@@ -13,6 +13,18 @@ export function formatDuration(ms: number): string {
   return minutes < 1 ? '<1 min' : `${minutes} min`;
 }
 
+/** "just now", "3 min ago", "2 h ago", "yesterday". Takes the clock, never reads it. */
+export function formatAgo(ts: number, now: number): string {
+  const seconds = Math.max(0, Math.round((now - ts) / 1000));
+  if (seconds < 45) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? 'yesterday' : `${days} days ago`;
+}
+
 export function formatDate(ts: number | null): string {
   if (!ts) return '—';
   return new Date(ts).toLocaleDateString(undefined, {

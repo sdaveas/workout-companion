@@ -17,8 +17,14 @@ added in phases: connect is in, the sync engine is next
 from a program JSON / backup file (Settings → **Import a file**).
 
 Storage: everything lives in this browser profile — IndexedDB (`workout-companion`) plus a
-localStorage mirror of the active session. No account, no server, no sync. A fresh profile
-starts empty: Home sends you to Programs.
+localStorage mirror of the active session. No server. A fresh profile starts empty: Home
+sends you to Programs.
+
+Drive sync (optional): Settings → **Connect Google Drive** keeps one
+`Workout Companion/workout-companion-backup.json` in your own Drive, so two devices show the
+same programs and history. IndexedDB stays the master copy; sync runs on app open, two
+seconds after a session write, and on **Sync now**. Deletes never propagate. Design:
+`docs/designs/google-drive-sync.md`.
 
 Backup: Settings → **Export backup** writes one JSON with every program and every session;
 **Import a file** merges by id (new items added, matching ones updated, nothing deleted) and

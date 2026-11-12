@@ -7,6 +7,7 @@ import { importBackupFile } from '../lib/importFile';
 import { downloadJson } from '../lib/exportHistory';
 import { countSessions, loadAllSessions } from '../storage/sessions';
 import { Banner } from '../components/ui/Banner';
+import { formatAgo } from '../lib/format';
 import {
   EMPTY_STATE,
   forgetToken,
@@ -125,7 +126,7 @@ export function Settings() {
             <p className="mt-2 text-sm">Connected</p>
             <p className="mt-1 text-xs text-muted">
               {drive.lastSyncedAt
-                ? `Last synced ${new Date(drive.lastSyncedAt).toLocaleString()}.`
+                ? `Last synced ${formatAgo(drive.lastSyncedAt, now)}.`
                 : 'Not synced yet.'}{' '}
               This phone keeps the real copy; Drive holds a mirror.
             </p>
