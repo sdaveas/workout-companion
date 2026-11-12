@@ -93,40 +93,43 @@ function SessionMenu({
       className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-white"
     >
       <div className="p-2">
-        <MenuGroup label="Modes">
-          {canKeepAwake() && <MenuRow label="Keep screen on" on={keepAwake} onClick={onKeepAwake} />}
-          {autoAvailable && <MenuRow label="Auto" on={auto} onClick={onAuto} />}
-          {/* Nested under Auto: they only matter while it is running the clock. */}
-          {auto && (
-            <>
-              {canVibrate() && (
-                <MenuRow label="Vibrate" on={vibrate} onClick={onVibrate} sub />
-              )}
-              <MenuRow label="Sound" on={sound} onClick={onSound} sub />
-            </>
-          )}
-        </MenuGroup>
+        {(canKeepAwake() || autoAvailable) && (
+          <MenuGroup label="Modes">
+            {canKeepAwake() && (
+              <MenuRow label="Keep screen on" on={keepAwake} onClick={onKeepAwake} />
+            )}
+            {autoAvailable && <MenuRow label="Auto" on={auto} onClick={onAuto} />}
+            {/* Nested under Auto: they only matter while it is running the clock. */}
+            {auto && (
+              <>
+                {canVibrate() && (
+                  <MenuRow label="Vibrate" on={vibrate} onClick={onVibrate} sub />
+                )}
+                <MenuRow label="Sound" on={sound} onClick={onSound} sub />
+              </>
+            )}
+          </MenuGroup>
+        )}
 
-        <MenuGroup label="Session">
-          {started && (
-            <>
-              <button
-                type="button"
-                onClick={onRestart}
-                className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
-              >
-                Restart
-              </button>
-              <button
-                type="button"
-                onClick={onEnd}
-                className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
-              >
-                End session
-              </button>
-            </>
-          )}
-        </MenuGroup>
+        {/* Nothing to restart or end before the first set, so no empty heading. */}
+        {started && (
+          <MenuGroup label="Session">
+            <button
+              type="button"
+              onClick={onRestart}
+              className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
+            >
+              Restart
+            </button>
+            <button
+              type="button"
+              onClick={onEnd}
+              className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
+            >
+              End session
+            </button>
+          </MenuGroup>
+        )}
       </div>
     </dialog>
   );
@@ -530,14 +533,18 @@ export function ActiveWorkout() {
           </div>
         }
         actions={
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => menuDialog.current?.showModal()}
-            className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
-          >
-            Settings
-          </button>
+          // Nothing worth opening before the first set on a device with no switches
+          // of its own (a desktop: no wake lock, no vibration).
+          canKeepAwake() || !isReady ? (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => menuDialog.current?.showModal()}
+              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+            >
+              Settings
+            </button>
+          ) : undefined
         }
       >
         {!isReady && (

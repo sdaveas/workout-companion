@@ -52,9 +52,12 @@ const TONES: Record<Cue, Array<[freq: number, at: number, dur: number]>> = {
   // A logged set is a single confirmation, the countdown is a rising ladder: short
   // and high so three of them in a row do not sound like one long note.
   set: [[880, 0, 0.12]],
-  // Twice the length of a tick: it fires once, so a short blip gets lost mid-rep,
-  // but anything past a quarter second starts to drag.
-  ten: [[740, 0, 0.22]],
+  // Two rising notes: one blip at 220ms was still easy to miss mid-rep, and the
+  // pitch change separates it from the ticks and from the end pair.
+  ten: [
+    [740, 0, 0.14],
+    [880, 0.16, 0.14],
+  ],
   tick: [[990, 0, 0.06]],
   end: [
     [660, 0, 0.12],

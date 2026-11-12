@@ -17,6 +17,10 @@ import type { WorkoutAction, WorkoutEvent, WorkoutState } from '../engine/types'
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
+/** Auto survives a session. Off unless the user turned it on. */
+const AUTO_KEY = 'wc:auto';
+const autoWanted = () => localStorage.getItem(AUTO_KEY) === '1';
+
 interface SessionStore {
   state: WorkoutState | null;
   error: string | null;
@@ -60,6 +64,9 @@ export const useSession = create<SessionStore>((set, get) => ({
 
   startWorkout() {
     get().dispatch({ type: 'START' });
+    // Auto is a preference, not a per-session choice: a session started after one
+    // that ran in auto should come up in auto too.
+    if (autoWanted()) get().dispatch({ type: 'START_AUTO' });
   },
 
   dispatch(action) {
@@ -75,6 +82,9 @@ export const useSession = create<SessionStore>((set, get) => ({
     }
 
     set({ state: next, error: null });
+    if (action.type === 'START_AUTO' || action.type === 'STOP_AUTO') {
+      localStorage.setItem(AUTO_KEY, next.mode === 'auto' ? '1' : '0');
+    }
     writeSnapshot(next);
     void saveSession(next).catch((err) => set({ error: `Not saving: ${message(err)}` }));
   },
@@ -144,10 +154,8 @@ export const useSession = create<SessionStore>((set, get) => ({
     const prev = get().state;
     if (!prev) return;
     const now = Date.now();
-    const started = reduce(createSession(prev.program, now, newSessionId()), {
-      type: 'START',
-      now,
-    });
+    const fresh = reduce(createSession(prev.program, now, newSessionId()), { type: 'START', now });
+    const started = autoWanted() ? reduce(fresh, { type: 'START_AUTO', now }) : fresh;
     // The old row goes first: a restart throws the work away, and leaving a half
     // session behind would only clutter recovery.
     void deleteSession(prev.sessionId).catch(() => undefined);

@@ -56,14 +56,14 @@ describe('cue', () => {
     expect(ctx.oscillators.length).toBe(1);
   });
 
-  it('counts down: one beep at ten, one per second at three, two and one', async () => {
+  it('counts down: two notes at ten, one per second at three, two and one', async () => {
     const cue = await load();
     cue('ten');
-    expect(ctx.oscillators.length).toBe(1);
+    expect(ctx.oscillators.length).toBe(2);
     cue('tick');
     cue('tick');
     cue('tick');
-    expect(ctx.oscillators.length).toBe(4);
+    expect(ctx.oscillators.length).toBe(5);
     expect(vibrate).toHaveBeenLastCalledWith(60);
   });
 
