@@ -9,6 +9,9 @@ import { ScreenHeader } from '../components/ui/ScreenHeader';
 const GIS = 'https://accounts.google.com/gsi/client';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const CLIENT_KEY = 'wc:spikeClientId';
+// Public by design: the token flow has no secret, and a 72-character ID is misery
+// to type on a phone.
+const CLIENT_ID = '639110879545-tvo01k0gtbe72v5urdgd0n9mk9f7fkio.apps.googleusercontent.com';
 
 type Token = { access_token?: string; error?: string; scope?: string };
 
@@ -128,7 +131,7 @@ async function driveTest(t: string): Promise<string> {
 }
 
 export function DriveSpike() {
-  const [clientId, setClientId] = useState(() => localStorage.getItem(CLIENT_KEY) ?? '');
+  const [clientId, setClientId] = useState(() => localStorage.getItem(CLIENT_KEY) ?? CLIENT_ID);
   const [lines, setLines] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
