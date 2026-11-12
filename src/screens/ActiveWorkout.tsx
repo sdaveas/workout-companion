@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { navigate } from '../hooks/useHashRoute';
 import { useAutoAdvance } from '../hooks/useAutoAdvance';
 import { useNow } from '../hooks/useNow';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { canKeepAwake, useKeepAwake } from '../hooks/useKeepAwake';
+import { useCues } from '../hooks/useCues';
+import { canVibrate, cue } from '../lib/cues';
 import { useSession } from '../store/sessionStore';
 import {
   getCurrentExercise,
@@ -42,32 +45,129 @@ const TRANSPORT_BTN =
 /** The primary action keeps the same size and type in every stage of the session. */
 const PRIMARY_BTN = 'h-14 w-full font-gym text-base';
 
-const AUTO_ON = 'border-accent bg-accent/10 text-accent';
-const AUTO_OFF = 'border-line text-muted';
-
 /** "6–10", or just "6" when the prescription is a single number. */
 const repsText = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`);
 
 /**
- * A mode, not a per-set action: it lives in the header beside End, so the button hit
- * twenty times a session never shares its row with a switch flipped once.
+ * The header carries one button; everything that is flipped once, plus the way out,
+ * lives in this sheet. Auto is a mode, End is a decision — neither belongs in the
+ * row of things tapped twenty times a session.
  */
-function AutoToggle({
+function SessionMenu({
+  menuRef,
   auto,
-  dispatch,
+  autoAvailable,
+  started,
+  keepAwake,
+  onKeepAwake,
+  onAuto,
+  onEnd,
+  onRestart,
+  sound,
+  vibrate,
+  onSound,
+  onVibrate,
 }: {
+  menuRef: RefObject<HTMLDialogElement | null>;
   auto: boolean;
-  dispatch: (action: WorkoutAction) => void;
+  autoAvailable: boolean;
+  /** Nothing to restart or end before the first set. */
+  started: boolean;
+  keepAwake: boolean;
+  onKeepAwake: () => void;
+  onAuto: () => void;
+  onEnd: () => void;
+  onRestart: () => void;
+  sound: boolean;
+  vibrate: boolean;
+  onSound: () => void;
+  onVibrate: () => void;
+}) {
+  return (
+    <dialog
+      ref={menuRef}
+      aria-label="Session options"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) e.currentTarget.close();
+      }}
+      className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-white"
+    >
+      <div className="p-2">
+        <MenuGroup label="Modes">
+          {canKeepAwake() && <MenuRow label="Keep screen on" on={keepAwake} onClick={onKeepAwake} />}
+          {autoAvailable && <MenuRow label="Auto" on={auto} onClick={onAuto} />}
+          {/* Nested under Auto: they only matter while it is running the clock. */}
+          {auto && (
+            <>
+              {canVibrate() && (
+                <MenuRow label="Vibrate" on={vibrate} onClick={onVibrate} sub />
+              )}
+              <MenuRow label="Sound" on={sound} onClick={onSound} sub />
+            </>
+          )}
+        </MenuGroup>
+
+        <MenuGroup label="Session">
+          {started && (
+            <>
+              <button
+                type="button"
+                onClick={onRestart}
+                className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
+              >
+                Restart
+              </button>
+              <button
+                type="button"
+                onClick={onEnd}
+                className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger"
+              >
+                End session
+              </button>
+            </>
+          )}
+        </MenuGroup>
+      </div>
+    </dialog>
+  );
+}
+
+/** A group of rows with one small heading, the way the Settings screen does it. */
+function MenuGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="mt-1 first:mt-0">
+      <p className="px-3 pb-1 pt-2 text-xs uppercase tracking-[0.2em] text-muted">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+/** One switch: the label says what it does, the right hand says whether it is on. */
+function MenuRow({
+  label,
+  on,
+  onClick,
+  sub = false,
+}: {
+  label: string;
+  on: boolean;
+  onClick: () => void;
+  /** Indented under the switch it belongs to. */
+  sub?: boolean;
 }) {
   return (
     <button
       type="button"
-      aria-label={auto ? 'Stop auto' : 'Start auto'}
-      aria-pressed={auto}
-      onClick={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
-      className={`h-11 shrink-0 rounded-xl border px-3 font-gym text-sm ${auto ? AUTO_ON : AUTO_OFF}`}
+      aria-pressed={on}
+      onClick={onClick}
+      className={`flex h-12 w-full items-center justify-between rounded-xl pr-3 text-left text-sm ${
+        sub ? 'pl-7 text-muted' : 'pl-3'
+      }`}
     >
-      auto
+      <span>{label}</span>
+      <span className={`font-gym text-xs ${on ? 'text-accent' : 'text-muted'}`}>
+        {on ? 'on' : 'off'}
+      </span>
     </button>
   );
 }
@@ -223,13 +323,17 @@ export function ActiveWorkout() {
   const clearError = useSession((s) => s.clearError);
   const dispatch = useSession((s) => s.dispatch);
   const reset = useSession((s) => s.reset);
+  const restart = useSession((s) => s.restart);
   const startWorkout = useSession((s) => s.startWorkout);
   const endDialog = useRef<HTMLDialogElement>(null);
+  const menuDialog = useRef<HTMLDialogElement>(null);
   // The right hand ends a two-hand set: hold the screen briefly so the tick is seen.
   const [flashDone, setFlashDone] = useState(false);
   // A second tap during the hold must not queue a second completion.
   const holdRef = useRef(false);
   const [howTo, setHowTo] = useState(false);
+  const [keepAwake, toggleKeepAwake] = useKeepAwake();
+  const { sound, vibrate, toggleSound, toggleVibrate } = useCues();
 
   const status = state?.status;
   const auto = state?.mode === 'auto';
@@ -254,12 +358,15 @@ export function ActiveWorkout() {
     if (status === 'abandoned') navigate('#/');
   }, [status, state?.sessionId]);
 
-  useWakeLock(!!state && (RUNNING.includes(state.status) || state.status === 'paused'));
+  useWakeLock(
+    keepAwake && !!state && (RUNNING.includes(state.status) || state.status === 'paused'),
+  );
 
-  // One haptic when a break runs out, one when a set lands. Keyed so a restored
-  // session does not buzz on mount.
-  const restAlert = useRef<number | null>(null);
+  // One cue when a set lands, and a countdown on whichever clock is running. Keyed by
+  // the clock instance so a restored session does not fire the marks it already passed.
   const doneAlert = useRef<number | null>(null);
+  const countdown = useRef<{ key: string; marks: Set<number> }>({ key: '', marks: new Set() });
+
   useEffect(() => {
     if (!state) return;
     const done = getWorkoutProgress(state).done;
@@ -267,13 +374,40 @@ export function ActiveWorkout() {
       doneAlert.current = done;
     } else if (done !== doneAlert.current) {
       doneAlert.current = done;
-      navigator.vibrate?.(120);
+      cue('set');
     }
-    if (state.status !== 'resting' && state.status !== 'exercise_complete') return;
-    if (remainingMs(state, tickNow) > 0) return;
-    if (restAlert.current === state.restCount) return;
-    restAlert.current = state.restCount;
-    navigator.vibrate?.([200, 100, 200]);
+  }, [state]);
+
+  useEffect(() => {
+    if (!state) return;
+    const clock = (() => {
+      if (state.status === 'resting' || state.status === 'exercise_complete') {
+        return { key: `rest:${state.restCount}`, left: remainingMs(state, tickNow) };
+      }
+      if (state.mode === 'auto' && state.status === 'exercise_active' && state.stageStartedAt != null) {
+        return { key: `stage:${state.stageStartedAt}`, left: autoRemainingMs(state, tickNow) };
+      }
+      return null;
+    })();
+    if (!clock) return;
+    if (countdown.current.key !== clock.key) {
+      countdown.current = { key: clock.key, marks: new Set() };
+    }
+    const marks = countdown.current.marks;
+    const fire = (at: number, kind: 'ten' | 'tick' | 'end') => {
+      if (marks.has(at)) return;
+      marks.add(at);
+      cue(kind);
+    };
+
+    if (clock.left <= 0) {
+      fire(0, 'end');
+      return;
+    }
+    // Ceil, so "3" means the last whole second before 2, not the moment 3.0 starts.
+    const secs = Math.ceil(clock.left / 1000);
+    if (secs === 10) fire(10, 'ten');
+    else if (secs <= 3) fire(secs, 'tick');
   }, [state, tickNow]);
 
   if (!state) return null;
@@ -396,19 +530,14 @@ export function ActiveWorkout() {
           </div>
         }
         actions={
-          !isReady ? (
-            <>
-              {RUNNING.includes(state.status) && <AutoToggle auto={auto} dispatch={dispatch} />}
-              <button
-                type="button"
-                onClick={() => endDialog.current?.showModal()}
-                aria-haspopup="dialog"
-                className="h-11 shrink-0 rounded-xl border border-line px-3 font-gym text-sm text-muted"
-              >
-                End
-              </button>
-            </>
-          ) : undefined
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => menuDialog.current?.showModal()}
+            className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+          >
+            Settings
+          </button>
         }
       >
         {!isReady && (
@@ -733,6 +862,30 @@ export function ActiveWorkout() {
           </div>
         )}
       </footer>
+
+      <SessionMenu
+        menuRef={menuDialog}
+        auto={auto}
+        autoAvailable={!!state && RUNNING.includes(state.status)}
+        started={!isReady}
+        keepAwake={keepAwake}
+        onKeepAwake={toggleKeepAwake}
+        onAuto={() => dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' })}
+        sound={sound}
+        vibrate={vibrate}
+        onSound={toggleSound}
+        onVibrate={toggleVibrate}
+        onEnd={() => {
+          menuDialog.current?.close();
+          endDialog.current?.showModal();
+        }}
+        onRestart={() => {
+          menuDialog.current?.close();
+          if (confirm('Restart this workout from the first set? Today’s progress is lost.')) {
+            restart();
+          }
+        }}
+      />
 
       {/* A native modal: it dims the screen, traps focus, and Esc or a tap outside closes it. */}
       <dialog

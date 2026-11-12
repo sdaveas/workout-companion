@@ -92,7 +92,7 @@ dialog::backdrop {
 .exercise-frame {
   background-color: currentColor;
   visibility: hidden;
-  animation: exercise-flip 1.6s steps(1, end) infinite;
+  animation: exercise-flip 2s steps(1, end) infinite;
 }
 
 .exercise-frame-base {
@@ -122,7 +122,7 @@ dialog::backdrop {
   /* Two still line drawings swapping in place, not motion across the screen. It is
      the exercise form cue, so it keeps flipping even with motion turned down. */
   .exercise-frame {
-    animation-duration: 1.6s !important;
+    animation-duration: 2s !important;
     animation-iteration-count: infinite !important;
   }
 }

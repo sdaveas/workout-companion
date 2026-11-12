@@ -34,6 +34,8 @@ interface SessionStore {
   removeSession: (id: string) => Promise<void>;
   clearError: () => void;
   reset: () => void;
+  /** Throw the current session away and start the same program again from set one. */
+  restart: () => void;
 }
 
 export const useSession = create<SessionStore>((set, get) => ({
@@ -137,4 +139,20 @@ export const useSession = create<SessionStore>((set, get) => ({
 
   clearError: () => set({ error: null }),
   reset: () => set({ state: null, error: null }),
+
+  restart() {
+    const prev = get().state;
+    if (!prev) return;
+    const now = Date.now();
+    const started = reduce(createSession(prev.program, now, newSessionId()), {
+      type: 'START',
+      now,
+    });
+    // The old row goes first: a restart throws the work away, and leaving a half
+    // session behind would only clutter recovery.
+    void deleteSession(prev.sessionId).catch(() => undefined);
+    set({ state: started, error: null });
+    writeSnapshot(started);
+    void saveSession(started).catch((err) => set({ error: `Not saving: ${message(err)}` }));
+  },
 }));
