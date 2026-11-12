@@ -125,7 +125,7 @@ export function Summary() {
   if (!param) {
     return (
       <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+        <ScreenHeader back={{ to: '#/', label: 'Programs' }} />
         <p className="mt-16 text-center text-muted">No session selected.</p>
         <div className="mt-4 text-center">
           <Button onClick={() => navigate('#/history')}>History</Button>
@@ -137,7 +137,7 @@ export function Summary() {
   if (!summary) {
     return (
       <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+        <ScreenHeader back={{ to: '#/', label: 'Programs' }} />
         <p className="mt-16 text-center text-muted">Loading session…</p>
       </main>
     );
@@ -145,7 +145,7 @@ export function Summary() {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+      <ScreenHeader back={{ to: '#/', label: 'Programs' }} />
       <p className="mt-4 text-xs uppercase tracking-widest text-accent">
         {summary.endedEarly ? 'Ended early' : 'Session complete'}
       </p>

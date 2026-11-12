@@ -197,7 +197,7 @@ export function PasteProgram({ initial }: { initial?: string }) {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={initial ? { to: '#/', label: 'Home' } : { to: '#/programs', label: 'Programs' }}
+        back={initial ? { to: '#/', label: 'Programs' } : { to: '#/programs', label: 'Programs' }}
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
             {initial ? 'Shared program' : 'Paste a program'}

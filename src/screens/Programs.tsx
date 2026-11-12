@@ -68,7 +68,7 @@ export function Programs() {
                 label: 'Programs',
                 onSelect: () => setEditing(null),
               }
-            : { to: '#/', label: 'Home', onSelect: () => setEditing(null) }
+            : { to: '#/', label: 'Programs', onSelect: () => setEditing(null) }
         }
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">

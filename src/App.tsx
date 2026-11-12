@@ -3,7 +3,6 @@ import { useHashRoute } from './hooks/useHashRoute';
 import { ActiveWorkout } from './screens/ActiveWorkout';
 import { AddShared } from './screens/AddShared';
 import { Credits } from './screens/Credits';
-import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { PasteProgram } from './screens/PasteProgram';
 import { ProgramDetail } from './screens/ProgramDetail';
@@ -23,7 +22,6 @@ const KNOWN = new Set([
   'program',
   'session',
   'summary',
-  'history',
   'settings',
   'credits',
 ]);
@@ -50,13 +48,12 @@ export function App() {
       {route.name === 'program' && <ProgramDetail id={route.param ?? ''} />}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
-      {route.name === 'history' && <History />}
       {route.name === 'settings' && <Settings />}
       {route.name === 'credits' && <Credits />}
       {(route.name === 'home' || route.name === '') && <Home />}
       {!KNOWN.has(route.name) && route.name !== 'home' && (
         <main className="mx-auto max-w-md px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <ScreenHeader back={{ to: '#/', label: 'Home' }} />
+          <ScreenHeader back={{ to: '#/', label: 'Programs' }} />
           <p className="mt-16 text-center text-muted">That page is not here.</p>
           <div className="mt-4 text-center">
             <a href="#/" className="text-sm text-accent underline underline-offset-4">

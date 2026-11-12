@@ -2,9 +2,10 @@ import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useEffect, useRef, useState } from 'react';
 import { useNow } from '../hooks/useNow';
 import { usePrograms } from '../store/programsStore';
+import { useSession } from '../store/sessionStore';
 import { buildBackup } from '../lib/backup';
 import { importBackupFile } from '../lib/importFile';
-import { downloadJson } from '../lib/exportHistory';
+import { downloadJson, historyExport } from '../lib/exportHistory';
 import { countSessions, loadAllSessions } from '../storage/sessions';
 import { Banner } from '../components/ui/Banner';
 import { getToken } from '../lib/drive/auth';
@@ -12,6 +13,8 @@ import { loadBackup, saveBackup } from '../lib/drive/files';
 
 export function Settings() {
   const programs = usePrograms((s) => s.programs);
+  const history = useSession((s) => s.history);
+  const loadHistory = useSession((s) => s.loadHistory);
   const [sessions, setSessions] = useState<number | null>(null);
   const [driveBusy, setDriveBusy] = useState<'save' | 'load' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -21,7 +24,8 @@ export function Settings() {
 
   useEffect(() => {
     void countSessions().then(setSessions).catch(() => setSessions(null));
-  }, [programs.length]);
+    void loadHistory();
+  }, [programs.length, loadHistory]);
 
   async function exportBackup() {
     setError(null);
@@ -95,7 +99,7 @@ export function Settings() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={{ to: '#/', label: 'Home' }}
+        back={{ to: '#/', label: 'Programs' }}
         title={<h1 className="text-sm font-semibold uppercase tracking-widest">Settings</h1>}
       />
 
@@ -170,6 +174,16 @@ export function Settings() {
         <p className="mt-2 text-center text-xs text-muted">
           A backup, or a single program JSON
         </p>
+
+        {/* The history-only export used to live on the History screen. */}
+        <button
+          type="button"
+          disabled={history.length === 0}
+          onClick={() => downloadJson('workout-history.json', historyExport(history, now))}
+          className="mt-3 h-11 w-full text-xs text-muted underline disabled:opacity-50"
+        >
+          Export history only
+        </button>
       </section>
 
       {error && <Banner message={error} onDismiss={() => setError(null)} />}

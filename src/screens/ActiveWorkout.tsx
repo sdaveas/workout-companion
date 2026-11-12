@@ -533,7 +533,7 @@ export function ActiveWorkout() {
         className="px-5 pt-[max(0.75rem,env(safe-area-inset-top))]"
         back={{
           to: '#/',
-          label: 'Home',
+          label: 'Programs',
           compact: true,
           onSelect: isReady
             ? () => {
