@@ -62,8 +62,9 @@ export function History() {
                 aria-hidden
                 className="h-5 w-5"
               >
-                <path d="M12 14V3" />
-                <path d="m8 7 4-4 4 4" />
+                {/* Saving a file points down, so it cannot be mistaken for a row's share. */}
+                <path d="M12 3v11" />
+                <path d="m8 10 4 4 4-4" />
                 <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
               </svg>
             </button>
