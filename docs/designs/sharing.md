@@ -162,3 +162,64 @@ receiver lands on the same screen.
 
 Verified by measurement on the live build: every header share control is a 44×44 box at
 `y=16`, rightmost in its row.
+
+---
+
+# Revision: short links, when the owner wants them
+
+## Problem
+
+A program link is 269 characters, a workout link 308. In a chat that is four lines of
+blue text. The payload is already near its floor: 204 characters for six exercises,
+gzip-compressed, base64url-encoded, and a binary wire format was measured at 163 — a 20%
+saving that would break every link already sent, so it was rejected.
+
+The remaining 58 characters are the deployment itself:
+`https://sdaveas.github.io/workout-companion/?v=4#/add/`. Shortening past that means
+storing a mapping somewhere, and this app has no backend by design.
+
+## Technical Plan
+
+**An optional worker the owner deploys, never a service we run.** `worker/shorten.js` is
+a Cloudflare Worker with one KV namespace:
+
+- `POST /` with `{ "u": "<full link>" }` → `{ "s": "https://<worker>/aB3xK9p" }`.
+- `GET /aB3xK9p` → `302`, `Location` = the full link. A redirect's Location may carry a
+  fragment, so `#/add/<payload>` survives the hop.
+- Ids are 7 characters from an alphabet without `0/o/1/l`, because a link gets read aloud.
+- It only accepts links to this deployment, so it is not an open redirector.
+- Entries live five years; the free plan covers 100k opens and 1k shares a day.
+
+**Off by default.** `SHORTENER` in `src/lib/shorten.ts` is empty, and then no request is
+made at all. Set it to the deployed origin and the app starts shortening. Every failure
+— offline, blocked, worker deleted, slow — falls back to the full link, so sharing never
+depends on the worker existing. That keeps the local-first rule: the worker is an
+enhancement, exactly like Drive is.
+
+## Alternatives
+
+- **A public shortener (is.gd, TinyURL, cleanuri, spoo.me).** Measured: is.gd and TinyURL
+  send no CORS header for our origin, cleanuri answered 504, spoo.me works (`*`) but is a
+  small free service that also becomes the owner of every link. A link that dies when a
+  stranger's side project dies is worse than a long link.
+- **A binary wire format.** 204 → 163 characters (20%). It needs a new payload version,
+  which makes links already sent undecodable by cached builds, for one saved line.
+- **A custom domain.** 58 characters of every link become ~20, with no backend and no
+  link rot. The best lever if the owner wants it, and it is a DNS decision, not code.
+- **Static redirect pages on GitHub Pages.** One file per share, i.e. a commit per share,
+  which needs a write token in the client. No.
+- **Storing the payload in the path (`/add/<payload>`) instead of the fragment.** GitHub
+  Pages 404s every unknown path; the app is a fragment-routed SPA.
+
+## Detailed Implementation
+
+| File | Change |
+| --- | --- |
+| `worker/shorten.js` | POST to store, GET to redirect, CORS pinned to the Pages origin |
+| `worker/wrangler.toml` | the KV binding and worker name |
+| `worker/README.md` | the four deploy commands, and what it changes |
+| `src/lib/shorten.ts` | `shorten(url)`, off when `SHORTENER` is empty, never throws |
+| `src/lib/shareProgram.ts` | `send()` shortens once, before the share sheet or the clipboard |
+
+Verified: with `SHORTENER` empty the share path is unchanged (long link, numbers in the
+sheet's text). The worker itself is verified after `wrangler deploy`.

@@ -7,3 +7,5 @@ playwright-report
 data/history/*.json
 data/programs/archive/
 .playwright-mcp/
+worker/node_modules
+worker/.wrangler
