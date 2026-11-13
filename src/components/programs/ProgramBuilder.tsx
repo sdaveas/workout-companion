@@ -308,6 +308,10 @@ export function ProgramBuilder({
       >
         {initial ? 'Update program' : 'Create program'}
       </button>
+
+      {/* Room under the last row, or the page cannot scroll far enough to put a freshly
+          added exercise at the top of the screen. */}
+      <div aria-hidden className="h-[60vh]" />
     </section>
   );
 }
