@@ -191,8 +191,10 @@ binary form spends one byte per small number and one or two on an exercise name.
 
 - Payload prefix `2` (the prefix is how the decoder tells formats apart; `1` stays
   readable forever), then one flag byte, then base64url bytes.
-- Flag bit 0: gzipped. Gzip is applied only when it actually shrinks the packed bytes —
-  on a small packed payload it usually does not, and the byte tells the decoder.
+- Flag bit 1: deflate-raw, applied only when it shrinks the pack. Bit 0 is gzip, read
+  only — links written before this build carry it. Measured on the same six-exercise
+  session: raw 169 bytes, gzip 153, deflate-raw 135. Deflate-raw wins because it is the
+  deflate stream with no wrapper; gzip's header and CRC cost 18 bytes we do not need.
 - Varints everywhere, in this order per program: name, exercise count, then per exercise
   the library index (`0` = a custom name follows), sets, reps min, reps max as a delta,
   weight as `round(kg × 10) + 1` (`0` = bodyweight), flags (bit 0 = per hand), rest in
@@ -216,6 +218,12 @@ from the live site before the change.
   escaping eats the saving and makes the link fragile when a chat client re-wraps it.
 - **Gzip the packed bytes unconditionally.** Measured bigger at this size (170 vs 163 on
   the mixed fixture), because gzip's header costs ~18 bytes.
+- **Brotli or zstd.** Both compress the pack better than deflate-raw on paper — brotli 127
+  bytes, zstd 145, deflate-raw 135 on that session — but `CompressionStream` supports
+  neither in Chrome or Safari, so it would mean shipping a 50–100 KB wasm decoder to every
+  reader for 8 bytes, about 11 characters of link. The JSON text they were asked about is
+  no longer sent: brotli 179 / zstd 185 / gzip 186 on 340 bytes of JSON, against 127 for
+  brotli on the 169-byte pack it became.
 - **Drop fields that equal a default** (sets 3, rest 90, reps 10–12). In JSON+gzip that
   is worth a few bytes; in binary each field is already one byte, so it buys nothing and
   adds a table of defaults to keep in sync.

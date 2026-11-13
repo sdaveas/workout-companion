@@ -149,16 +149,21 @@ function performedFrom(state: WorkoutState): Performed | undefined {
 }
 
 /**
- * The binary wire. One byte of flags, then the packed bytes: bit 0 says gzipped, and
- * gzip is used only when it actually shrinks the pack (at this size it usually does not).
+ * The binary wire. One byte of flags, then the packed bytes. Bit 1 says deflate-raw,
+ * which is the whole deflate stream without gzip's 18-byte wrapper — measured 135 bytes
+ * against gzip's 153 on a six-exercise session, and raw's 169. Bit 0 is gzip, read only:
+ * links written before this build carry it.
  */
+const FLAG_GZIP = 1;
+const FLAG_DEFLATE_RAW = 2;
+
 async function encodeBinary(programs: Program[], performed?: Performed): Promise<string> {
   const packed = packPrograms(programs, performed);
-  const gzipped = await pack(packed);
-  const useGzip = gzipped.length < packed.length;
-  const body = useGzip ? gzipped : packed;
+  const deflated = await deflateRaw(packed);
+  const useDeflate = deflated != null && deflated.length < packed.length;
+  const body = useDeflate ? deflated : packed;
   const bytes = new Uint8Array(body.length + 1);
-  bytes[0] = useGzip ? 1 : 0;
+  bytes[0] = useDeflate ? FLAG_DEFLATE_RAW : 0;
   bytes.set(body, 1);
   return VERSION_BINARY + toB64url(bytes);
 }
@@ -337,7 +342,10 @@ function unpackPrograms(bytes: Uint8Array): SharedPrograms {
 async function decodeBinary(payload: string): Promise<SharedPrograms> {
   const bytes = fromB64url(payload);
   if (bytes.length < 2) throw new Error('short payload');
-  const body = (bytes[0] & 1) === 1 ? await unpack(bytes.subarray(1)) : bytes.subarray(1);
+  const flag = bytes[0];
+  const body = bytes.subarray(1);
+  if ((flag & FLAG_GZIP) !== 0) return unpackPrograms(await unpack(body));
+  if ((flag & FLAG_DEFLATE_RAW) !== 0) return unpackPrograms(await inflateRaw(body));
   return unpackPrograms(body);
 }
 
@@ -364,10 +372,19 @@ function fromB64url(value: string): Uint8Array {
   return bytes;
 }
 
-/** gzip when the platform has it (Safari 16.4+), otherwise raw bytes — the gzip magic tells them apart. */
-async function pack(bytes: Uint8Array): Promise<Uint8Array> {
-  if (typeof CompressionStream === 'undefined') return bytes;
-  const stream = new Blob([bytes.slice()]).stream().pipeThrough(new CompressionStream('gzip'));
+/** The deflate stream with no wrapper at all. `null` when this platform cannot do it. */
+async function deflateRaw(bytes: Uint8Array): Promise<Uint8Array | null> {
+  if (typeof CompressionStream === 'undefined') return null;
+  try {
+    const stream = new Blob([bytes.slice()]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  } catch {
+    return null; // older Safari: the link simply travels raw
+  }
+}
+
+async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
+  const stream = new Blob([bytes.slice()]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
