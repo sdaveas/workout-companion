@@ -63,8 +63,10 @@ export function ProgramDetail({ id }: { id: string }) {
   async function openCoach() {
     const brief = currentBrief();
     if (!brief) return;
-    const copied = await copyBrief(brief);
+    // Open before awaiting anything: iOS drops the tap's activation at the first await,
+    // and a window.open without it is silently ignored — the button looks dead.
     window.open(briefChatUrl(brief), '_blank', 'noopener');
+    const copied = await copyBrief(brief);
     // The way back is a paste, so the app waits on the paste step. When copying was
     // refused the brief is on this screen to select by hand, so stay.
     if (copied && program) navigate(`#/paste/${program.id}`);
