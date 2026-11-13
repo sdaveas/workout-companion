@@ -166,3 +166,65 @@ receiver lands on the same screen.
 
 Verified by measurement on the live build: every header share control is a 44×44 box at
 `y=16`, rightmost in its row.
+
+---
+
+# Revision: a binary payload
+
+## Problem
+
+The link is 269 characters for a program and 308 for a workout, and 58 of those are the
+deployment. The payload is the only lever left, and the text form is near its floor:
+minified JSON, gzipped, base64url — 204 characters for six exercises.
+
+Measured against a varint-packed binary form, same six exercises:
+
+| | JSON + gzip | binary | saving |
+| --- | --- | --- | --- |
+| names from the exercise library | 129 | 71 | 45% |
+| four custom names | 204 | 163 | 20% |
+
+The text form spends its bytes on syntax (`[`, `"`, `,`, keys) and on decimal weights; the
+binary form spends one byte per small number and one or two on an exercise name.
+
+## Technical Plan
+
+- Payload prefix `2` (the prefix is how the decoder tells formats apart; `1` stays
+  readable forever), then one flag byte, then base64url bytes.
+- Flag bit 0: gzipped. Gzip is applied only when it actually shrinks the packed bytes —
+  on a small packed payload it usually does not, and the byte tells the decoder.
+- Varints everywhere, in this order per program: name, exercise count, then per exercise
+  the library index (`0` = a custom name follows), sets, reps min, reps max as a delta,
+  weight as `round(kg × 10) + 1` (`0` = bodyweight), flags (bit 0 = per hand), rest in
+  seconds.
+- Numbers ride after each program: `1` means they follow, then per exercise a count of
+  set entries (`0` = not done), then per set reps (`0` = skipped), weight, flags
+  (bit 0 = a right hand follows), and that hand's reps.
+- Multi-program links never carry numbers, as before.
+- Decoding keeps all three paths: `2` binary, `1` the JSON+gzip wire, and the version-less
+  raw-JSON links that predate both.
+
+Risk, accepted: a link made by this build will not open in a cached build older than it —
+the app updates its service worker on launch, so the window is one visit. The reverse
+(old link, new build) always works and is covered by a test that decodes a link captured
+from the live site before the change.
+
+## Alternatives
+
+- **Base85 instead of base64url.** 25% smaller than base64, but its alphabet includes
+  `#`, `%`, `<`, `>`, `{`, `}` and space, which have to be escaped in a fragment — the
+  escaping eats the saving and makes the link fragile when a chat client re-wraps it.
+- **Gzip the packed bytes unconditionally.** Measured bigger at this size (170 vs 163 on
+  the mixed fixture), because gzip's header costs ~18 bytes.
+- **Drop fields that equal a default** (sets 3, rest 90, reps 10–12). In JSON+gzip that
+  is worth a few bytes; in binary each field is already one byte, so it buys nothing and
+  adds a table of defaults to keep in sync.
+- **Send only the numbers for a workout link.** The receiver has no copy of the plan, so
+  there would be nothing to import.
+
+## Detailed Implementation
+
+| File | Change |
+| --- | --- |
+| `src/lib/share.ts` | `packPrograms`/`unpackPrograms`, varint reader/writer, `2` prefix, gzip flag; `decodePrograms` keeps the `1` and legacy paths |
+| `src/lib/share.test.ts` | a captured `1` program link and `1` workout link still decode; binary round trip; length ceiling for a library-named program |

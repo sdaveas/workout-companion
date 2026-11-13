@@ -14,6 +14,8 @@ export const SHARE_PATH = '#/add/';
  * The exercise name is sent as an index into the built-in library when we know it.
  */
 const VERSION = '1';
+/** Binary wire. `1` stays readable forever; this is what we emit. */
+const VERSION_BINARY = '2';
 
 type WireExercise = [number | string, number, number, number, number, 0 | 1, number];
 
@@ -30,52 +32,42 @@ export type Performed = ((PerformedSet | null)[] | null)[];
 
 /** `[reps, weightKg]`, a third `repsRight`, or `null` for a set that was skipped. */
 type WireSet = [number, number] | [number, number, number];
-type WireProgram = [string, string, WireExercise[], ((WireSet | null)[] | null)[]?];
 
-/**
- * A known exercise travels as its position in EXERCISE_LIBRARY, which keeps links
- * short. Positions are therefore frozen: a library entry never moves, and new ones
- * are appended. See the "curated entries first" test in data/exercises.test.ts.
- */
-const nameCode = (name: string): number | string => {
-  const i = EXERCISE_LIBRARY.findIndex((e) => e.name.toLowerCase() === name.trim().toLowerCase());
-  return i >= 0 ? i : name.trim();
-};
+interface PlanRow {
+  name: string;
+  sets: number;
+  min: number;
+  max: number;
+  weightKg: number | null;
+  perHand: boolean;
+  rest: number;
+}
 
-function toWire(program: Program, performed?: Performed): WireProgram {
-  const wire: WireProgram = [
-    program.name,
-    // The week is the receiver's call: a solo lifter and a Monday/Wednesday/Friday
-    // lifter get the same link, and the link never schedules anything for them.
-    '',
-    program.exercises.map((e) => [
-      nameCode(e.name),
-      e.sets,
-      e.reps.min,
-      e.reps.max,
-      e.weightKg ?? -1,
-      e.perHand ? 1 : 0,
-      e.restSeconds,
-    ]),
-  ];
+/** The canonical program JSON the importer parses. Both wires end here. */
+function programJson(name: string, rows: PlanRow[], day?: string): string {
+  const seen = new Set<string>();
+  const exercises = rows.map((row, i) => {
+    let id = slug(row.name) || `exercise-${i + 1}`;
+    while (seen.has(id)) id = `${id}-${i + 1}`;
+    seen.add(id);
+    return {
+      id,
+      name: row.name,
+      sets: row.sets,
+      reps: { min: row.min, max: row.max },
+      ...(row.weightKg != null ? { weight: { value: row.weightKg, unit: 'kg' } } : {}),
+      ...(row.perHand ? { per_hand: true } : {}),
+      rest_seconds: row.rest,
+    };
+  });
 
-  // The 4th slot is optional: a link without it is the program link it always was, and a
-  // build that predates it reads the first three and gets the plan.
-  if (performed) {
-    wire[3] = performed.map(
-      (sets) =>
-        sets?.map((set) =>
-          set == null
-            ? null
-            : ([
-                set.reps,
-                set.weightKg ?? -1,
-                ...(set.repsRight === undefined ? [] : [set.repsRight]),
-              ] as WireSet),
-        ) ?? null,
-    );
-  }
-  return wire;
+  return JSON.stringify({
+    schema_version: 1,
+    id: slug(name),
+    name,
+    ...(day ? { schedule: { day } } : {}),
+    exercises,
+  });
 }
 
 /** Wire → the canonical program JSON the importer accepts. `null` when it is not a program. */
@@ -84,36 +76,24 @@ function fromWire(wire: unknown): { json: string; performed?: Performed } | null
   const [name, day, rows] = wire as [string, unknown, unknown[]];
   const logged = Array.isArray(wire[3]) ? readPerformed(wire[3] as unknown[]) : undefined;
 
-  const seen = new Set<string>();
-  const exercises = rows.map((row, i) => {
+  const plan: PlanRow[] = rows.map((row) => {
     if (!Array.isArray(row) || row.length < 7) throw new Error('bad exercise');
     const [code, sets, min, max, weight, perHand, rest] = row as WireExercise;
     const exerciseName = typeof code === 'number' ? EXERCISE_LIBRARY[code]?.name : code;
     if (typeof exerciseName !== 'string' || !exerciseName) throw new Error('unknown exercise');
-    let id = slug(exerciseName) || `exercise-${i + 1}`;
-    while (seen.has(id)) id = `${id}-${i + 1}`;
-    seen.add(id);
     return {
-      id,
       name: exerciseName,
       sets,
-      reps: { min, max },
-      ...(typeof weight === 'number' && weight >= 0
-        ? { weight: { value: weight, unit: 'kg' } }
-        : {}),
-      ...(perHand ? { per_hand: true } : {}),
-      rest_seconds: rest,
+      min,
+      max,
+      weightKg: typeof weight === 'number' && weight >= 0 ? weight : null,
+      perHand: perHand === 1,
+      rest,
     };
   });
 
   return {
-    json: JSON.stringify({
-      schema_version: 1,
-      id: slug(name),
-      name,
-      ...(typeof day === 'string' && day ? { schedule: { day } } : {}),
-      exercises,
-    }),
+    json: programJson(name, plan, typeof day === 'string' ? day : undefined),
     ...(logged ? { performed: logged } : {}),
   };
 }
@@ -168,10 +148,202 @@ function performedFrom(state: WorkoutState): Performed | undefined {
   return performed.some((sets) => sets?.some((set) => set != null)) ? performed : undefined;
 }
 
-/** A finished session: the same tuple, plus what was logged. */
+/**
+ * The binary wire. One byte of flags, then the packed bytes: bit 0 says gzipped, and
+ * gzip is used only when it actually shrinks the pack (at this size it usually does not).
+ */
+async function encodeBinary(programs: Program[], performed?: Performed): Promise<string> {
+  const packed = packPrograms(programs, performed);
+  const gzipped = await pack(packed);
+  const useGzip = gzipped.length < packed.length;
+  const body = useGzip ? gzipped : packed;
+  const bytes = new Uint8Array(body.length + 1);
+  bytes[0] = useGzip ? 1 : 0;
+  bytes.set(body, 1);
+  return VERSION_BINARY + toB64url(bytes);
+}
+
+function varint(out: number[], value: number) {
+  let v = Math.max(0, Math.round(value));
+  while (v >= 0x80) {
+    out.push((v & 0x7f) | 0x80);
+    v = Math.floor(v / 128);
+  }
+  out.push(v);
+}
+
+function writeString(out: number[], value: string) {
+  const bytes = new TextEncoder().encode(value);
+  varint(out, bytes.length);
+  for (const byte of bytes) out.push(byte);
+}
+
+/** Small numbers, then strings. Throws on a payload that ends early. */
+class Reader {
+  private at = 0;
+  constructor(private readonly bytes: Uint8Array) {}
+
+  varint(): number {
+    let shift = 0;
+    let value = 0;
+    for (;;) {
+      if (this.at >= this.bytes.length) throw new Error('short payload');
+      const byte = this.bytes[this.at++];
+      value += (byte & 0x7f) * 2 ** shift;
+      if ((byte & 0x80) === 0) return value;
+      shift += 7;
+      if (shift > 35) throw new Error('bad varint');
+    }
+  }
+
+  string(): string {
+    const length = this.varint();
+    const end = this.at + length;
+    if (end > this.bytes.length) throw new Error('short payload');
+    const text = new TextDecoder().decode(this.bytes.subarray(this.at, end));
+    this.at = end;
+    return text;
+  }
+}
+
+/** Tenths of a kilo, so 5.8 kg survives a round trip: 0 = bodyweight. */
+const weightCode = (kg: number | null) => (kg == null ? 0 : Math.round(kg * 10) + 1);
+const fromWeightCode = (code: number) => (code === 0 ? null : (code - 1) / 10);
+
+function packPrograms(programs: Program[], performed?: Performed): Uint8Array {
+  const out: number[] = [];
+  varint(out, programs.length);
+
+  for (const [index, program] of programs.entries()) {
+    writeString(out, program.name);
+    varint(out, program.exercises.length);
+    for (const exercise of program.exercises) {
+      // A library name is one small number; anything else travels as text.
+      const code = EXERCISE_LIBRARY.findIndex(
+        (e) => e.name.toLowerCase() === exercise.name.trim().toLowerCase(),
+      );
+      if (code >= 0) varint(out, code + 1);
+      else {
+        varint(out, 0);
+        writeString(out, exercise.name.trim());
+      }
+      varint(out, exercise.sets);
+      varint(out, exercise.reps.min);
+      varint(out, Math.max(0, exercise.reps.max - exercise.reps.min));
+      varint(out, weightCode(exercise.weightKg));
+      varint(out, exercise.perHand ? 1 : 0);
+      varint(out, Math.max(0, Math.round(exercise.restSeconds)));
+    }
+
+    // Numbers belong to one workout, so only a single-program link carries them.
+    const logged = programs.length === 1 && index === 0 ? performed : undefined;
+    if (!logged) {
+      varint(out, 0);
+      continue;
+    }
+    varint(out, 1);
+    for (const sets of logged) {
+      varint(out, sets ? sets.length : 0);
+      for (const set of sets ?? []) {
+        // A skipped set is reps 0: no completed set can have none.
+        if (set == null) {
+          varint(out, 0);
+          varint(out, 0);
+          varint(out, 0);
+          continue;
+        }
+        varint(out, set.reps);
+        varint(out, weightCode(set.weightKg));
+        const hasRight = set.repsRight !== undefined;
+        varint(out, hasRight ? 1 : 0);
+        if (hasRight) varint(out, set.repsRight ?? 0);
+      }
+    }
+  }
+
+  return new Uint8Array(out);
+}
+
+function readNumbers(reader: Reader, exercises: number): Performed {
+  const performed: Performed = [];
+  for (let e = 0; e < exercises; e += 1) {
+    const count = reader.varint();
+    if (count === 0) {
+      performed.push(null);
+      continue;
+    }
+    const sets: (PerformedSet | null)[] = [];
+    for (let s = 0; s < count; s += 1) {
+      const reps = reader.varint();
+      const weight = reader.varint();
+      const flags = reader.varint();
+      const repsRight = (flags & 1) === 1 ? reader.varint() : undefined;
+      sets.push(
+        reps === 0
+          ? null
+          : {
+              reps,
+              weightKg: fromWeightCode(weight),
+              ...(repsRight === undefined ? {} : { repsRight }),
+            },
+      );
+    }
+    performed.push(sets);
+  }
+  return performed;
+}
+
+function unpackPrograms(bytes: Uint8Array): SharedPrograms {
+  const reader = new Reader(bytes);
+  const count = reader.varint();
+  if (count < 1 || count > 50) throw new Error('bad program count');
+
+  const programs: Program[] = [];
+  let performed: Performed | undefined;
+  for (let p = 0; p < count; p += 1) {
+    const name = reader.string();
+    const exerciseCount = reader.varint();
+    const rows: PlanRow[] = [];
+    for (let e = 0; e < exerciseCount; e += 1) {
+      const code = reader.varint();
+      const exerciseName = code === 0 ? reader.string() : EXERCISE_LIBRARY[code - 1]?.name;
+      if (!exerciseName) throw new Error('unknown exercise');
+      const sets = reader.varint();
+      const min = reader.varint();
+      const max = min + reader.varint();
+      const weight = reader.varint();
+      const flags = reader.varint();
+      const rest = reader.varint();
+      rows.push({
+        name: exerciseName,
+        sets,
+        min,
+        max,
+        weightKg: fromWeightCode(weight),
+        perHand: (flags & 1) === 1,
+        rest,
+      });
+    }
+    if (reader.varint() === 1) performed = readNumbers(reader, exerciseCount);
+
+    const parsed = parseProgram(programJson(name, rows));
+    if (!parsed.ok) return parsed;
+    programs.push(parsed.program);
+  }
+
+  return { ok: true, programs, ...(performed ? { performed } : {}) };
+}
+
+async function decodeBinary(payload: string): Promise<SharedPrograms> {
+  const bytes = fromB64url(payload);
+  if (bytes.length < 2) throw new Error('short payload');
+  const body = (bytes[0] & 1) === 1 ? await unpack(bytes.subarray(1)) : bytes.subarray(1);
+  return unpackPrograms(body);
+}
+
+/** A finished session: the same plan, plus what was logged. */
 export async function encodeSession(state: WorkoutState): Promise<string> {
-  const wire = toWire(state.program, performedFrom(state));
-  return VERSION + toB64url(await pack(new TextEncoder().encode(JSON.stringify(wire))));
+  return encodeBinary([state.program], performedFrom(state));
 }
 
 function toB64url(bytes: Uint8Array): string {
@@ -211,10 +383,9 @@ export async function encodeProgram(program: Program): Promise<string> {
   return encodePrograms([program]);
 }
 
-/** Several programs in one link: the same wire rows, one array around them. */
+/** Several programs in one link: the same pack, one count in front of them. */
 export async function encodePrograms(programs: Program[]): Promise<string> {
-  const wire = programs.length === 1 ? toWire(programs[0]) : programs.map((p) => toWire(p));
-  return VERSION + toB64url(await pack(new TextEncoder().encode(JSON.stringify(wire))));
+  return encodeBinary(programs);
 }
 
 async function readPayload(body: string): Promise<unknown> {
@@ -228,6 +399,15 @@ export type SharedPrograms =
 
 /** One link, one program or many. A single program reads exactly as it always did. */
 export async function decodePrograms(payload: string): Promise<SharedPrograms> {
+  // The binary wire first: it is what this build writes.
+  if (payload.startsWith(VERSION_BINARY) && /^[A-Za-z0-9_-]+$/.test(payload.slice(1))) {
+    try {
+      return await decodeBinary(payload.slice(1));
+    } catch {
+      return notAProgram();
+    }
+  }
+
   let data: unknown;
   try {
     // Version-less links predate the compact format; they carry the program JSON itself.

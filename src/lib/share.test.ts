@@ -106,6 +106,17 @@ describe('share link', () => {
     expect(back.programs).toHaveLength(1);
   });
 
+  it('still opens a link written by the JSON+gzip build', async () => {
+    // Captured from the live site before the binary wire landed.
+    const old =
+      '1H4sIAAAAAAAAE4XOwQrCMAwG4FcpOaeybDjndep5IoKH0oPTwoZdO9pVfXzpxg6DgaeEP98PEXCz7mXDwEpAABQCzsE3PPQeMMMcKUFOmOA-kSgIsxhQittNgTSFUBnF765jx9DVtdKaXewHFnKup2spVG_lGnV_sqtrH6r37PQdlPGtNYDpwuejLyd1CE4vAUUgUQiRIyeJYjeNIo6YUxJd_ITmZWz-O5qg9YpYa0kpf4FfqYhUAQAA';
+    const back = await decodePrograms(old);
+    expect(back.ok).toBe(true);
+    if (!back.ok) return;
+    expect(back.programs[0].name).toBe('Workout B');
+    expect(back.performed?.[0]?.[0]).toMatchObject({ reps: 6, weightKg: null });
+  });
+
   it('rejects a link that is not a program', async () => {
     expect((await decodeProgram('not-a-payload!!')).ok).toBe(false);
     expect((await decodeProgram('aGVsbG8')).ok).toBe(false); // "hello"
