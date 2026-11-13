@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
@@ -62,6 +62,13 @@ export function ProgramBuilder({
   const [draft, setDraft] = useState<ProgramDraft>(() =>
     initial ? draftFromProgram(initial) : emptyDraft(),
   );
+  /** Adding a row changes the list far below the button, so say what happened. */
+  const [added, setAdded] = useState<string | null>(null);
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(null), 2500);
+    return () => clearTimeout(timer);
+  }, [added]);
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -96,6 +103,7 @@ export function ProgramBuilder({
         },
       ],
     }));
+    setAdded(`${known.name} added`);
   };
 
   const ready = draft.name.trim().length > 0 && draft.exercises.some((e) => e.name.trim());
@@ -251,9 +259,18 @@ export function ProgramBuilder({
         ))}
       </ul>
 
+      {added && (
+        <p role="status" className="mt-2 rounded-lg bg-surface px-3 py-2 text-sm text-accent">
+          {added}
+        </p>
+      )}
+
       <ExercisePicker
         onPick={addFromLibrary}
-        onNew={() => setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }))}
+        onNew={() => {
+          setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }));
+          setAdded('Blank exercise added');
+        }}
       />
 
       <button
