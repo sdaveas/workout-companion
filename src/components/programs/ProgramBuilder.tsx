@@ -284,7 +284,7 @@ export function ProgramBuilder({
                     onChange={(e) => patchExercise(i, { perHand: e.target.checked })}
                     className="h-6 w-6 shrink-0 appearance-none rounded border border-line bg-field accent-accent checked:border-accent checked:bg-accent"
                   />
-                  Per hand ×2
+                  Repeat for each hand
                 </span>
               </label>
             </div>
