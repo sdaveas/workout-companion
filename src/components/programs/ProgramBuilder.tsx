@@ -72,14 +72,17 @@ export function ProgramBuilder({
    */
   const nameRefs = useRef<Array<HTMLInputElement | null>>([]);
   const setRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
   const [focus, setFocus] = useState<{ index: number; field: 'name' | 'sets' } | null>(null);
   useEffect(() => {
     if (!focus) return;
+    const row = rowRefs.current[focus.index];
     const el = (focus.field === 'name' ? nameRefs : setRefs).current[focus.index];
     setFocus(null);
-    if (!el) return;
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    el.focus({ preventScroll: true });
+    // The whole row to the top of the screen, so "Exercise N" is the first line under
+    // the status bar and everything below it is the new exercise.
+    row?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    el?.focus({ preventScroll: true });
   }, [focus]);
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
@@ -179,7 +182,13 @@ export function ProgramBuilder({
 
       <ul className="mt-5 space-y-4">
         {draft.exercises.map((ex, i) => (
-          <li key={i} className="border-t border-line pt-4 first:border-0 first:pt-0">
+          <li
+            key={i}
+            ref={(node) => {
+              rowRefs.current[i] = node;
+            }}
+            className="border-t border-line pt-4 first:border-0 first:pt-0"
+          >
             <div className="flex items-start gap-2">
               <label className="block flex-1">
                 <span className="text-[10px] uppercase tracking-widest text-muted">
