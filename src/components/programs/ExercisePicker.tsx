@@ -85,7 +85,7 @@ export function ExercisePicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-12 w-full rounded-xl border border-dashed border-line text-sm font-semibold text-muted"
+        className="h-12 w-full rounded-xl bg-accent text-sm font-semibold text-ink"
       >
         + Add exercise
       </button>

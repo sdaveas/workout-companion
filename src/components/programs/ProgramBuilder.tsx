@@ -304,7 +304,7 @@ export function ProgramBuilder({
         type="button"
         disabled={!ready}
         onClick={() => void create()}
-        className="mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted"
+        className="mt-4 h-12 w-full rounded-xl border border-line text-sm font-semibold text-accent disabled:text-muted"
       >
         {initial ? 'Update program' : 'Create program'}
       </button>
