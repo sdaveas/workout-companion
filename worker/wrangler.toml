@@ -1,8 +1,0 @@
-name = "wc-links"
-main = "shorten.js"
-compatibility_date = "2026-01-01"
-
-# npx wrangler kv namespace create LINKS
-[[kv_namespaces]]
-binding = "LINKS"
-id = "REPLACE_WITH_THE_ID_WRANGLER_PRINTS"

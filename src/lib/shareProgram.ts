@@ -2,7 +2,6 @@ import type { Program, WorkoutState } from '../engine/types';
 import { summarize } from '../engine/summary';
 import { formatDuration } from './format';
 import { encodeProgram, encodePrograms, encodeSession, shareUrl } from './share';
-import { shorten } from './shorten';
 
 /**
  * The share sheet and the clipboard get the link and nothing else. A caption beside
@@ -46,16 +45,14 @@ export async function shareSession(state: WorkoutState): Promise<string | null> 
 
 /** Share sheet when the phone has one; the clipboard when it does not (every desktop). */
 async function send(title: string, url: string, text?: string): Promise<string | null> {
-  // The optional worker in `worker/`; without it this is the full link.
-  const link = (await shorten(url)) ?? url;
   if (navigator.share) {
     try {
-      await navigator.share(text ? { title, text, url: link } : { title, url: link });
+      await navigator.share(text ? { title, text, url } : { title, url });
       return null;
     } catch (err) {
       if ((err as Error).name === 'AbortError') return null;
     }
   }
-  await navigator.clipboard.writeText(link);
+  await navigator.clipboard.writeText(url);
   return `Link copied: ${title}.`;
 }
