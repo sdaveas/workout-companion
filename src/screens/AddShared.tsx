@@ -4,7 +4,7 @@ import type { Program, Weekday } from '../engine/types';
 import { describeError } from '../schemas/program';
 import { usePrograms } from '../store/programsStore';
 import { conflictingProgram, renameProgram, suggestedName, uniqueId, uniqueName, withIdentity } from '../lib/identity';
-import { decodePrograms } from '../lib/share';
+import { decodePrograms, type Performed, type PerformedSet } from '../lib/share';
 import { saveProgram } from '../storage/programs';
 import { exerciseCount, formatDay } from '../lib/format';
 import { withDays } from '../lib/schedule';
@@ -25,7 +25,22 @@ const DAYS: Weekday[] = [
 type Loaded =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
-  | { kind: 'ready'; programs: Program[] };
+  | { kind: 'ready'; programs: Program[]; performed?: Performed };
+
+/** One line of what the sender logged: reps, both hands when unilateral, weight if any. */
+function logged(sets: (PerformedSet | null)[] | null): string {
+  if (sets === null) return 'not done';
+  if (sets.length === 0) return 'not done';
+  return sets
+    .map((set) =>
+      set === null
+        ? '—'
+        : `${set.reps}${set.repsRight === undefined ? '' : `/${set.repsRight}`}${
+            set.weightKg === null ? '' : `×${set.weightKg}`
+          }`,
+    )
+    .join('  ');
+}
 
 /**
  * The days live in the program's own JSON, so a backup or a re-export carries them.
@@ -96,7 +111,7 @@ export function AddShared({ payload }: { payload: string }) {
       if (!alive) return;
       setState(
         result.ok
-          ? { kind: 'ready', programs: result.programs }
+          ? { kind: 'ready', programs: result.programs, performed: result.performed }
           : {
               kind: 'error',
               message: describeError(result.error)[0]?.message ?? 'That link is not readable.',
@@ -133,6 +148,7 @@ export function AddShared({ payload }: { payload: string }) {
   }
 
   const shared = state.kind === 'ready' ? state.programs : [];
+  const performed = state.kind === 'ready' ? state.performed : undefined;
   const single = shared.length === 1 ? shared[0] : null;
   const clash = single && loaded ? conflictingProgram(single, programs) : null;
 
@@ -166,7 +182,11 @@ export function AddShared({ payload }: { payload: string }) {
         back={{ to: '#/', label: 'Home', compact: true }}
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
-            {shared.length > 1 ? 'Shared programs' : 'Shared program'}
+            {shared.length > 1
+              ? 'Shared programs'
+              : performed
+                ? 'Shared workout'
+                : 'Shared program'}
           </h1>
         }
       />
@@ -224,22 +244,36 @@ export function AddShared({ payload }: { payload: string }) {
 
       {single && loaded && !clash && (
         <section className="mt-6 rounded-xl border border-line bg-surface p-4">
-          <p className="text-xs uppercase tracking-widest text-accent">Someone shared this</p>
+          <p className="text-xs uppercase tracking-widest text-accent">
+            {performed ? 'Someone shared this workout' : 'Someone shared this'}
+          </p>
           <p className="mt-2 text-lg font-semibold">{single.name}</p>
           <p className="mt-1 text-sm text-muted">
             {single.exercises.length} exercise
             {single.exercises.length === 1 ? '' : 's'}
           </p>
+          {performed && (
+            <p className="mt-1 text-xs text-muted">
+              The numbers are what they did. You get the plan, and your own numbers.
+            </p>
+          )}
           {single.description && (
             <p className="mt-2 text-sm text-muted">{single.description}</p>
           )}
-          <ul className="mt-3 space-y-1">
-            {single.exercises.map((e) => (
-              <li key={e.id} className="flex justify-between text-sm">
-                <span className="truncate">{e.name}</span>
-                <span className="ml-2 shrink-0 text-muted">
-                  {e.sets}×{e.reps.min === e.reps.max ? e.reps.min : `${e.reps.min}–${e.reps.max}`}
-                </span>
+          <ul className="mt-3 space-y-1.5">
+            {single.exercises.map((e, i) => (
+              <li key={e.id}>
+                <div className="flex justify-between text-sm">
+                  <span className="truncate">{e.name}</span>
+                  <span className="ml-2 shrink-0 text-muted">
+                    {e.sets}×{e.reps.min === e.reps.max ? e.reps.min : `${e.reps.min}–${e.reps.max}`}
+                  </span>
+                </div>
+                {performed && (
+                  <p className="font-mono text-xs leading-relaxed text-accent/80">
+                    {logged(performed[i] ?? null)}
+                  </p>
+                )}
               </li>
             ))}
           </ul>

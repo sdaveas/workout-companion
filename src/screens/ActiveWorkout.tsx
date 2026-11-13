@@ -19,6 +19,7 @@ import { elapsedMs, estimatedRemainingMs } from '../engine/time';
 import { formatClock, formatDuration, formatSet, formatSetNumber, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
 import { shareProgram } from '../lib/shareProgram';
+import { GearIcon, ShareIcon } from '../components/ui/icons';
 import type { ProgramExercise, SetRecord, WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
@@ -566,18 +567,20 @@ export function ActiveWorkout() {
           <>
             <button
               type="button"
-              onClick={() => void share()}
-              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+              aria-label="Settings"
+              aria-haspopup="dialog"
+              onClick={() => menuDialog.current?.showModal()}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
             >
-              Share
+              <GearIcon />
             </button>
             <button
               type="button"
-              aria-haspopup="dialog"
-              onClick={() => menuDialog.current?.showModal()}
-              className="h-11 shrink-0 rounded-xl border border-line px-3 text-sm text-muted"
+              aria-label="Share this program"
+              onClick={() => void share()}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
             >
-              Settings
+              <ShareIcon />
             </button>
           </>
         }

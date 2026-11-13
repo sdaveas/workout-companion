@@ -1,5 +1,5 @@
-import type { Program } from '../engine/types';
-import { encodeProgram, encodePrograms, shareUrl } from './share';
+import type { Program, WorkoutState } from '../engine/types';
+import { encodeProgram, encodePrograms, encodeSession, shareUrl } from './share';
 
 /**
  * The share sheet and the clipboard get the link and nothing else. A caption beside
@@ -18,6 +18,14 @@ export async function shareProgram(program: Program): Promise<string | null> {
 export async function sharePrograms(programs: Program[]): Promise<string | null> {
   if (programs.length === 1) return shareProgram(programs[0]);
   return send(`${programs.length} programs`, shareUrl(await encodePrograms(programs)));
+}
+
+/**
+ * A finished workout: the same link, plus the numbers that were actually logged. The
+ * receiver still imports the plan; the numbers are a report they can read and copy.
+ */
+export async function shareSession(state: WorkoutState): Promise<string | null> {
+  return send(state.program.name, shareUrl(await encodeSession(state)));
 }
 
 /** Share sheet when the phone has one; the clipboard when it does not (every desktop). */

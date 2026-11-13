@@ -11,6 +11,7 @@ import { BRIEF_MAX_SESSIONS, coachBrief } from '../lib/coachBrief';
 import { briefChatUrl } from '../lib/chatPrompt';
 import { stashProgram } from '../lib/briefSnapshot';
 import { shareProgram } from '../lib/shareProgram';
+import { ShareIcon } from '../components/ui/icons';
 
 /**
  * A saved program, read-only: what is in it, what it looks like, and a way to start.
@@ -100,10 +101,11 @@ export function ProgramDetail({ id }: { id: string }) {
         actions={
           <button
             type="button"
+            aria-label="Share this program"
             onClick={() => void share()}
-            className="h-11 rounded-xl border border-line px-4 text-sm"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
           >
-            Share
+            <ShareIcon />
           </button>
         }
       />

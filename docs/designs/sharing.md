@@ -60,6 +60,105 @@ exists. A six-exercise program is ~1000 characters; a one-exercise program is ~2
 | `src/engine/rest.ts` | remaining rest clamped to the duration (a stale clock read showed 02:01 for a 2:00 rest) |
 | `scripts/scenarios.mjs` | scenario 11: share → asks → add → clash → rename → builder duplicate name |
 
-Not covered: sharing sessions/history, multi-program links, sharing with someone who has no
-program space of their own. Housekeeping: opening the link and leaving without adding writes
-nothing, and reload after adding does not re-prompt because the route moves to `#/programs`.
+Not covered: sharing with someone who has no program space of their own. Housekeeping: opening
+the link and leaving without adding writes nothing, and reload after adding does not re-prompt
+because the route moves to `#/programs`.
+
+---
+
+# Revision: one link, two things to share
+
+## Problem
+
+Two kinds of thing get shared, and the app only knows how to send one of them.
+
+1. **The program.** "This is what I train" — the plan, so a friend can adopt it.
+2. **The workout.** The same plan, plus what actually happened: 10, 11, 12 reps instead of
+   "10–12", two sets instead of three, one exercise skipped.
+
+Today only (1) travels, and the session screens pretend (2) is the same thing: the Share
+button on a history row sends the *stored* program, which is the plan the user edited since,
+not the workout they did. It also disappears when the program was deleted, even though the
+session still holds a full snapshot of it.
+
+The controls are inconsistent too. Share exists on Programs rows, the program page, the workout
+and history rows — as a text pill in headers and an icon in rows — and on Summary only as a
+one-off prompt card that a checkbox can silence forever. There is no way to share a session
+from Summary once the prompt is muted, and no way to tell the receiver that a link carries
+numbers at all.
+
+## Technical Plan
+
+**One payload, one route, one screen.** Every share produces `#/add/<payload>`, and every
+receiver lands on the same screen.
+
+- A session travels as the *same* wire tuple with an optional 4th slot: one entry per exercise,
+  or `null` when the exercise was not done. An entry is a list of sets, one per planned set, in
+  order — `[reps, weightKg]` (`-1` = bodyweight) — with two escapes:
+  - `null` in a set's place means that set was skipped, so "did 1, skipped 2, did 3" stays
+    distinct from "did 1 and 2, skipped 3" instead of collapsing by position.
+  - a third element, `[reps, weight, repsRight]`, on unilateral exercises: left and right travel
+    separately, because a weak side is what a training partner actually reads for.
+  No version bump: an older build reads the tuple it already knows, ignores the extra slot, and
+  gets the plan — the correct degradation, since the plan is the part that is importable.
+- Two sessions carry no numbers and degrade to a plain program link, because their numbers are
+  not evidence: **auto sessions** record the timed target as the result (`Summary` already
+  refuses to rewrite a program from them), and a session where **nothing was completed** would
+  produce an empty report. Both share the plan.
+- The session's program comes from `state.program` (the snapshot stored with the session), not
+  from the programs table. A deleted or edited program still shares exactly what was done, and
+  the "can't share, program is gone" case disappears.
+- `decodePrograms` returns `performed` beside `programs`, index-aligned with
+  `program.exercises`. It is `undefined` for a plain program link, so the receiver's screen can
+  say "Shared program" or "Shared workout" without guessing.
+- The receiver's action does not change: **Add to my routines saves the plan.** The numbers are
+  shown as a report under each exercise ("they did 10, 11, 12"), never written into the targets.
+  A shared workout is a report, not an edit of the receiver's prescription.
+- **Header rule.** Share is the last control in the top-right, always a 44px icon box, on every
+  screen that represents exactly one shareable thing: the program page, the workout, the
+  summary. Screens that are containers keep their own action instead (Home: import/export,
+  Programs: add, History: export). Lists share per row with the same icon.
+- Summary loses the prompt card and the `wc:noSharePrompt` key; the header icon replaces both,
+  and it is there for every session, not only the one that just ended.
+- ActiveWorkout's `Settings` becomes a gear box so the workout header is two icons, not an icon
+  beside a word.
+
+## Alternatives
+
+- **A second route for workouts (`#/add/<payload>/<numbers>`).** Two decoders, two screens, and
+  a chat client that trims the tail of a long URL silently drops the numbers half.
+- **Bumping the payload prefix to `2`.** The prefix is how the decoder tells the compact form
+  from a legacy raw-JSON link; changing it makes every link already sent undecodable. The
+  optional 4th slot is self-describing and costs nothing.
+- **Numbers become the receiver's targets ("train what I lifted").** Tempting, and wrong: a
+  light day, a deload or a bad session would be imported as a prescription. The plan is the
+  portable thing; the numbers are evidence.
+- **A separate "session card" screen with no import.** The receiver's real intent when opening
+  a link is still "give me this routine". Two screens for one payload doubles the surface for
+  no gain.
+- **Sharing the stored program for a session, keeping today's behaviour.** Sends a plan the
+  sender may have edited after the session, and cannot share at all once the program is gone.
+- **One number per set for unilateral exercises.** Loses the left/right imbalance, which is the
+  one thing a partner reading a shared workout wants from a single-arm movement; the third wire
+  element costs about six characters.
+- **A shorter array instead of a `null` sentinel for skipped sets.** Set numbers shift, so "did
+  1, skipped 2, did 3" reads as "did 1 and 2", and the receiver sees numbers that never happened.
+- **Keeping the Summary prompt card and adding the icon too.** Two entry points for one action
+  on one screen, one of which can be hidden by a setting nobody can find again.
+
+## Detailed Implementation
+
+| File | Change |
+| --- | --- |
+| `src/lib/share.ts` | `Performed`/`PerformedSet` types; optional 4th wire slot (set `null`, unilateral third element); `encodeSession(state)`; `decodePrograms` returns `performed` |
+| `src/lib/shareProgram.ts` | `shareSession(state)` beside `shareProgram` |
+| `src/screens/AddShared.tsx` | "Shared workout" heading and the sender's numbers under each exercise |
+| `src/screens/Summary.tsx` | header Share icon via `ScreenHeader`'s existing `actions`; prompt card and `wc:noSharePrompt` deleted |
+| `src/components/ui/SessionRow.tsx` | shares the snapshot + numbers; no longer hides when the program is gone |
+| `src/screens/ProgramDetail.tsx` | Share is the icon box, not a text pill |
+| `src/screens/ActiveWorkout.tsx` | Share icon; Settings becomes a gear icon |
+| `src/components/ui/icons.tsx` | one `ShareIcon`/`GearIcon`, replacing the copy inside `SessionRow` |
+| `src/lib/share.test.ts` | round trip: program link has no `performed`; session link does; skipped set and skipped exercise survive; auto and nothing-done share the plan only |
+
+Verified by measurement on the live build: every header share control is a 44×44 box at
+`y=16`, rightmost in its row.

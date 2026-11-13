@@ -1,4 +1,4 @@
-import type { Program } from '../engine/types';
+import type { Program, SetRecord, WorkoutState } from '../engine/types';
 import { parseProgram, type ParseResult } from '../schemas/program';
 import { EXERCISE_LIBRARY } from '../data/exercises';
 import { slug } from '../lib/buildProgram';
@@ -17,6 +17,21 @@ const VERSION = '1';
 
 type WireExercise = [number | string, number, number, number, number, 0 | 1, number];
 
+/** One logged set. A unilateral movement keeps both hands: the weak side is the point. */
+export interface PerformedSet {
+  reps: number;
+  weightKg: number | null;
+  /** The other hand, when the movement is unilateral. */
+  repsRight?: number;
+}
+
+/** Per exercise in program order: its sets, or `null` when the exercise was not done. */
+export type Performed = ((PerformedSet | null)[] | null)[];
+
+/** `[reps, weightKg]`, a third `repsRight`, or `null` for a set that was skipped. */
+type WireSet = [number, number] | [number, number, number];
+type WireProgram = [string, string, WireExercise[], ((WireSet | null)[] | null)[]?];
+
 /**
  * A known exercise travels as its position in EXERCISE_LIBRARY, which keeps links
  * short. Positions are therefore frozen: a library entry never moves, and new ones
@@ -27,8 +42,8 @@ const nameCode = (name: string): number | string => {
   return i >= 0 ? i : name.trim();
 };
 
-function toWire(program: Program): [string, string, WireExercise[]] {
-  return [
+function toWire(program: Program, performed?: Performed): WireProgram {
+  const wire: WireProgram = [
     program.name,
     // The week is the receiver's call: a solo lifter and a Monday/Wednesday/Friday
     // lifter get the same link, and the link never schedules anything for them.
@@ -43,12 +58,31 @@ function toWire(program: Program): [string, string, WireExercise[]] {
       e.restSeconds,
     ]),
   ];
+
+  // The 4th slot is optional: a link without it is the program link it always was, and a
+  // build that predates it reads the first three and gets the plan.
+  if (performed) {
+    wire[3] = performed.map(
+      (sets) =>
+        sets?.map((set) =>
+          set == null
+            ? null
+            : ([
+                set.reps,
+                set.weightKg ?? -1,
+                ...(set.repsRight === undefined ? [] : [set.repsRight]),
+              ] as WireSet),
+        ) ?? null,
+    );
+  }
+  return wire;
 }
 
 /** Wire → the canonical program JSON the importer accepts. `null` when it is not a program. */
-function fromWire(wire: unknown): string | null {
+function fromWire(wire: unknown): { json: string; performed?: Performed } | null {
   if (!Array.isArray(wire) || typeof wire[0] !== 'string' || !Array.isArray(wire[2])) return null;
   const [name, day, rows] = wire as [string, unknown, unknown[]];
+  const logged = Array.isArray(wire[3]) ? readPerformed(wire[3] as unknown[]) : undefined;
 
   const seen = new Set<string>();
   const exercises = rows.map((row, i) => {
@@ -72,13 +106,72 @@ function fromWire(wire: unknown): string | null {
     };
   });
 
-  return JSON.stringify({
-    schema_version: 1,
-    id: slug(name),
-    name,
-    ...(typeof day === 'string' && day ? { schedule: { day } } : {}),
-    exercises,
+  return {
+    json: JSON.stringify({
+      schema_version: 1,
+      id: slug(name),
+      name,
+      ...(typeof day === 'string' && day ? { schedule: { day } } : {}),
+      exercises,
+    }),
+    ...(logged ? { performed: logged } : {}),
+  };
+}
+
+function readPerformed(raw: unknown[]): Performed {
+  return raw.map((entry) => {
+    if (!Array.isArray(entry)) return null;
+    return entry.map((set) => {
+      if (!Array.isArray(set)) return null;
+      const [reps, weight, right] = set as WireSet;
+      if (typeof reps !== 'number') return null;
+      return {
+        reps,
+        weightKg: typeof weight === 'number' && weight >= 0 ? weight : null,
+        ...(typeof right === 'number' ? { repsRight: right } : {}),
+      };
+    });
   });
+}
+
+/**
+ * What the sender actually did. Auto sessions log the timed target as the result, and a
+ * session where nothing was completed has no report to send — both share the plan alone.
+ */
+function performedFrom(state: WorkoutState): Performed | undefined {
+  if (state.mode === 'auto') return undefined;
+
+  const performed: Performed = state.exerciseRecords.map((record) => {
+    if (record.skipped) return null;
+    // A unilateral set is two rows (one per hand) under the same set number.
+    const bySet = new Map<number, SetRecord[]>();
+    for (const set of record.sets) {
+      const group = bySet.get(set.setNumber);
+      if (group) group.push(set);
+      else bySet.set(set.setNumber, [set]);
+    }
+    return [...bySet.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([, group]) => {
+        const done = group.filter((set) => set.completed);
+        if (done.length === 0) return null;
+        const left = done.find((set) => set.side === 'left') ?? done[0];
+        const right = done.find((set) => set.side === 'right');
+        return {
+          reps: left.actualReps ?? 0,
+          weightKg: left.actualWeightKg,
+          ...(right ? { repsRight: right.actualReps ?? 0 } : {}),
+        };
+      });
+  });
+
+  return performed.some((sets) => sets?.some((set) => set != null)) ? performed : undefined;
+}
+
+/** A finished session: the same tuple, plus what was logged. */
+export async function encodeSession(state: WorkoutState): Promise<string> {
+  const wire = toWire(state.program, performedFrom(state));
+  return VERSION + toB64url(await pack(new TextEncoder().encode(JSON.stringify(wire))));
 }
 
 function toB64url(bytes: Uint8Array): string {
@@ -120,7 +213,7 @@ export async function encodeProgram(program: Program): Promise<string> {
 
 /** Several programs in one link: the same wire rows, one array around them. */
 export async function encodePrograms(programs: Program[]): Promise<string> {
-  const wire = programs.length === 1 ? toWire(programs[0]) : programs.map(toWire);
+  const wire = programs.length === 1 ? toWire(programs[0]) : programs.map((p) => toWire(p));
   return VERSION + toB64url(await pack(new TextEncoder().encode(JSON.stringify(wire))));
 }
 
@@ -130,7 +223,7 @@ async function readPayload(body: string): Promise<unknown> {
 }
 
 export type SharedPrograms =
-  | { ok: true; programs: Program[] }
+  | { ok: true; programs: Program[]; performed?: Performed }
   | Extract<ParseResult, { ok: false }>;
 
 /** One link, one program or many. A single program reads exactly as it always did. */
@@ -169,13 +262,16 @@ export async function decodePrograms(payload: string): Promise<SharedPrograms> {
   // Wire rows: one tuple, or an array of tuples when several programs were shared.
   const tuples = Array.isArray(data[0]) ? data : [data];
   const programs: Program[] = [];
+  let performed: Performed | undefined;
   for (const [index, tuple] of tuples.entries()) {
     try {
-      const json = fromWire(tuple);
-      if (json == null) return notAProgram();
-      const parsed = parseProgram(json);
+      const read = fromWire(tuple);
+      if (read == null) return notAProgram();
+      const parsed = parseProgram(read.json);
       if (!parsed.ok) return parsed;
       programs.push(parsed.program);
+      // Numbers belong to one workout, so they only ride a single-program link.
+      if (tuples.length === 1) performed = read.performed;
     } catch {
       return {
         ok: false,
@@ -186,7 +282,7 @@ export async function decodePrograms(payload: string): Promise<SharedPrograms> {
       };
     }
   }
-  return programs.length > 0 ? { ok: true, programs } : notAProgram();
+  return programs.length > 0 ? { ok: true, programs, ...(performed ? { performed } : {}) } : notAProgram();
 }
 
 function notAProgram(): SharedPrograms {

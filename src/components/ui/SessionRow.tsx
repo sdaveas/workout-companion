@@ -1,48 +1,25 @@
 import { useState } from 'react';
-import { usePrograms } from '../../store/programsStore';
 import { useSession } from '../../store/sessionStore';
 import { summarize } from '../../engine/summary';
-import { shareProgram } from '../../lib/shareProgram';
+import { shareSession } from '../../lib/shareProgram';
+import { ShareIcon } from './icons';
 import { formatDate, formatDuration } from '../../lib/format';
 import type { SessionRow as Row } from '../../storage/db';
 
-function ShareIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className="h-5 w-5"
-    >
-      <path d="M12 3v11" />
-      <path d="m8 7 4-4 4 4" />
-      <path d="M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6" />
-    </svg>
-  );
-}
-
 /**
- * One finished session: summary, the program's share link, and delete. A session
- * outlives its program, so a deleted or renamed program simply has no link to
- * send and the button disappears.
+ * One finished session: summary, its share link, and delete. The link carries the
+ * session's own snapshot of the program, so a deleted or renamed program still shares
+ * exactly what was done — the numbers included.
  */
 export function SessionRow({ row, actions = true }: { row: Row; actions?: boolean }) {
-  const programs = usePrograms((s) => s.programs);
   const removeSession = useSession((s) => s.removeSession);
   const [note, setNote] = useState<string | null>(null);
 
   const summary = summarize(row.state, row.finishedAt ?? row.state.updatedAt);
-  const canShare = programs.some((p) => p.id === row.programId);
 
   async function share() {
-    const program = programs.find((p) => p.id === row.programId);
-    if (!program) return;
     try {
-      const message = await shareProgram(program);
+      const message = await shareSession(row.state);
       if (message) setNote(message);
     } catch (err) {
       setNote(err instanceof Error ? err.message : String(err));
@@ -71,7 +48,7 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
             {summary.endedEarly && <span className="text-danger"> · ended early</span>}
           </p>
         </a>
-        {actions && canShare && (
+        {actions && (
           <button
             type="button"
             aria-label={`Share ${row.programName} from ${formatDate(row.finishedAt)}`}
