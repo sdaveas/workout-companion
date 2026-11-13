@@ -213,6 +213,11 @@ export function ProgramDetail({ id }: { id: string }) {
         >
           Copy it only (for the chat you already have open)
         </button>
+        {copied === 'yes' && (
+          <p role="status" className="mt-1 text-center text-xs text-accent">
+            Copied. Paste it as your next message in the chat.
+          </p>
+        )}
 
         <p className="mt-4 text-[10px] uppercase tracking-widest text-accent">Step 2</p>
         <h3 className="mt-1 text-sm font-semibold">When the coach answers</h3>
