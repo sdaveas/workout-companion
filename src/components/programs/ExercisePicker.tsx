@@ -33,6 +33,16 @@ export function ExercisePicker({
   /** The row just added: highlighted in the list and named in a toast at the bottom. */
   const [added, setAdded] = useState<{ name: string; at: number } | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  /** The library lives behind a button: 279 rows on screen is a wall, not a menu. */
+  const [open, setOpen] = useState(false);
+  const sheet = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    if (open && !el.open) el.showModal();
+    if (!open && el.open) el.close();
+  }, [open]);
 
   useEffect(() => {
     if (!added) return;
@@ -65,26 +75,59 @@ export function ExercisePicker({
     onPick(name);
     setQuery('');
     setPreview(null);
+    setOpen(false);
     // A new object each time, so tapping the same exercise twice still flashes.
     setAdded({ name, at: Date.now() });
   };
 
   return (
     <div className="mt-4">
-      <label className="block">
-        <span className="text-[10px] uppercase tracking-widest text-muted">Add an exercise</span>
-        <input
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="h-12 w-full rounded-xl border border-dashed border-line text-sm font-semibold text-muted"
+      >
+        + Add exercise
+      </button>
+
+      <dialog
+        ref={sheet}
+        aria-label="Add an exercise"
+        onClose={() => {
+          setOpen(false);
+          setQuery('');
+        }}
+        onCancel={() => setOpen(false)}
+        className="m-0 h-[100dvh] max-h-none w-full max-w-none rounded-none border-0 bg-ink p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] text-[#f5f6f7]"
+      >
+        <div className="mx-auto flex h-full max-w-md flex-col">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Add an exercise</h2>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="-mr-2 grid h-11 w-11 place-items-center rounded-full text-xl text-muted"
+            >
+              ×
+            </button>
+          </div>
+
+          <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search exercises"
           placeholder={`Search ${EXERCISE_LIBRARY.length} exercises…`}
           autoComplete="off"
-          className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
+          className="mt-2 h-12 w-full shrink-0 rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
         />
-      </label>
 
-      <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Filter by muscle group">
+      <div
+        className="mt-2 flex shrink-0 flex-wrap gap-2"
+        role="group"
+        aria-label="Filter by muscle group"
+      >
         {MUSCLE_GROUP_ORDER.map((group) => {
           const on = groups.includes(group);
           return (
@@ -105,8 +148,11 @@ export function ExercisePicker({
 
       <button
         type="button"
-        onClick={onNew}
-        className="mt-3 h-11 w-full rounded-xl border border-dashed border-line text-sm text-muted"
+        onClick={() => {
+          setOpen(false);
+          onNew();
+        }}
+        className="mt-3 h-11 w-full shrink-0 rounded-xl border border-dashed border-line text-sm text-muted"
       >
         + New exercise (my own)
       </button>
@@ -118,7 +164,7 @@ export function ExercisePicker({
       ) : (
         <ul
           aria-label="Exercises"
-          className="mt-3 max-h-[min(85vh,960px)] divide-y divide-line overflow-y-auto rounded-xl border border-line"
+          className="mt-3 min-h-0 flex-1 divide-y divide-line overflow-y-auto rounded-xl border border-line"
         >
           {rows.map((e) => (
             <li
@@ -157,6 +203,9 @@ export function ExercisePicker({
           ))}
         </ul>
       )}
+
+        </div>
+      </dialog>
 
       {added && (
         <p

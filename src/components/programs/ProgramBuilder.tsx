@@ -29,17 +29,20 @@ function Num({
   onChange,
   min = 0,
   max,
+  inputRef,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
   min?: number;
   max?: number;
+  inputRef?: (el: HTMLInputElement | null) => void;
 }) {
   return (
     <label className="block">
       <span className="text-[10px] uppercase tracking-widest text-muted">{label}</span>
       <input
+        ref={inputRef}
         type="number"
         inputMode="numeric"
         value={value}
@@ -62,17 +65,22 @@ export function ProgramBuilder({
   const [draft, setDraft] = useState<ProgramDraft>(() =>
     initial ? draftFromProgram(initial) : emptyDraft(),
   );
-  /** A row just added by hand: scroll to it and put the cursor in its name field. */
-  const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  const [focusAt, setFocusAt] = useState<number | null>(null);
+  /**
+   * The row just added: scroll to it and put the cursor where the next tap would go.
+   * A library pick arrives with a name, so the cursor starts at Sets; a row added by
+   * hand has no name yet and starts there.
+   */
+  const nameRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const setRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const [focus, setFocus] = useState<{ index: number; field: 'name' | 'sets' } | null>(null);
   useEffect(() => {
-    if (focusAt == null) return;
-    const el = inputs.current[focusAt];
-    setFocusAt(null);
+    if (!focus) return;
+    const el = (focus.field === 'name' ? nameRefs : setRefs).current[focus.index];
+    setFocus(null);
     if (!el) return;
     el.scrollIntoView({ block: 'center', behavior: 'smooth' });
     el.focus({ preventScroll: true });
-  }, [focusAt]);
+  }, [focus]);
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -91,9 +99,10 @@ export function ProgramBuilder({
   const addFromLibrary = (name: string) => {
     const known = libraryExercise(name);
     if (!known) return;
+    // blank rows are never saved, so they would only sit above the new exercise
+    const kept = draft.exercises.filter((e) => e.name.trim());
     setDraft((d) => ({
       ...d,
-      // blank rows are never saved, so they would only sit above the new exercise
       exercises: [
         ...d.exercises.filter((e) => e.name.trim()),
         {
@@ -107,6 +116,7 @@ export function ProgramBuilder({
         },
       ],
     }));
+    setFocus({ index: kept.length, field: 'sets' });
   };
 
   const ready = draft.name.trim().length > 0 && draft.exercises.some((e) => e.name.trim());
@@ -177,7 +187,7 @@ export function ProgramBuilder({
                 </span>
                 <input
                   ref={(el) => {
-                    inputs.current[i] = el;
+                    nameRefs.current[i] = el;
                   }}
                   value={ex.name}
                   onChange={(e) => patchExercise(i, { name: e.target.value })}
@@ -216,7 +226,15 @@ export function ProgramBuilder({
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-2">
-              <Num label="Sets" value={ex.sets} min={1} onChange={(sets) => patchExercise(i, { sets })} />
+              <Num
+                inputRef={(el) => {
+                  setRefs.current[i] = el;
+                }}
+                label="Sets"
+                value={ex.sets}
+                min={1}
+                onChange={(sets) => patchExercise(i, { sets })}
+              />
               <Num
                 label="Reps min"
                 value={ex.repsMin}
@@ -269,7 +287,7 @@ export function ProgramBuilder({
         onPick={addFromLibrary}
         onNew={() => {
           setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }));
-          setFocusAt(draft.exercises.length);
+          setFocus({ index: draft.exercises.length, field: 'name' });
         }}
       />
 
