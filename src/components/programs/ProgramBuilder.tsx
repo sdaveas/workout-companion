@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Program, Weekday } from '../../engine/types';
 import { formatDay } from '../../lib/format';
 import { usePrograms } from '../../store/programsStore';
@@ -62,13 +62,17 @@ export function ProgramBuilder({
   const [draft, setDraft] = useState<ProgramDraft>(() =>
     initial ? draftFromProgram(initial) : emptyDraft(),
   );
-  /** Adding a row changes the list far below the button, so say what happened. */
-  const [added, setAdded] = useState<string | null>(null);
+  /** A row just added by hand: scroll to it and put the cursor in its name field. */
+  const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  const [focusAt, setFocusAt] = useState<number | null>(null);
   useEffect(() => {
-    if (!added) return;
-    const timer = setTimeout(() => setAdded(null), 2500);
-    return () => clearTimeout(timer);
-  }, [added]);
+    if (focusAt == null) return;
+    const el = inputs.current[focusAt];
+    setFocusAt(null);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.focus({ preventScroll: true });
+  }, [focusAt]);
 
   const patch = (p: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...p }));
   const patchExercise = (i: number, p: Partial<DraftExercise>) =>
@@ -103,7 +107,6 @@ export function ProgramBuilder({
         },
       ],
     }));
-    setAdded(`${known.name} added`);
   };
 
   const ready = draft.name.trim().length > 0 && draft.exercises.some((e) => e.name.trim());
@@ -173,9 +176,12 @@ export function ProgramBuilder({
                   Exercise {i + 1}
                 </span>
                 <input
+                  ref={(el) => {
+                    inputs.current[i] = el;
+                  }}
                   value={ex.name}
                   onChange={(e) => patchExercise(i, { name: e.target.value })}
-                  placeholder="Goblet Squat"
+                  placeholder="Type exercise name"
                   className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
                 />
               </label>
@@ -259,17 +265,11 @@ export function ProgramBuilder({
         ))}
       </ul>
 
-      {added && (
-        <p role="status" className="mt-2 rounded-lg bg-surface px-3 py-2 text-sm text-accent">
-          {added}
-        </p>
-      )}
-
       <ExercisePicker
         onPick={addFromLibrary}
         onNew={() => {
           setDraft((d) => ({ ...d, exercises: [...d.exercises, emptyExercise()] }));
-          setAdded('Blank exercise added');
+          setFocusAt(draft.exercises.length);
         }}
       />
 

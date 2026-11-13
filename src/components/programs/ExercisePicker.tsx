@@ -30,7 +30,15 @@ export function ExercisePicker({
   const [query, setQuery] = useState('');
   const [groups, setGroups] = useState<MuscleGroup[]>([]);
   const [preview, setPreview] = useState<LibraryExercise | null>(null);
+  /** The row just added: highlighted in the list and named in a toast at the bottom. */
+  const [added, setAdded] = useState<{ name: string; at: number } | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(null), 2000);
+    return () => clearTimeout(timer);
+  }, [added]);
 
   useEffect(() => {
     const el = dialog.current;
@@ -57,6 +65,8 @@ export function ExercisePicker({
     onPick(name);
     setQuery('');
     setPreview(null);
+    // A new object each time, so tapping the same exercise twice still flashes.
+    setAdded({ name, at: Date.now() });
   };
 
   return (
@@ -93,6 +103,14 @@ export function ExercisePicker({
         })}
       </div>
 
+      <button
+        type="button"
+        onClick={onNew}
+        className="mt-3 h-11 w-full rounded-xl border border-dashed border-line text-sm text-muted"
+      >
+        + New exercise (my own)
+      </button>
+
       {rows.length === 0 ? (
         <p className="mt-4 text-sm text-muted">
           Nothing matches “{query.trim()}”. Add it as your own →
@@ -103,14 +121,21 @@ export function ExercisePicker({
           className="mt-3 max-h-[min(85vh,960px)] divide-y divide-line overflow-y-auto rounded-xl border border-line"
         >
           {rows.map((e) => (
-            <li key={e.name} className="flex items-stretch bg-surface">
+            <li
+              key={e.name}
+              className={`flex items-stretch transition-colors ${
+                added?.name === e.name ? 'bg-accent/15' : 'bg-surface'
+              }`}
+            >
               <button
                 type="button"
                 aria-label={e.name}
                 onClick={() => add(e.name)}
                 className="flex min-h-11 flex-1 items-center justify-between gap-3 py-2 pl-3 text-left text-sm"
               >
-                <span>{e.name}</span>
+                <span className={added?.name === e.name ? 'font-semibold text-accent' : ''}>
+                  {e.name}
+                </span>
                 <span aria-hidden className="shrink-0 text-[11px] text-muted">
                   {e.muscle}
                 </span>
@@ -133,13 +158,16 @@ export function ExercisePicker({
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={onNew}
-        className="mt-2 h-11 w-full rounded-xl border border-dashed border-line text-sm text-muted"
-      >
-        + New exercise (my own)
-      </button>
+      {added && (
+        <p
+          role="status"
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
+          <span className="block rounded-xl bg-field px-3 py-2 text-center text-sm text-accent shadow-lg ring-1 ring-line">
+            {added.name} added
+          </span>
+        </p>
+      )}
 
       <dialog
         ref={dialog}
