@@ -1,7 +1,8 @@
 /**
  * Builds public/og.jpg — the static link-preview card. Scrapers never see the
- * `#` part of a share URL, so the card cannot name the program being shared; it
- * shows what a workout looks like in the app instead.
+ * `#` part of a share URL, so the card cannot name the workout being shared. It
+ * used to show a sample program; that read as a lie in the chat. It now points
+ * at the link instead of pretending to be the session.
  *
  * Run: node scripts/og.mjs   (needs the dev server's Playwright install, no server)
  */
@@ -12,15 +13,6 @@ const SURFACE = '#15161a';
 const LINE = '#26282e';
 const MUTED = '#8b8f98';
 const ACCENT = '#d7ff3f';
-
-// Workout A, as the app stores it.
-const ROWS = [
-  ['Push-up', '3 × 6–10', '1:30'],
-  ['Dumbbell Row', '3 × 10–12', '1:30'],
-  ['Shoulder Press', '2 × 8–12', '1:00'],
-  ['Romanian Deadlift', '3 × 12', '1:30'],
-  ['Plank', '3 × 30s', '1:00'],
-];
 
 const html = `<!doctype html><meta charset="utf-8">
 <style>
@@ -46,11 +38,8 @@ const html = `<!doctype html><meta charset="utf-8">
   }
   .card h2 { font-size: 15px; letter-spacing: 3.5px; color: ${ACCENT}; font-weight: 600; }
   .card p { font-size: 17px; color: ${MUTED}; margin-top: 6px; }
-  .row { display: flex; align-items: baseline; gap: 12px; padding: 15px 0; border-top: 1px solid ${LINE}; }
-  .row:first-of-type { margin-top: 18px; }
-  .row .n { flex: 1; font-size: 22px; }
-  .row .s { font-size: 20px; font-variant-numeric: tabular-nums; color: #e8e9ec; }
-  .row .r { width: 74px; text-align: right; font-size: 16px; color: ${MUTED}; font-variant-numeric: tabular-nums; }
+  .card .big { font-size: 34px; line-height: 1.25; color: #f2f3f5; font-weight: 600; margin-top: 22px; letter-spacing: -0.5px; }
+  .card .then { font-size: 20px; margin-top: 14px; }
 </style>
 <div class="left">
   <div class="eyebrow">OFFLINE WORKOUT GUIDE</div>
@@ -58,9 +47,9 @@ const html = `<!doctype html><meta charset="utf-8">
   <div class="tag">Set by set. Rest timed.<br>Nothing to sign up for.</div>
 </div>
 <div class="card">
-  <h2>A SAMPLE PROGRAM</h2>
-  <p>yours travels in the link</p>
-  ${ROWS.map(([n, s, r]) => `<div class="row"><span class="n">${n}</span><span class="s">${s}</span><span class="r">${r}</span></div>`).join('')}
+  <h2>SHARED WORKOUT</h2>
+  <p class="big">See my session here.</p>
+  <p class="then">Every set, rep and weight, exactly as it was done.</p>
 </div>`;
 
 const browser = await chromium.launch();
