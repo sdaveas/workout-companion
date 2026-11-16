@@ -498,7 +498,7 @@ export async function decodeProgram(payload: string): Promise<ParseResult> {
  * so a fresh query string is the only way to make them look again; the program
  * itself still lives in the hash and never touches the server.
  */
-export const SHARE_VERSION = 6;
+export const SHARE_VERSION = 7;
 
 export function shareUrl(payload: string, base = location.origin + location.pathname): string {
   return `${base}?v=${SHARE_VERSION}${SHARE_PATH}${payload}`;
