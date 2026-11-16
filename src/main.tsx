@@ -2,9 +2,17 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { parkSharedText } from './lib/device';
+import { payloadFromUrl, SHARE_PATH } from './lib/share';
 import './index.css';
 
 parkSharedText();
+
+// A chat that opens its preview card to the scraped URL drops the `#`, so the payload
+// travels in the query string. Put it back where the router looks before the app starts.
+const carried = payloadFromUrl(location.href);
+if (carried && !location.hash.startsWith(SHARE_PATH + carried)) {
+  history.replaceState(null, '', location.pathname + SHARE_PATH + carried);
+}
 
 // Ask the browser to keep IndexedDB out of eviction (iOS honours this for installed PWAs).
 // ponytail: best-effort; if it is refused, History → Export is the backup path.

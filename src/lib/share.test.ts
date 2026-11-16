@@ -8,6 +8,7 @@ import {
   encodeProgram,
   encodePrograms,
   encodeSession,
+  payloadFromUrl,
   shareUrl,
 } from './share';
 
@@ -79,7 +80,7 @@ describe('share link', () => {
 
   it('carries a preview version so a changed card is re-fetched', async () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
-    expect(url.startsWith('https://example.com/app/?v=7#/add/')).toBe(true);
+    expect(url.startsWith('https://example.com/app/?v=7&d=')).toBe(true);
   });
 
   it('keeps a realistic program link short', async () => {
@@ -92,7 +93,7 @@ describe('share link', () => {
     const second: Program = { ...program, id: 'workout-b', name: 'Workout B' };
     const url = shareUrl(await encodePrograms([program, second]), 'https://example.com/app/');
     expect(url.length).toBeLessThan(500);
-    const back = await decodePrograms(url.split('#/add/')[1]);
+    const back = await decodePrograms(payloadFromUrl(url) ?? '');
     expect(back.ok).toBe(true);
     if (!back.ok) return;
     expect(back.programs.map((p) => p.name)).toEqual([program.name, 'Workout B']);
@@ -115,6 +116,13 @@ describe('share link', () => {
     if (!back.ok) return;
     expect(back.programs[0].name).toBe('Workout B');
     expect(back.performed?.[0]?.[0]).toMatchObject({ reps: 6, weightKg: null });
+  });
+
+  it('reads the payload from the query, and from an older link that kept it in the hash', () => {
+    expect(payloadFromUrl('https://example.com/app/?v=7&d=2Aabc_-')).toBe('2Aabc_-');
+    expect(payloadFromUrl('https://example.com/app/?v=4#/add/2Aabc_-')).toBe('2Aabc_-');
+    expect(payloadFromUrl('https://example.com/app/?v=7')).toBeNull();
+    expect(payloadFromUrl('https://example.com/app/?v=7&d=not base64!')).toBeNull();
   });
 
   it('rejects a link that is not a program', async () => {

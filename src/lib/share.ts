@@ -495,11 +495,29 @@ export async function decodeProgram(payload: string): Promise<ParseResult> {
 
 /**
  * Bump when the link preview card changes. Chat clients cache the unfurl per URL,
- * so a fresh query string is the only way to make them look again; the program
- * itself still lives in the hash and never touches the server.
+ * so a fresh query string is the only way to make them look again.
  */
 export const SHARE_VERSION = 7;
 
+/**
+ * The payload rides in the query string, not the fragment. A chat that opens its
+ * preview card to the scraped URL drops the `#`, and with it the whole workout;
+ * a query survives that trip, and the app moves it into the hash on boot.
+ */
 export function shareUrl(payload: string, base = location.origin + location.pathname): string {
-  return `${base}?v=${SHARE_VERSION}${SHARE_PATH}${payload}`;
+  return `${base}?v=${SHARE_VERSION}&d=${payload}`;
+}
+
+/** The payload from a share URL — ours in the query, an older one in the fragment. */
+export function payloadFromUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url, 'https://x/');
+  } catch {
+    return null;
+  }
+  const inQuery = parsed.searchParams.get('d');
+  if (inQuery && /^[A-Za-z0-9_-]+$/.test(inQuery)) return inQuery;
+  const inHash = parsed.hash.match(/#\/add\/([A-Za-z0-9_-]+)/);
+  return inHash ? inHash[1] : null;
 }
