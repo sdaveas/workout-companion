@@ -29,16 +29,36 @@ export async function sharePrograms(programs: Program[]): Promise<string | null>
  * payload lives in the fragment, which no server ever sees. So the numbers ride in two
  * places the app controls: the share text, and a picture of the session drawn here.
  */
-export async function shareSession(state: WorkoutState): Promise<string | null> {
+export interface SessionShare {
+  title: string;
+  url: string;
+  text: string;
+  file: File | null;
+}
+
+/**
+ * Everything the tap needs, built ahead of the tap. WebKit drops the gesture across an
+ * await, and a share sheet opened after two of them is refused — so the screen prepares
+ * this while it renders and `sendSession` is nothing but the call itself.
+ */
+export async function prepareSession(state: WorkoutState): Promise<SessionShare> {
   const summary = summarize(state, state.finishedAt ?? state.updatedAt);
   const lines = sessionShareLines(summary);
   const url = shareUrl(await encodeSession(state));
   const card = await sessionCard(lines);
   // The picture carries the numbers; the text would only repeat them. The link rides
   // along as the caption, because some apps drop a separate URL field beside a file.
-  return card
-    ? send(state.program.name, url, url, card)
-    : send(state.program.name, url, sessionMessage(lines, url));
+  return {
+    title: state.program.name,
+    url,
+    text: card ? url : sessionMessage(lines, url),
+    file: card,
+  };
+}
+
+/** Call straight from the tap, before anything else. */
+export function sendSession(share: SessionShare): Promise<string | null> {
+  return send(share.title, share.url, share.text, share.file);
 }
 
 /** Share sheet when the phone has one; the clipboard when it does not (every desktop). */
@@ -66,6 +86,8 @@ async function send(
       return null;
     } catch (err) {
       if ((err as Error).name === 'AbortError') return null;
+      await navigator.clipboard.writeText(text ?? url);
+      return `The share sheet refused (${(err as Error).name || 'error'}). Link copied.`;
     }
   }
   await navigator.clipboard.writeText(text ?? url);

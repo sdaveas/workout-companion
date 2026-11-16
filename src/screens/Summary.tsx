@@ -8,7 +8,7 @@ import { summarize } from '../engine/summary';
 import type { WorkoutAction } from '../engine/types';
 import { formatClock, formatDate } from '../lib/format';
 import { planProgramUpdate } from '../lib/programUpdate';
-import { shareSession } from '../lib/shareProgram';
+import { prepareSession, sendSession, type SessionShare } from '../lib/shareProgram';
 import { ShareIcon } from '../components/ui/icons';
 import { usePrograms } from '../store/programsStore';
 import { Button } from '../components/ui/Button';
@@ -40,6 +40,7 @@ export function Summary() {
   const saveProgram = usePrograms((s) => s.save);
   const [updateState, setUpdateState] = useState<'idle' | 'busy' | 'applied' | 'dismissed'>('idle');
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [share, setShare] = useState<SessionShare | null>(null);
 
   useEffect(() => {
     if (!param) return;
@@ -90,10 +91,26 @@ export function Summary() {
     return coachBrief({ program: storedProgram ?? source.program, sessions: [forBrief] });
   }
 
-  async function shareIt() {
+  // Built while the screen renders: WebKit refuses a share sheet opened after an await.
+  useEffect(() => {
     if (!source) return;
+    let alive = true;
+    setShare(null);
+    void prepareSession(source)
+      .then((ready) => {
+        if (alive) setShare(ready);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+    // The card is the session's numbers: it changes when the session does, not on a re-render.
+  }, [source?.sessionId, source?.finishedAt]);
+
+  async function shareIt() {
+    if (!share) return;
     try {
-      setShareNote(await shareSession(source));
+      setShareNote(await sendSession(share));
     } catch (err) {
       setShareNote(err instanceof Error ? err.message : String(err));
     }
@@ -151,6 +168,7 @@ export function Summary() {
           <button
             type="button"
             aria-label="Share this workout"
+            disabled={!share}
             onClick={() => void shareIt()}
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
           >

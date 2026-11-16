@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSession } from '../../store/sessionStore';
 import { summarize } from '../../engine/summary';
-import { shareSession } from '../../lib/shareProgram';
+import { prepareSession, sendSession, type SessionShare } from '../../lib/shareProgram';
 import { ShareIcon } from './icons';
 import { formatDate, formatDuration } from '../../lib/format';
 import type { SessionRow as Row } from '../../storage/db';
@@ -14,13 +14,29 @@ import type { SessionRow as Row } from '../../storage/db';
 export function SessionRow({ row, actions = true }: { row: Row; actions?: boolean }) {
   const removeSession = useSession((s) => s.removeSession);
   const [note, setNote] = useState<string | null>(null);
+  // Built on the way down to the tap: WebKit refuses a share sheet opened after an
+  // await, and building one card per row up front would cost a canvas each.
+  const ready = useRef<SessionShare | null>(null);
+  const building = useRef(false);
 
   const summary = summarize(row.state, row.finishedAt ?? row.state.updatedAt);
 
+  function prepare() {
+    if (ready.current || building.current) return;
+    building.current = true;
+    void prepareSession(row.state)
+      .then((built) => {
+        ready.current = built;
+      })
+      .catch(() => {
+        building.current = false;
+      });
+  }
+
   async function share() {
     try {
-      const message = await shareSession(row.state);
-      if (message) setNote(message);
+      const built = ready.current ?? (await prepareSession(row.state));
+      setNote(await sendSession(built));
     } catch (err) {
       setNote(err instanceof Error ? err.message : String(err));
     }
@@ -52,6 +68,8 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
           <button
             type="button"
             aria-label={`Share ${row.programName} from ${formatDate(row.finishedAt)}`}
+            onPointerDown={prepare}
+            onFocus={prepare}
             onClick={() => void share()}
             className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-muted"
           >
