@@ -80,7 +80,7 @@ describe('share link', () => {
 
   it('carries a preview version so a changed card is re-fetched', async () => {
     const url = shareUrl(await encodeProgram(program), 'https://example.com/app/');
-    expect(url.startsWith('https://example.com/app/?v=7&d=')).toBe(true);
+    expect(url.startsWith('https://example.com/app/?v=8&d=')).toBe(true);
   });
 
   it('keeps a realistic program link short', async () => {
@@ -119,10 +119,10 @@ describe('share link', () => {
   });
 
   it('reads the payload from the query, and from an older link that kept it in the hash', () => {
-    expect(payloadFromUrl('https://example.com/app/?v=7&d=2Aabc_-')).toBe('2Aabc_-');
+    expect(payloadFromUrl('https://example.com/app/?v=8&d=2Aabc_-')).toBe('2Aabc_-');
     expect(payloadFromUrl('https://example.com/app/?v=4#/add/2Aabc_-')).toBe('2Aabc_-');
     expect(payloadFromUrl('https://example.com/app/?v=7')).toBeNull();
-    expect(payloadFromUrl('https://example.com/app/?v=7&d=not base64!')).toBeNull();
+    expect(payloadFromUrl('https://example.com/app/?v=8&d=not base64!')).toBeNull();
   });
 
   it('rejects a link that is not a program', async () => {

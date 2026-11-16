@@ -48,7 +48,7 @@ const html = `<!doctype html><meta charset="utf-8">
 </div>
 <div class="card">
   <h2>SHARED WORKOUT</h2>
-  <p class="big">See my session here.</p>
+  <p class="big">Check out my workout!</p>
   <p class="then">Every set, rep and weight, exactly as it was done.</p>
 </div>`;
 

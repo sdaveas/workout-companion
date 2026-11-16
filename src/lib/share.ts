@@ -497,7 +497,7 @@ export async function decodeProgram(payload: string): Promise<ParseResult> {
  * Bump when the link preview card changes. Chat clients cache the unfurl per URL,
  * so a fresh query string is the only way to make them look again.
  */
-export const SHARE_VERSION = 7;
+export const SHARE_VERSION = 8;
 
 /**
  * The payload rides in the query string, not the fragment. A chat that opens its
