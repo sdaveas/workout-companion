@@ -1,12 +1,11 @@
 import type { Program, WorkoutState } from '../engine/types';
 import { summarize } from '../engine/summary';
-import { formatDuration } from './format';
 import { encodeProgram, encodePrograms, encodeSession, shareUrl } from './share';
+import { sessionCard, sessionMessage, sessionShareLines } from './shareCard';
 
 /**
- * The share sheet and the clipboard get the link and nothing else. A caption beside
- * it looks right in a chat, but "Copy" on the sheet then hands over the caption —
- * the one thing that is not the link.
+ * A program shares as the bare link: a caption beside it looks right in a chat, but
+ * "Copy" on the sheet then hands over the caption — the one thing that is not the link.
  */
 export async function shareProgram(program: Program): Promise<string | null> {
   return send(program.name, shareUrl(await encodeProgram(program)));
@@ -26,33 +25,49 @@ export async function sharePrograms(programs: Program[]): Promise<string | null>
  * A finished workout: the same link, plus the numbers that were actually logged. The
  * receiver still imports the plan; the numbers are a report they can read and copy.
  *
- * The numbers also ride in the share sheet's text, because the link card in a chat is
- * drawn by the chat app from the page's static meta tags — the payload lives in the
- * fragment, which no server ever sees. Clipboard still gets the bare link.
+ * A link card in a chat is drawn by the chat app from the page's static meta tags — the
+ * payload lives in the fragment, which no server ever sees. So the numbers ride in two
+ * places the app controls: the share text, and a picture of the session drawn here.
  */
 export async function shareSession(state: WorkoutState): Promise<string | null> {
   const summary = summarize(state, state.finishedAt ?? state.updatedAt);
-  const line = [
-    state.program.name,
-    formatDuration(summary.durationMs),
-    `${summary.setsCompleted} sets`,
-    summary.volumeKg > 0 ? `${Math.round(summary.volumeKg)} kg` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  return send(state.program.name, shareUrl(await encodeSession(state)), line);
+  const lines = sessionShareLines(summary);
+  const url = shareUrl(await encodeSession(state));
+  const card = await sessionCard(lines);
+  // The picture carries the numbers; the text would only repeat them. The link rides
+  // along as the caption, because some apps drop a separate URL field beside a file.
+  return card
+    ? send(state.program.name, url, url, card)
+    : send(state.program.name, url, sessionMessage(lines, url));
 }
 
 /** Share sheet when the phone has one; the clipboard when it does not (every desktop). */
-async function send(title: string, url: string, text?: string): Promise<string | null> {
+async function send(
+  title: string,
+  url: string,
+  text?: string,
+  file?: File | null,
+): Promise<string | null> {
   if (navigator.share) {
+    const withFile =
+      file != null &&
+      typeof navigator.canShare === 'function' &&
+      navigator.canShare({ files: [file] });
+    // `text` always carries the link too, so it rides alone: a URL field beside it
+    // would post the link twice.
+    const data: ShareData =
+      text == null
+        ? { title, url }
+        : withFile && file
+          ? { title, text, files: [file] }
+          : { title, text };
     try {
-      await navigator.share(text ? { title, text, url } : { title, url });
+      await navigator.share(data);
       return null;
     } catch (err) {
       if ((err as Error).name === 'AbortError') return null;
     }
   }
-  await navigator.clipboard.writeText(url);
+  await navigator.clipboard.writeText(text ?? url);
   return `Link copied: ${title}.`;
 }

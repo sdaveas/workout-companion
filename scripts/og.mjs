@@ -58,8 +58,8 @@ const html = `<!doctype html><meta charset="utf-8">
   <div class="tag">Set by set. Rest timed.<br>Nothing to sign up for.</div>
 </div>
 <div class="card">
-  <h2>EXAMPLE WORKOUT</h2>
-  <p>the link carries the real one</p>
+  <h2>A SAMPLE PROGRAM</h2>
+  <p>yours travels in the link</p>
   ${ROWS.map(([n, s, r]) => `<div class="row"><span class="n">${n}</span><span class="s">${s}</span><span class="r">${r}</span></div>`).join('')}
 </div>`;
 
