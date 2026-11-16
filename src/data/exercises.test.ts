@@ -156,6 +156,11 @@ describe('which drawing an exercise gets', () => {
     expect(figureSlug('Dumbbell Seated Shoulder Press')).toBe('overhead-press');
     expect(figureSlug('Skull Crusher')).toBe('overhead-tricep-extension');
     expect(figureSlug('Hanging Knee Raise')).toBe('plank');
+    expect(figureSlug('Lying Leg Raise')).toBe('lying-leg-raise');
+    expect(figureSlug('Lying leg rise')).toBe('lying-leg-raise');
+    expect(figureSlug('Reverse Crunch')).toBe('reverse-crunch');
+    expect(figureSlug('Cable Crunch')).toBe('crunch');
+    expect(figureSlug('Decline Sit-Up')).toBe('crunch');
     expect(figureSlug('Side Plank Hip Dip')).toBe('side-plank');
     expect(figureSlug('Romanian Deadlift')).toBe('romanian-deadlift');
   });

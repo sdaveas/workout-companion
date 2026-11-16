@@ -45,7 +45,16 @@ export function activityGrid(
   );
 }
 
-/** The month a column starts in, once per month, so the axis stays readable. */
+/** A month label is three columns wide. */
+const LABEL_COLUMNS = 3;
+
+/**
+ * The month a column starts in, once per month, so the axis stays readable.
+ *
+ * A month that starts a column or two after the last label is dropped: its text would
+ * sit on top of the previous one, and in the grid it wrapped onto a second row and
+ * printed through the cells below.
+ */
 export function monthLabels(grid: DayCell[][]): Array<{ index: number; label: string }> {
   const labels: Array<{ index: number; label: string }> = [];
   let last = -1;
@@ -53,11 +62,13 @@ export function monthLabels(grid: DayCell[][]): Array<{ index: number; label: st
     const first = column[0].day;
     const month = new Date(first).getMonth();
     if (month === last) continue;
+    // The month is noted either way; only the label is skipped.
+    last = month;
+    if (labels.length > 0 && index - labels[labels.length - 1].index < LABEL_COLUMNS) continue;
     labels.push({
       index,
       label: new Date(first).toLocaleDateString(undefined, { month: 'short' }),
     });
-    last = month;
   }
   return labels;
 }

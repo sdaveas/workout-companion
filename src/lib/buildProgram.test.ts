@@ -83,6 +83,39 @@ describe('buildProgramJson', () => {
     if (result.ok) expect(result.program.exercises.map((e) => e.name)).toEqual(['Plank']);
   });
 
+  it('keeps the fields the form does not edit when updating a saved program', () => {
+    const original = parseProgram(
+      JSON.stringify({
+        schema_version: 1,
+        id: 'base',
+        name: 'Base',
+        description: 'Day 1 of 3',
+        estimated_duration_minutes: 45,
+        exercises: [
+          {
+            id: 'squat',
+            name: 'Squat',
+            sets: 3,
+            reps: { min: 5, max: 5 },
+            rest_seconds: 90,
+            instructions: ['Brace hard.'],
+          },
+        ],
+      }),
+    );
+    if (!original.ok) throw new Error('fixture must parse');
+
+    const draft = { ...draftFromProgram(original.program), name: 'Base, renamed' };
+    const result = parseProgram(buildProgramJson(draft, original.program.id, original.program));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.program.id).toBe('base');
+    expect(result.program.name).toBe('Base, renamed');
+    expect(result.program.description).toBe('Day 1 of 3');
+    expect(result.program.estimatedDurationMinutes).toBe(45);
+    expect(result.program.exercises[0].instructions).toEqual(['Brace hard.']);
+  });
+
   it('falls back to a stable id for names with no usable characters', () => {
     const draft = emptyDraft();
     draft.name = '!!!';

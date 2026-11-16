@@ -169,14 +169,15 @@ describe('auto mode', () => {
     expect(s.status).toBe('resting');
   });
 
-  it('turns auto off on undo and does not re-fire', () => {
+  it('keeps auto on across undo and gives the restored set a fresh clock', () => {
     let s = auto(oneLift);
     s = run(s, { type: 'COMPLETE_SET', now: T0 + 25_000, reps: 10, weightKg: null });
     expect(s.currentSetIndex).toBe(1);
     s = run(s, { type: 'UNDO', now: T0 + 26_000 });
-    expect(s.mode).toBe('manual');
-    expect(s.stageStartedAt).toBe(null);
+    expect(s.mode).toBe('auto');
     expect(s.currentSetIndex).toBe(0);
+    // A fresh clock, not the spent one: nothing fires on the tick right after undo.
+    expect(s.stageStartedAt).toBe(T0 + 26_000);
     expect(dueAction(s, T0 + 26_000)).toBe(null);
   });
 

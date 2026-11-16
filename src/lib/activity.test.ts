@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activityGrid } from './activity';
+import { activityGrid, monthLabels } from './activity';
 
 /** Local noon, so a DST shift can never move the date. */
 const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).getTime();
@@ -33,5 +33,27 @@ describe('activityGrid', () => {
   it('ignores a session that has not finished', () => {
     const grid = activityGrid([{ finishedAt: null }], at(2026, 11, 11), 2);
     expect(grid.flat().every((c) => c.count === 0)).toBe(true);
+  });
+
+  it('keeps month labels far enough apart to be read', () => {
+    // One column per first day; month changes at 0, 1, 5, 6 and 9.
+    const firstDays = [
+      [2026, 7, 27],
+      [2026, 8, 3],
+      [2026, 8, 10],
+      [2026, 8, 17],
+      [2026, 8, 31],
+      [2026, 9, 7],
+      [2026, 10, 5],
+      [2026, 10, 12],
+      [2026, 10, 19],
+      [2026, 11, 9],
+    ] as const;
+    const grid = firstDays.map(([y, m, d]) =>
+      Array.from({ length: 7 }, () => ({ day: midnight(y, m, d), count: 0 })),
+    );
+
+    // Aug at column 1 would print over Jul; Oct at 6 would print over Sep.
+    expect(monthLabels(grid).map((l) => l.index)).toEqual([0, 5, 9]);
   });
 });

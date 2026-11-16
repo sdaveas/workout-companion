@@ -71,13 +71,24 @@ function handle(s: WorkoutState, e: WorkoutEvent): WorkoutState | null {
     case 'SKIP_SET':
       return inStatus(s, ['exercise_active']) ? skipSet(s, e) : null;
 
+    case 'REPEAT_SET':
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete'])
+        ? repeatSet(s, e)
+        : null;
+
     case 'UPDATE_SET_RESULT':
       return inStatus(s, ['exercise_active', 'resting', 'exercise_complete', 'completed'])
         ? updateSetResult(s, e)
         : null;
 
     case 'SET_DRAFT':
-      return inStatus(s, ['exercise_active']) ? setDraft(s, e) : null;
+      // Allowed during the break too: the next set's reps are decided while resting.
+      return inStatus(s, ['exercise_active', 'resting']) ? setDraft(s, e) : null;
+
+    case 'SET_EXERCISE_RESULT':
+      return inStatus(s, ['exercise_active', 'resting', 'exercise_complete'])
+        ? setExerciseResult(s, e)
+        : null;
 
     case 'PAUSE':
       return inStatus(s, ['exercise_active', 'resting', 'exercise_complete']) ? pause(s, e) : null;
@@ -209,6 +220,58 @@ function completeSet(
     status: rest.restStartedAt != null ? 'resting' : 'exercise_active',
     ...rest,
     ...stage,
+  };
+}
+
+/**
+ * One more set of the current exercise, as a fresh row after the last one recorded.
+ *
+ * Same action for two wishes: the set was logged as one when it should have been two
+ * hands, or the session simply wants another set. The new rows start uncompleted, and
+ * the program stays untouched — the session records what was actually done.
+ */
+function repeatSet(s: WorkoutState, e: { now: number }): WorkoutState {
+  const exercise = currentExercise(s);
+  const record = s.exerciseRecords[s.currentExerciseIndex];
+  const sets = record.sets;
+  if (sets.length === 0) throw new InvalidTransition(s.status, 'REPEAT_SET');
+
+  // On exercise_complete the index already sits on the last set, which is the one to repeat.
+  const template = sets[Math.min(s.currentSetIndex, sets.length - 1)];
+  const nextNumber = Math.max(...sets.map((x) => x.setNumber)) + 1;
+  // A one-hand exercise records one row per hand, so a repeat adds a left and a right.
+  const sides = exercise.perHand ? (['left', 'right'] as const) : ([null] as const);
+  const rows = sides.map((side, i) => ({
+    setNumber: nextNumber + i,
+    side,
+    targetReps: template.targetReps,
+    targetWeightKg: template.targetWeightKg,
+    actualReps: null,
+    actualWeightKg: null,
+    completed: false,
+    skipped: false,
+    completedAt: null,
+  }));
+
+  return {
+    ...s,
+    exerciseRecords: s.exerciseRecords.map((r, i) =>
+      i === s.currentExerciseIndex
+        ? {
+            ...r,
+            sets: [...sets, ...rows],
+            completedAt: null,
+            skipped: false,
+            skippedAt: null,
+          }
+        : r,
+    ),
+    currentSetIndex: sets.length,
+    draft: draftFor(exercise),
+    undoStack: withUndo(s),
+    status: 'exercise_active',
+    ...clearedRest(),
+    ...stageClock(s.mode, exercise, e.now),
   };
 }
 
@@ -349,10 +412,7 @@ function rememberRest(s: WorkoutState, restDurationMs: number): WorkoutState {
   return { ...s, restUsed };
 }
 
-function adjustRest(
-  s: WorkoutState,
-  e: Extract<WorkoutEvent, { type: 'ADJUST_REST' }>,
-): WorkoutState {
+function adjustRest(s: WorkoutState, e: Extract<WorkoutEvent, { type: 'ADJUST_REST' }>): WorkoutState {
   const rest = rebaseRest(s, e.now, e.seconds);
   return rememberRest({ ...s, ...rest }, rest.restDurationMs);
 }
@@ -404,9 +464,7 @@ function skipExercise(s: WorkoutState, e: { now: number }): WorkoutState {
           ...r,
           skipped: true,
           skippedAt: e.now,
-          sets: r.sets.map((set) =>
-            set.completed ? set : { ...set, skipped: true, completedAt: e.now },
-          ),
+          sets: r.sets.map((set) => (set.completed ? set : { ...set, skipped: true, completedAt: e.now })),
         }
       : r,
   );
@@ -425,9 +483,7 @@ function finish(s: WorkoutState, e: { now: number }): WorkoutState {
   const records = s.exerciseRecords.map((r, i) => {
     if (i < s.currentExerciseIndex) return r;
     const from = i === s.currentExerciseIndex ? s.currentSetIndex : 0;
-    const sets = r.sets.map((set, j) =>
-      j >= from && !set.completed ? { ...set, skipped: true, completedAt: e.now } : set,
-    );
+    const sets = r.sets.map((set, j) => (j >= from && !set.completed ? { ...set, skipped: true, completedAt: e.now } : set));
     const anySkipped = sets.some((set) => set.skipped);
     return { ...r, sets, skipped: r.skipped || anySkipped };
   });
@@ -449,8 +505,11 @@ function finish(s: WorkoutState, e: { now: number }): WorkoutState {
 
 /**
  * Undo is a manual correction: the restored stage may have no clock, a spent clock
- * or an expired rest, any of which would make the driver fire 250 ms later. So auto
- * turns off; one tap of the Auto chip re-arms it.
+ * or an expired rest, any of which would make the driver fire 250 ms later.
+ *
+ * Auto is the user's preference, not a property of the set, so undo keeps it on and
+ * re-arms a fresh clock instead of dropping to manual. A restored break gets a fresh
+ * clock for the same reason, so neither is a ghost that has already expired.
  */
 function undo(s: WorkoutState, now: number): WorkoutState | null {
   const entry = s.undoStack.at(-1);
@@ -459,18 +518,61 @@ function undo(s: WorkoutState, now: number): WorkoutState | null {
     ...entry,
     program: s.program,
     undoStack: s.undoStack.slice(0, -1),
-    mode: 'manual' as const,
     ...clearedStage(),
   };
-  // A restored break gets a fresh clock so it is not a ghost that has already expired.
   if (restored.restStartedAt != null) restored.restStartedAt = now;
+  if (restored.status === 'exercise_active' && restored.mode === 'auto') {
+    Object.assign(restored, stageClock('auto', currentExercise(restored), now));
+  }
   return restored;
 }
 
-function setRpe(
-  s: WorkoutState,
-  e: Extract<WorkoutEvent, { type: 'SET_RPE' }>,
-): WorkoutState {
+/**
+ * "That last exercise was 4 sets of 12, not 3 of 10" — fixed up during its break.
+ *
+ * Only a finished exercise can be corrected, and only its own rows: logged sets take
+ * the new number, extra sets are logged as done at that count, dropped ones go.
+ * Nothing here touches the program or the next exercise. No undo entry: one tap of a
+ * stepper is not a step, and ten of them would bury the step that logged the set.
+ */
+function setExerciseResult(s: WorkoutState, e: Extract<WorkoutEvent, { type: 'SET_EXERCISE_RESULT' }>): WorkoutState {
+  const record = s.exerciseRecords[e.exerciseIndex];
+  const exercise = s.program.exercises[e.exerciseIndex];
+  if (!record || !exercise) throw new InvalidArgument('No such exercise.');
+  if (record.completedAt == null) throw new InvalidArgument('That exercise is not finished.');
+
+  const reps = checkReps(e.reps);
+  if (reps > 100) throw new InvalidArgument('Reps must be 0 to 100.');
+  if (!isInt(e.sets) || e.sets < 1 || e.sets > 20) {
+    throw new InvalidArgument('Sets must be 1 to 20.');
+  }
+
+  // A per-hand exercise logs one row per hand, so its set count is a row pair.
+  const factor = exercise.perHand ? 2 : 1;
+  const rows: SetRecord[] = Array.from({ length: e.sets * factor }, (_, n) => {
+    const old = record.sets[n];
+    // A skipped set is not a set that was done: it keeps its own row.
+    if (old) return old.skipped ? old : { ...old, actualReps: reps };
+    return {
+      setNumber: n + 1,
+      side: exercise.perHand ? ((n % 2 === 0 ? 'left' : 'right') as 'left' | 'right') : null,
+      targetReps: { min: reps, max: reps },
+      targetWeightKg: exercise.weightKg,
+      actualReps: reps,
+      actualWeightKg: exercise.weightKg,
+      completed: true,
+      skipped: false,
+      completedAt: e.now,
+    };
+  });
+
+  return {
+    ...s,
+    exerciseRecords: s.exerciseRecords.map((r, i) => (i === e.exerciseIndex ? { ...r, sets: rows } : r)),
+  };
+}
+
+function setRpe(s: WorkoutState, e: Extract<WorkoutEvent, { type: 'SET_RPE' }>): WorkoutState {
   if (e.rpe === null) return { ...s, rpe: null };
   if (!isInt(e.rpe) || e.rpe < 1 || e.rpe > 10)
     throw new InvalidArgument('RPE must be an integer from 1 to 10.');

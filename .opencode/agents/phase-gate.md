@@ -1,7 +1,7 @@
 ---
 description: EGM phase gate. Decides whether an implementation phase is actually complete and what the next action is, using the project's own gate protocol. Use proactively at the end of every phase, before starting the next one.
 mode: subagent
-model: opencode-go/deepseek-v4-pro
+model: opencode-go/deepseek-v4.1-flash#high
 permissions:
   - action: edit
     resource: "*"

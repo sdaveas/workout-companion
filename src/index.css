@@ -100,6 +100,12 @@ dialog::backdrop {
   animation-name: exercise-flip-base;
 }
 
+/* A paused session holds the drawing still too: one tap, every clock — and the
+   figure — stops. Resuming picks up where the pose left off. */
+[data-paused] .exercise-frame {
+  animation-play-state: paused;
+}
+
 @keyframes exercise-flip {
   0% { visibility: hidden; }
   50% { visibility: visible; }
@@ -126,3 +132,4 @@ dialog::backdrop {
     animation-iteration-count: infinite !important;
   }
 }
+

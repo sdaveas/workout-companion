@@ -18,13 +18,12 @@ import { remainingMs } from '../engine/rest';
 import { elapsedMs, estimatedRemainingMs } from '../engine/time';
 import { formatClock, formatDuration, formatSet, formatSetNumber, formatWeight } from '../lib/format';
 import { figureSlug } from '../data/exerciseFigures';
-import { shareProgram } from '../lib/shareProgram';
-import { GearIcon, ShareIcon } from '../components/ui/icons';
+import { GearIcon, PauseIcon, PlayIcon } from '../components/ui/icons';
 import type { ProgramExercise, SetRecord, WorkoutAction, WorkoutState } from '../engine/types';
 import { ExerciseDetails } from '../components/exercise/ExerciseDetails';
 import { ExerciseImage } from '../components/exercise/ExerciseImage';
 import { ExerciseMotion } from '../components/exercise/ExerciseMotion';
-import { SetEntry } from '../components/workout/SetEntry';
+import { CompactStepper, SetEntry } from '../components/workout/SetEntry';
 import { ProgressBar } from '../components/workout/ProgressBar';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
@@ -191,6 +190,103 @@ function MenuRow({
 }
 
 /** One row per remaining exercise; the one about to start is lit up. */
+/**
+ * The numbers a break is about, on their own screen: the set just logged (reps and
+ * weight), or the exercise just finished (sets and reps). Cancel throws the draft away,
+ * Save writes it once, so a slip of a thumb cannot rewrite a set.
+ */
+function ResultEdit({
+  mode,
+  exercise,
+  lastSet,
+  total,
+  sets,
+  reps,
+  onSave,
+  onClose,
+}: {
+  mode: 'set' | 'exercise';
+  exercise: ProgramExercise;
+  lastSet: SetRecord | null;
+  total: number;
+  sets: number;
+  reps: number;
+  onSave: (value: { reps: number; weightKg: number | null; sets: number }) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState({
+    reps,
+    weightKg: lastSet?.actualWeightKg ?? exercise.weightKg ?? null,
+  });
+  const [setCount, setSetCount] = useState(sets);
+
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted">
+          {mode === 'set' ? 'Correct the set' : 'Correct the exercise'}
+        </p>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-lg text-muted"
+        >
+          ×
+        </button>
+      </div>
+      <h2 className="mt-1 truncate text-xl font-semibold">{exercise.name}</h2>
+      <p className="mt-0.5 text-xs text-muted">
+        {mode === 'set' && lastSet
+          ? `Set ${formatSet(lastSet.side, lastSet.setNumber, total)} · what you actually did`
+          : 'What you actually did, set by set'}
+      </p>
+
+      <div className="mt-4 rounded-2xl border border-line bg-surface px-4 py-2">
+        {mode === 'set' ? (
+          <SetEntry exercise={exercise} draft={draft} onChange={setDraft} />
+        ) : (
+          <div className="divide-y divide-line">
+            <CompactStepper
+              label="Sets"
+              value={setCount}
+              display={String(setCount)}
+              step={1}
+              min={1}
+              onChange={setSetCount}
+            />
+            <CompactStepper
+              label="Reps"
+              value={draft.reps}
+              display={String(draft.reps)}
+              step={1}
+              min={0}
+              onChange={(next) => setDraft({ ...draft, reps: next })}
+            />
+          </div>
+        )}
+      </div>
+
+      <p className="mt-3 text-xs text-muted">
+        The program itself does not change; this is what goes in the log.
+      </p>
+
+      <div className="mt-auto flex gap-2 pt-6">
+        <Button className="h-12 flex-1" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          className="h-12 flex-[2]"
+          onClick={() => onSave({ ...draft, sets: setCount })}
+        >
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ExerciseOverview({
   exercises,
   firstNumber,
@@ -285,7 +381,7 @@ function RepsTarget({ reps }: { reps: { min: number; max: number } }) {
   );
 }
 
-/** The session transport: previous set, then skip the set or restart the break. */
+/** The session transport: previous set, then skip the set or restart the break, then one more set. */
 function TransportRow({
   state,
   dispatch,
@@ -316,21 +412,27 @@ function TransportRow({
         >
           skip
         </button>
+      ) : state.restStartedAt != null ? (
+        <button
+          type="button"
+          aria-label="Reset rest timer"
+          onClick={() => dispatch({ type: 'RESTART_REST' })}
+          className={`${TRANSPORT_BTN} border-line text-muted`}
+        >
+          reset timer
+        </button>
       ) : (
-        state.restStartedAt != null ? (
-          <button
-            type="button"
-            aria-label="Reset rest timer"
-            onClick={() => dispatch({ type: 'RESTART_REST' })}
-            className={`${TRANSPORT_BTN} border-line text-muted`}
-          >
-            reset timer
-          </button>
-        ) : (
-          // No break to restart (the last set): hold the slot so previous stays put.
-          <div aria-hidden className="flex-1" />
-        )
+        // No break to restart (the last set): hold the slot so previous stays put.
+        <div aria-hidden className="flex-1" />
       )}
+      <button
+        type="button"
+        aria-label="Repeat set"
+        onClick={() => dispatch({ type: 'REPEAT_SET' })}
+        className={`${TRANSPORT_BTN} border-line text-muted`}
+      >
+        repeat
+      </button>
     </div>
   );
 }
@@ -350,9 +452,10 @@ export function ActiveWorkout() {
   // A second tap during the hold must not queue a second completion.
   const holdRef = useRef(false);
   const [howTo, setHowTo] = useState(false);
+  /** What the break is correcting: the set just done, or the exercise just done. */
+  const [editing, setEditing] = useState<'set' | 'exercise' | null>(null);
   const [keepAwake, toggleKeepAwake] = useKeepAwake();
   const { sound, vibrate, toggleSound, toggleVibrate } = useCues();
-  const [shareNote, setShareNote] = useState<string | null>(null);
 
   const status = state?.status;
   const autoMode = state?.mode === 'auto';
@@ -436,16 +539,6 @@ export function ActiveWorkout() {
 
   if (!state) return null;
 
-  async function share() {
-    if (!state) return;
-    try {
-      const note = await shareProgram(state.program);
-      if (note) setShareNote(note);
-    } catch (err) {
-      setShareNote(err instanceof Error ? err.message : String(err));
-    }
-  }
-
   const exercise = getCurrentExercise(state);
   const record = getCurrentRecord(state);
   const nextExercise = getNextExercise(state);
@@ -466,6 +559,18 @@ export function ActiveWorkout() {
   const metaLine = `Exercise ${state.currentExerciseIndex + 1} of ${state.program.exercises.length}`;
   const breakSource = state.status === 'paused' ? state.pausedFrom : state.status;
   const inStandingRest = breakSource === 'resting';
+  /** The set just finished: the break is when its numbers get corrected, not the next. */
+  const lastSet =
+    state.status === 'resting' && state.currentSetIndex > 0
+      ? (record?.sets[state.currentSetIndex - 1] ?? null)
+      : null;
+  /** What a finished exercise recorded, for the break's sets/reps stepper. */
+  const doneSets =
+    record?.completedAt != null && exercise ? record.sets.length / (exercise.perHand ? 2 : 1) : 0;
+  const doneReps =
+    record?.sets.find((x) => x.completed && x.actualReps != null)?.actualReps ??
+    exercise?.reps.max ??
+    0;
   const inExerciseBreak = breakSource === 'exercise_complete';
   const restIsTimed = state.restStartedAt != null && restLeft > 0;
   const stageElapsed =
@@ -531,6 +636,20 @@ export function ActiveWorkout() {
     return null;
   })();
 
+  /**
+   * Auto timing: on the preview screen this is only the preference, since the clock
+   * starts with the session; once started it flips the live stage clock.
+   */
+  function toggleAuto() {
+    if (status === 'ready') {
+      const next = !autoPref;
+      setAutoPref(next);
+      localStorage.setItem('wc:auto', next ? '1' : '0');
+      return;
+    }
+    dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' });
+  }
+
   // Six XL digits cost 60 px of stage height; on a phone the drawing needs those.
   const bigNumber = 'text-5xl [@media(min-height:760px)]:text-6xl';
   const bigClass =
@@ -541,7 +660,11 @@ export function ActiveWorkout() {
         : bigNumber;
 
   return (
-    <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden">
+    <main
+      // Marks the screen so the drawing's flip animation freezes with the clocks.
+      data-paused={state.status === 'paused' ? '' : undefined}
+      className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden"
+    >
       <ScreenHeader
         className="px-5 pt-[max(1rem,env(safe-area-inset-top))]"
         back={{
@@ -565,6 +688,23 @@ export function ActiveWorkout() {
         }
         actions={
           <>
+            {/* One tap stops every clock: the workout, and the set clock when auto runs.
+                The engine's pause already freezes both. */}
+            {(state.status === 'paused' ||
+              state.status === 'exercise_active' ||
+              state.status === 'resting' ||
+              state.status === 'exercise_complete') && (
+              <button
+                type="button"
+                aria-label={state.status === 'paused' ? 'Resume' : 'Pause'}
+                onClick={() => dispatch({ type: state.status === 'paused' ? 'RESUME' : 'PAUSE' })}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+                  state.status === 'paused' ? 'border-accent text-accent' : 'border-line text-muted'
+                }`}
+              >
+                {state.status === 'paused' ? <PlayIcon /> : <PauseIcon />}
+              </button>
+            )}
             <button
               type="button"
               aria-label="Settings"
@@ -573,14 +713,6 @@ export function ActiveWorkout() {
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
             >
               <GearIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="Share this program"
-              onClick={() => void share()}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              <ShareIcon />
             </button>
           </>
         }
@@ -613,12 +745,6 @@ export function ActiveWorkout() {
           </>
         )}
       </ScreenHeader>
-
-      {shareNote && (
-        <p role="status" className="mt-1 text-xs text-accent">
-          {shareNote}
-        </p>
-      )}
 
       {error && (
         <div className="absolute inset-x-5 bottom-44 z-30">
@@ -756,6 +882,19 @@ export function ActiveWorkout() {
           </div>
         )}
 
+        {/* A break is when the set just logged gets corrected — it was 12, not 10. The
+            numbers live on their own screen: the clock needs the room, and a mis-tap
+            here should not rewrite history. */}
+        {exercise && lastSet?.completed && record && (
+          <Button
+            data-testid="edit-result"
+            className="mt-2 h-11 shrink-0"
+            onClick={() => setEditing('set')}
+          >
+            {`Edit set ${formatSet(lastSet.side, lastSet.setNumber, record.sets.length)}`}
+          </Button>
+        )}
+
         {inStandingRest && (
           <div
             data-testid="rest-cue"
@@ -785,6 +924,17 @@ export function ActiveWorkout() {
             {restIsTimed && (
               <p className="text-3xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
             )}
+            {/* Same for the exercise just finished: correct it on its own screen. */}
+            {exercise && doneSets > 0 && (
+              <Button
+                data-testid="edit-result"
+                className="mt-2 h-11 shrink-0"
+                onClick={() => setEditing('exercise')}
+              >
+                {`Edit ${exercise.name} · ${doneSets} × ${doneReps}`}
+              </Button>
+            )}
+
             {/* The next three are enough to plan the break; the rest would squeeze the
                 drawing to a smudge on a small phone. The ready screen has the full plan. */}
             <ExerciseOverview
@@ -871,11 +1021,7 @@ export function ActiveWorkout() {
           <div className="space-y-2">
             <div className="flex gap-2">
               {restLeft === 0 ? (
-                <Button
-                  variant="primary"
-                  className={PRIMARY_BTN}
-                  onClick={() => dispatch({ type: 'REST_DONE' })}
-                >
+                <Button variant="primary" className={PRIMARY_BTN} onClick={() => dispatch({ type: 'REST_DONE' })}>
                   Start set
                 </Button>
               ) : (
@@ -889,11 +1035,7 @@ export function ActiveWorkout() {
         )}
 
         {state.status === 'paused' && (
-          <Button
-            variant="primary"
-            className="h-14 w-full font-gym text-base"
-            onClick={() => dispatch({ type: 'RESUME' })}
-          >
+          <Button variant="primary" className="h-14 w-full font-gym text-base" onClick={() => dispatch({ type: 'RESUME' })}>
             Resume
           </Button>
         )}
@@ -901,11 +1043,7 @@ export function ActiveWorkout() {
         {state.status === 'exercise_complete' && (
           <div className="space-y-2">
             <div className="flex gap-2">
-              <Button
-                variant="primary"
-                className={PRIMARY_BTN}
-                onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}
-              >
+              <Button variant="primary" className={PRIMARY_BTN} onClick={() => dispatch({ type: 'NEXT_EXERCISE' })}>
                 {nextExercise ? 'Continue' : 'Finish workout'}
               </Button>
             </div>
@@ -921,16 +1059,7 @@ export function ActiveWorkout() {
         keepAwake={keepAwake}
         wake={wake}
         onKeepAwake={toggleKeepAwake}
-        onAuto={() => {
-          // On the preview screen this is only the preference; the clock starts later.
-          if (status === 'ready') {
-            const next = !autoPref;
-            setAutoPref(next);
-            localStorage.setItem('wc:auto', next ? '1' : '0');
-            return;
-          }
-          dispatch({ type: auto ? 'STOP_AUTO' : 'START_AUTO' });
-        }}
+        onAuto={toggleAuto}
         sound={sound}
         vibrate={vibrate}
         onSound={() => {
@@ -983,15 +1112,45 @@ export function ActiveWorkout() {
               Abandon
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            className="mt-2 w-full"
-            onClick={() => endDialog.current?.close()}
-          >
+          <Button variant="ghost" className="mt-2 w-full" onClick={() => endDialog.current?.close()}>
             Keep going
           </Button>
         </div>
       </dialog>
+
+      {editing && exercise && (
+        <ResultEdit
+          mode={editing}
+          exercise={exercise}
+          lastSet={lastSet}
+          total={record?.sets.length ?? 0}
+          sets={doneSets}
+          reps={doneReps}
+          onClose={() => setEditing(null)}
+          onSave={(value) => {
+            if (editing === 'set' && lastSet) {
+              dispatch({
+                type: 'UPDATE_SET_RESULT',
+                exerciseIndex: state.currentExerciseIndex,
+                setNumber: lastSet.setNumber,
+                reps: value.reps,
+                weightKg: value.weightKg,
+              });
+              // The next set starts from the number just corrected.
+              dispatch({ type: 'SET_DRAFT', reps: value.reps, weightKg: value.weightKg });
+            }
+            if (editing === 'exercise') {
+              dispatch({
+                type: 'SET_EXERCISE_RESULT',
+                exerciseIndex: state.currentExerciseIndex,
+                sets: value.sets,
+                reps: value.reps,
+              });
+            }
+            setEditing(null);
+          }}
+        />
+      )}
 
       {howTo && exercise && (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-ink px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">

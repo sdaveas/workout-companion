@@ -36,14 +36,17 @@ function Check({
 export function TransferSheet({
   mode,
   now,
+  initial,
   onClose,
 }: {
   mode: 'import' | 'export';
   now: number;
+  /** What is already ticked; a history screen starts with history only. */
+  initial?: Parts;
   onClose: () => void;
 }) {
-  const [programs, setPrograms] = useState(true);
-  const [history, setHistory] = useState(true);
+  const [programs, setPrograms] = useState(initial?.programs ?? true);
+  const [history, setHistory] = useState(initial?.history ?? true);
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

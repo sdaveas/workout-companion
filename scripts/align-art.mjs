@@ -48,6 +48,7 @@ const SCALE = {
   'lat-pulldown': 0.97,
   'lateral-raise': 1,
   'leg-press': 1,
+  'lying-leg-raise': 1,
   'one-arm-dumbbell-row': 1,
   'overhead-press': 1,
   'overhead-tricep-extension': 1,

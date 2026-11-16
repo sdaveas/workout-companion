@@ -45,7 +45,9 @@ export function App() {
       {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
       {route.name === 'paste' && <PasteProgram from={route.param ?? undefined} />}
       {route.name === 'p' && <PasteProgram initial={decodeLinkPayload(route.param ?? '')} />}
-      {route.name === 'program' && <ProgramDetail id={route.param ?? ''} />}
+      {route.name === 'program' && (
+        <ProgramDetail id={route.param ?? ''} startEditing={route.rest[0] === 'edit'} />
+      )}
       {route.name === 'session' && <ActiveWorkout />}
       {route.name === 'summary' && <Summary />}
       {route.name === 'history' && <History />}

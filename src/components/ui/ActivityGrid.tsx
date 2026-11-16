@@ -60,7 +60,12 @@ export function ActivityGrid({
             {months.map((month) => (
               <span
                 key={month.index}
-                style={{ gridColumn: `${month.index + 1} / span 3` }}
+                // Pinned to the single label row: auto-placement would wrap one to a
+                // second row, which then printed through the cells below.
+                style={{
+                  gridColumn: `${month.index + 1} / span 3`,
+                  gridRow: 1,
+                }}
                 className="whitespace-nowrap"
               >
                 {month.label}

@@ -50,7 +50,7 @@ function Stepper({
   );
 }
 
-function CompactStepper({
+export function CompactStepper({
   label,
   value,
   display,
@@ -58,6 +58,7 @@ function CompactStepper({
   min,
   onChange,
   showLabel = true,
+  stacked = false,
 }: {
   label: string;
   value: number;
@@ -68,10 +69,18 @@ function CompactStepper({
   /** The weight column's display already carries its unit; a visible label only
       wraps inside the narrow second column. */
   showLabel?: boolean;
+  /** Label above the buttons: two steppers side by side need the width for the row. */
+  stacked?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-1">
-      <span className={showLabel ? 'text-[11px] uppercase tracking-widest text-muted' : 'sr-only'}>
+    <div className={stacked ? 'flex flex-col gap-0.5' : 'flex items-center justify-between gap-1'}>
+      <span
+        className={
+          showLabel
+            ? `text-[11px] uppercase tracking-widest text-muted ${stacked ? 'pl-1' : ''}`
+            : 'sr-only'
+        }
+      >
         {label}
       </span>
       <div className="flex items-center gap-1">

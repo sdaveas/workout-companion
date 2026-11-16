@@ -6,7 +6,8 @@ import { usePrograms } from '../store/programsStore';
 import { useSession } from '../store/sessionStore';
 import { useNow } from '../hooks/useNow';
 import { dayKey } from '../lib/activity';
-import { downloadJson, historyExport } from '../lib/exportHistory';
+import { TransferSheet } from '../components/ui/TransferSheet';
+import { ExportIcon, ImportIcon } from '../components/ui/icons';
 
 /**
  * The full log, with the training grid on top. The grid is the filter: tap a day
@@ -18,6 +19,8 @@ export function History() {
   const loadPrograms = usePrograms((s) => s.load);
   const [loaded, setLoaded] = useState(false);
   const [day, setDay] = useState<number | null>(null);
+  /** Which transfer the sheet is open for; both doors live here, as on Home. */
+  const [sheet, setSheet] = useState<'import' | 'export' | null>(null);
   const now = useNow(60_000);
 
   useEffect(() => {
@@ -45,30 +48,25 @@ export function History() {
         back={{ to: '#/', label: 'Home', compact: true }}
         title={<h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>}
         actions={
-          history.length > 0 ? (
+          <>
+            <button
+              type="button"
+              aria-label="Import history"
+              onClick={() => setSheet('import')}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
+            >
+              <ImportIcon />
+            </button>
             <button
               type="button"
               aria-label="Export history"
-              onClick={() => downloadJson('workout-history.json', historyExport(history, now))}
+              onClick={() => setSheet('export')}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="h-5 w-5"
-              >
-                {/* Saving a file points down, so it cannot be mistaken for a row's share. */}
-                <path d="M12 3v11" />
-                <path d="m8 10 4 4 4-4" />
-                <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
-              </svg>
+              {/* Saving a file points down, so it cannot be mistaken for a row's share. */}
+              <ExportIcon />
             </button>
-          ) : undefined
+          </>
         }
       />
 
@@ -101,6 +99,16 @@ export function History() {
           <SessionRow key={row.id} row={row} />
         ))}
       </ul>
+
+      {sheet && (
+        <TransferSheet
+          mode={sheet}
+          now={now}
+          // This screen is about sessions, so only history starts ticked.
+          initial={{ programs: false, history: true }}
+          onClose={() => setSheet(null)}
+        />
+      )}
     </main>
   );
 }

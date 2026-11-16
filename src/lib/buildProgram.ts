@@ -76,17 +76,24 @@ export function draftFromProgram(program: Program): ProgramDraft {
   };
 }
 
-export function buildProgramJson(draft: ProgramDraft, id?: string): string {
+export function buildProgramJson(draft: ProgramDraft, id?: string, base?: Program): string {
   const program = {
     schema_version: 1,
     // Keep the existing id when updating, even if the name changed.
     id: id ?? slug(draft.name),
     name: draft.name.trim(),
+    // The form does not edit these, so an edit must not drop them.
+    ...(base?.description ? { description: base.description } : {}),
+    ...(base?.estimatedDurationMinutes
+      ? { estimated_duration_minutes: base.estimatedDurationMinutes }
+      : {}),
     ...(draft.days.length > 0 ? { schedule: { days: draft.days } } : {}),
     exercises: draft.exercises
       .filter((e) => e.name.trim())
       .map((e, i) => {
         const kg = parseWeight(e.weightKg);
+        const instructions =
+          base?.exercises.find((x) => x.name.trim() === e.name.trim())?.instructions ?? [];
         return {
           id: slug(e.name) || `exercise-${i + 1}`,
           name: e.name.trim(),
@@ -95,6 +102,7 @@ export function buildProgramJson(draft: ProgramDraft, id?: string): string {
           ...(e.perHand ? { per_hand: true } : {}),
           ...(kg != null ? { weight: { value: kg, unit: 'kg' } } : {}),
           rest_seconds: e.restSeconds,
+          ...(instructions.length > 0 ? { instructions } : {}),
         };
       }),
   };

@@ -12,6 +12,8 @@ import { shareSession } from '../lib/shareProgram';
 import { ShareIcon } from '../components/ui/icons';
 import { usePrograms } from '../store/programsStore';
 import { Button } from '../components/ui/Button';
+import { CoachChat } from '../components/ui/CoachChat';
+import { coachBrief } from '../lib/coachBrief';
 
 function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
@@ -68,6 +70,26 @@ export function Summary() {
 
   // The link carries this session's snapshot and its numbers, so it works for a
   // workout whose program was edited or deleted since.
+  /**
+   * The brief about this workout: the session itself, plus the program it came from
+   * when that still exists (the saved one, not the snapshot, so the coach edits the
+   * program the user has). A deleted program leaves a history-only brief.
+   */
+  function sessionBrief(): string {
+    if (!source) return '';
+    const forBrief: SessionRow = row ?? {
+      id: source.sessionId,
+      stateVersion: 1,
+      programId: source.programId,
+      programName: source.program.name,
+      status: source.status,
+      startedAt: source.startedAt ?? source.updatedAt,
+      finishedAt: source.finishedAt,
+      state: source,
+    };
+    return coachBrief({ program: storedProgram ?? source.program, sessions: [forBrief] });
+  }
+
   async function shareIt() {
     if (!source) return;
     try {
@@ -281,6 +303,12 @@ export function Summary() {
           className="mt-2 w-full rounded-xl border border-line bg-surface p-3 text-sm outline-none focus:border-accent"
         />
       </section>
+
+      <CoachChat
+        brief={sessionBrief}
+        description="Sends this workout and its program to your coach — the sets, the weights, how hard it felt, what you wrote."
+        openLabel="Open ChatGPT with this workout"
+      />
 
       <div className="mt-8 space-y-2">
         <Button

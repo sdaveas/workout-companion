@@ -80,9 +80,14 @@ describe('set completion', () => {
   });
 
   it('rejects negative reps', () => {
-    expect(() => reduce(started(), { type: 'COMPLETE_SET', now: T0, reps: -1, weightKg: null })).toThrow(
-      InvalidArgument,
-    );
+    expect(() =>
+      reduce(started(), {
+        type: 'COMPLETE_SET',
+        now: T0,
+        reps: -1,
+        weightKg: null,
+      }),
+    ).toThrow(InvalidArgument);
   });
 
   it('goes to exercise_complete on the last set and still counts a rest down', () => {
@@ -275,9 +280,7 @@ describe('progression', () => {
   it('finishing after the last set is not an early end', () => {
     let s = started();
     let now = T0;
-    while (
-      !(s.status === 'exercise_complete' && s.currentExerciseIndex === s.program.exercises.length - 1)
-    ) {
+    while (!(s.status === 'exercise_complete' && s.currentExerciseIndex === s.program.exercises.length - 1)) {
       if (s.status === 'exercise_active') {
         const ex = getCurrentExercise(s)!;
         s = reduce(s, { type: 'COMPLETE_SET', now, reps: ex.reps.min, weightKg: ex.weightKg });
@@ -297,9 +300,7 @@ describe('progression', () => {
   it('abandons and refuses everything afterwards', () => {
     const s = reduce(started(), { type: 'ABANDON', now: T0 });
     expect(s.status).toBe('abandoned');
-    expect(() => reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null })).toThrow(
-      InvalidTransition,
-    );
+    expect(() => reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null })).toThrow(InvalidTransition);
   });
 });
 
@@ -378,6 +379,86 @@ describe('undo', () => {
       s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 5, weightKg: null });
     }
     expect(s.undoStack).toHaveLength(10);
+  });
+});
+
+describe('repeat a set', () => {
+  it('appends an uncompleted set and makes it the one to do now', () => {
+    let s = started();
+    const before = s.exerciseRecords[0].sets.length;
+    s = reduce(s, {
+      type: 'COMPLETE_SET',
+      now: T0 + 1_000,
+      reps: 10,
+      weightKg: null,
+    });
+    s = reduce(s, { type: 'REPEAT_SET', now: T0 + 2_000 });
+
+    expect(s.status).toBe('exercise_active');
+    expect(s.exerciseRecords[0].sets).toHaveLength(before + 1);
+    expect(s.currentSetIndex).toBe(before);
+    expect(s.exerciseRecords[0].sets[before]).toMatchObject({
+      completed: false,
+      skipped: false,
+    });
+    expect(s.exerciseRecords[0].sets[before].targetReps).toEqual(getCurrentExercise(s)!.reps);
+    // The break it was in is gone, and progress counts the new set.
+    expect(remainingMs(s, T0 + 2_000)).toBe(0);
+    expect(getWorkoutProgress(s).total).toBe(before + 1 + s.exerciseRecords.slice(1).flatMap((r) => r.sets).length);
+  });
+
+  it('adds one more set from the end of an exercise and un-completes it', () => {
+    let s = started();
+    for (let i = 0; i < 200 && s.status !== 'exercise_complete'; i += 1) {
+      s =
+        s.status === 'resting'
+          ? reduce(s, { type: 'SKIP_REST', now: T0 })
+          : reduce(s, {
+              type: 'COMPLETE_SET',
+              now: T0,
+              reps: 10,
+              weightKg: null,
+            });
+    }
+    expect(s.status).toBe('exercise_complete');
+    const { done, total } = getWorkoutProgress(s);
+
+    s = reduce(s, { type: 'REPEAT_SET', now: T0 + 5_000 });
+    expect(s.status).toBe('exercise_active');
+    expect(s.exerciseRecords[0].completedAt).toBe(null);
+    expect(getWorkoutProgress(s)).toMatchObject({ done, total: total + 1 });
+  });
+
+  it('adds both hands of a one-hand set', () => {
+    const oneArm: Program = {
+      ...program,
+      exercises: [
+        {
+          ...program.exercises[0],
+          id: 'one-arm',
+          name: 'One-arm Row',
+          sets: 1,
+          restSeconds: 0,
+          perHand: true,
+        },
+      ],
+    };
+    let s = reduce(createSession(oneArm, T0, 'sid'), {
+      type: 'START',
+      now: T0,
+    });
+    s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+    s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: null });
+    expect(s.status).toBe('exercise_complete');
+
+    s = reduce(s, { type: 'REPEAT_SET', now: T0 + 1_000 });
+    const sets = s.exerciseRecords[0].sets;
+    expect(sets).toHaveLength(4);
+    expect(sets.slice(2).map((x) => [x.setNumber, x.side, x.completed])).toEqual([
+      [3, 'left', false],
+      [4, 'right', false],
+    ]);
+    expect(s.currentSetIndex).toBe(2);
   });
 });
 
@@ -502,7 +583,6 @@ describe('guards', () => {
   ];
 
   const whileResting: Array<[string, WorkoutEvent]> = [
-    ['SET_DRAFT while resting', { type: 'SET_DRAFT', now: T0, reps: 5, weightKg: null }],
     ['SKIP_SET while resting', { type: 'SKIP_SET', now: T0 }],
     ['COMPLETE_SET while resting', { type: 'COMPLETE_SET', now: T0, reps: 5, weightKg: null }],
   ];
@@ -537,5 +617,163 @@ describe('progress checkpoints', () => {
     expect(marks).toHaveLength(sets - 1);
     expect(marks[0]).toBeCloseTo(1 / sets);
     expect(marks.at(-1)).toBeCloseTo((sets - 1) / sets);
+  });
+});
+
+describe('correct the exercise just finished', () => {
+  /** Push-ups done: three sets logged, and the break before the floor press. */
+  const finishedFirst = () => {
+    let s = started();
+    for (let i = 0; i < 3; i += 1) {
+      s = reduce(s, {
+        type: 'COMPLETE_SET',
+        now: T0 + i * 1000,
+        reps: 10,
+        weightKg: null,
+      });
+      if (s.status === 'resting') s = reduce(s, { type: 'SKIP_REST', now: T0 + i * 1000 + 1 });
+    }
+    return s;
+  };
+
+  it('takes a new set count and reps on the exercise that was done', () => {
+    const before = finishedFirst();
+    expect(before.status).toBe('exercise_complete');
+    expect(before.exerciseRecords[0].sets).toHaveLength(3);
+
+    const s = reduce(before, {
+      type: 'SET_EXERCISE_RESULT',
+      now: T0 + 10_000,
+      exerciseIndex: 0,
+      sets: 4,
+      reps: 12,
+    });
+
+    expect(s.exerciseRecords[0].sets).toHaveLength(4);
+    expect(s.exerciseRecords[0].sets.every((x) => x.completed && x.actualReps === 12)).toBe(true);
+    expect(summarize(s, T0 + 10_000).setsCompleted).toBe(4);
+    // The exercise stays finished, and the program is untouched.
+    expect(s.exerciseRecords[0].completedAt).not.toBeNull();
+    expect(s.program.exercises[0].sets).toBe(3);
+  });
+
+  it('drops sets when the count goes down', () => {
+    const s = reduce(finishedFirst(), {
+      type: 'SET_EXERCISE_RESULT',
+      now: T0 + 10_000,
+      exerciseIndex: 0,
+      sets: 2,
+      reps: 10,
+    });
+    expect(s.exerciseRecords[0].sets).toHaveLength(2);
+    expect(summarize(s, T0 + 10_000).setsCompleted).toBe(2);
+  });
+
+  it('counts a per-hand set as two rows', () => {
+    const oneArm: Program = {
+      ...program,
+      exercises: [{ ...program.exercises[1], perHand: true, sets: 2, restSeconds: 0 }],
+    };
+    let s = reduce(createSession(oneArm, T0, 'sid'), {
+      type: 'START',
+      now: T0,
+    });
+    for (let i = 0; i < 4; i += 1) {
+      s = reduce(s, { type: 'COMPLETE_SET', now: T0, reps: 8, weightKg: 5 });
+    }
+    expect(s.status).toBe('exercise_complete');
+
+    const edited = reduce(s, {
+      type: 'SET_EXERCISE_RESULT',
+      now: T0 + 10_000,
+      exerciseIndex: 0,
+      sets: 3,
+      reps: 10,
+    });
+    expect(edited.exerciseRecords[0].sets).toHaveLength(6);
+    expect(edited.exerciseRecords[0].sets.map((x) => x.side)).toEqual(['left', 'right', 'left', 'right', 'left', 'right']);
+    expect(edited.exerciseRecords[0].sets[5].actualReps).toBe(10);
+  });
+
+  it('leaves a skipped set alone', () => {
+    let s = reduce(started(), { type: 'SKIP_SET', now: T0 });
+    for (let i = 0; i < 2; i += 1) {
+      s = reduce(s, {
+        type: 'COMPLETE_SET',
+        now: T0 + 1000,
+        reps: 10,
+        weightKg: null,
+      });
+      if (s.status === 'resting') s = reduce(s, { type: 'SKIP_REST', now: T0 + 2000 });
+    }
+    expect(s.status).toBe('exercise_complete');
+
+    const edited = reduce(s, {
+      type: 'SET_EXERCISE_RESULT',
+      now: T0 + 10_000,
+      exerciseIndex: 0,
+      sets: 2,
+      reps: 12,
+    });
+    expect(edited.exerciseRecords[0].sets[0]).toMatchObject({
+      skipped: true,
+      actualReps: null,
+    });
+    expect(edited.exerciseRecords[0].sets[1].actualReps).toBe(12);
+  });
+
+  it('refuses an exercise that is not finished', () => {
+    expect(() =>
+      reduce(started(), {
+        type: 'SET_EXERCISE_RESULT',
+        now: T0,
+        exerciseIndex: 0,
+        sets: 4,
+        reps: 8,
+      }),
+    ).toThrow(InvalidArgument);
+  });
+
+  it('refuses nonsense numbers', () => {
+    const before = finishedFirst();
+    for (const [sets, reps] of [
+      [0, 8],
+      [3, 101],
+    ]) {
+      expect(() =>
+        reduce(before, {
+          type: 'SET_EXERCISE_RESULT',
+          now: T0,
+          exerciseIndex: 0,
+          sets,
+          reps,
+        }),
+      ).toThrow(InvalidArgument);
+    }
+  });
+});
+
+describe('edit reps during the break between sets', () => {
+  it('keeps the draft the break was entered with, and the next set starts from it', () => {
+    const resting = reduce(started(), {
+      type: 'COMPLETE_SET',
+      now: T0,
+      reps: 8,
+      weightKg: null,
+    });
+    expect(resting.status).toBe('resting');
+
+    const edited = reduce(resting, {
+      type: 'SET_DRAFT',
+      now: T0 + 5_000,
+      reps: 12,
+      weightKg: 20,
+    });
+    expect(edited.draft).toEqual({ reps: 12, weightKg: 20 });
+    expect(edited.status).toBe('resting');
+
+    const next = reduce(edited, { type: 'SKIP_REST', now: T0 + 6_000 });
+    expect(next.status).toBe('exercise_active');
+    expect(next.draft).toEqual({ reps: 12, weightKg: 20 });
   });
 });

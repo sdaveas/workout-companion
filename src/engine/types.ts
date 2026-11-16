@@ -103,6 +103,7 @@ export type WorkoutEvent =
   | { type: 'START'; now: number }
   | { type: 'COMPLETE_SET'; now: number; reps: number; weightKg: number | null }
   | { type: 'SKIP_SET'; now: number }
+  | { type: 'REPEAT_SET'; now: number }
   | {
       type: 'UPDATE_SET_RESULT';
       now: number;
@@ -112,6 +113,8 @@ export type WorkoutEvent =
       weightKg: number | null;
     }
   | { type: 'SET_DRAFT'; now: number; reps: number; weightKg: number | null }
+  /** Correct what a finished exercise did: its set count and the reps in them. */
+  | { type: 'SET_EXERCISE_RESULT'; now: number; exerciseIndex: number; sets: number; reps: number }
   | { type: 'PAUSE'; now: number }
   | { type: 'RESUME'; now: number }
   | { type: 'ADJUST_REST'; now: number; seconds: number }

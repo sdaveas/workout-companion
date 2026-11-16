@@ -7,6 +7,7 @@ import { nextUp } from '../engine/schedule';
 import { getWorkoutProgress } from '../engine/selectors';
 import { elapsedMs } from '../engine/time';
 import { exerciseCount, formatDay, formatDays, formatDuration } from '../lib/format';
+import { dayKey } from '../lib/activity';
 import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
@@ -14,15 +15,13 @@ import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { ActivityGrid } from '../components/ui/ActivityGrid';
 import { SessionRow } from '../components/ui/SessionRow';
 import { TransferSheet } from '../components/ui/TransferSheet';
+import { ExportIcon, ImportIcon } from '../components/ui/icons';
 
 /**
  * One page: what is on today, every program, the last few sessions, and two doors
  * for moving data. The page does not scroll; the middle column does, so the card
  * and the header stay put.
  */
-/** Rows before the list would push history off the page. Manage holds the rest. */
-const SHOWN_PROGRAMS = 4;
-
 export function Home() {
   const programs = usePrograms((s) => s.programs);
   const state = useSession((s) => s.state);
@@ -34,6 +33,8 @@ export function Home() {
   const [starting, setStarting] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [sheet, setSheet] = useState<'import' | 'export' | null>(null);
+  /** A day picked on the grid; null means the last session's day. */
+  const [picked, setPicked] = useState<number | null>(null);
   const now = useNow(60_000);
 
   useEffect(() => {
@@ -48,6 +49,14 @@ export function Home() {
   const next = nextUp(programs, sessions, now, active ? { programId: active.programId } : null);
   const progress = active ? getWorkoutProgress(active) : null;
   const latest = history[0] ?? null;
+  // Same filter as History, but it always has a day: the last session, until the
+  // grid is tapped.
+  const latestDay = latest?.finishedAt != null ? dayKey(latest.finishedAt) : null;
+  const day = picked ?? latestDay;
+  const shown =
+    day === null
+      ? history
+      : history.filter((row) => row.finishedAt != null && dayKey(row.finishedAt) === day);
 
   const meta = (program: { exercises: unknown[]; estimatedDurationMinutes?: number | null }) =>
     `${exerciseCount(program.exercises.length)}${
@@ -129,20 +138,7 @@ export function Home() {
               onClick={() => setSheet('import')}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="h-5 w-5"
-              >
-                <path d="M12 3v10" />
-                <path d="m8 9 4 4 4-4" />
-                <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
-              </svg>
+              <ImportIcon />
             </button>
             <button
               type="button"
@@ -150,20 +146,7 @@ export function Home() {
               onClick={() => setSheet('export')}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="h-5 w-5"
-              >
-                <path d="M12 14V3" />
-                <path d="m8 7 4-4 4 4" />
-                <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
-              </svg>
+              <ExportIcon />
             </button>
           </>
         }
@@ -173,15 +156,9 @@ export function Home() {
 
       {card && (
         <section
-          className={`mt-3 shrink-0 rounded-2xl border bg-surface p-4 ${
-            card.primary ? 'border-accent/50' : 'border-line'
-          }`}
+          className={`mt-3 shrink-0 rounded-2xl border bg-surface p-4 ${card.primary ? 'border-accent/50' : 'border-line'}`}
         >
-          <p
-            className={`text-xs uppercase tracking-widest ${
-              card.primary ? 'text-accent' : 'text-muted'
-            }`}
-          >
+          <p className={`text-xs uppercase tracking-widest ${card.primary ? 'text-accent' : 'text-muted'}`}>
             {card.eyebrow}
           </p>
           <h2 className="mt-1 truncate text-xl font-semibold">{card.name}</h2>
@@ -201,8 +178,8 @@ export function Home() {
         <section>
           <div className="flex items-baseline justify-between">
             <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
-            <a href="#/programs" className="text-xs text-muted underline underline-offset-4">
-              Manage
+            <a href="#/programs/new" className="text-xs text-muted underline underline-offset-4">
+              Add +
             </a>
           </div>
           {programs.length === 0 ? (
@@ -214,12 +191,12 @@ export function Home() {
             </a>
           ) : (
             <ul className="mt-2 space-y-2">
-              {programs.slice(0, SHOWN_PROGRAMS).map((p) => (
+              {programs.map((p) => (
                 <li key={p.id}>
-                  <Button
-                    className="flex h-12 w-full items-center justify-between"
-                    disabled={starting != null}
-                    onClick={() => void start(p.id)}
+                  {/* Tapping a program opens it; starting is a decision, not a link. */}
+                  <a
+                    href={`#/program/${p.id}`}
+                    className="flex h-12 w-full items-center justify-between rounded-lg border border-line bg-surface px-4 text-sm"
                   >
                     <span className="truncate">{p.name}</span>
                     <span className="ml-3 shrink-0 text-xs text-muted">
@@ -227,7 +204,7 @@ export function Home() {
                         ? formatDays(p.scheduleDays)
                         : exerciseCount(p.exercises.length)}
                     </span>
-                  </Button>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -238,19 +215,30 @@ export function Home() {
           <div className="flex items-baseline justify-between">
             <p className="text-xs uppercase tracking-widest text-muted">History</p>
             <a href="#/history" className="text-xs text-muted underline underline-offset-4">
-              Manage
+              More
             </a>
           </div>
           <div className="mt-2">
-            <ActivityGrid sessions={history} now={now} />
+            <ActivityGrid
+              sessions={history}
+              now={now}
+              selected={day}
+              onSelect={(next) => setPicked(next === day ? null : next)}
+            />
           </div>
-          {latest && (
-            <ul className="mt-2">
-              <SessionRow row={latest} actions={false} />
+          {shown.length > 0 && (
+            <ul className="mt-2 space-y-2">
+              {shown.slice(0, 5).map((row) => (
+                <li key={row.id}>
+                  <SessionRow row={row} actions={false} />
+                </li>
+              ))}
             </ul>
           )}
-          {loaded && !latest && (
-            <p className="mt-3 text-center text-sm text-muted">No finished sessions yet.</p>
+          {loaded && shown.length === 0 && (
+            <p className="mt-3 text-center text-sm text-muted">
+              {day === null ? 'No finished sessions yet.' : 'Nothing logged that day.'}
+            </p>
           )}
         </section>
       </div>

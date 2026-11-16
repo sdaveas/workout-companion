@@ -58,4 +58,4 @@ Your programs are ready above. Copy this reply in one go — the Copy button und
 - "weight" is optional. "instructions": two short lines per exercise. "muscle_groups": lowercase.
 
 ## Exercise names with drawings
-Bench Press, Overhead Press, Push-up, Incline Press, Triceps Pushdown, Dumbbell Row, Lat Pulldown, Pull-up, Seated Cable Row, Face Pull, Back Squat, Goblet Squat, Leg Press, Bulgarian Split Squat, Lunge, Calf Raise, Deadlift, Romanian Deadlift, Hip Thrust, Kettlebell Swing, Back Extension, Bicep Curl, Hammer Curl, Lateral Raise, Front Raise, Plank, Side Plank, Hanging Leg Raise, Crunch, Overhead Tricep Extension
+Bench Press, Overhead Press, Push-up, Incline Press, Triceps Pushdown, Dumbbell Row, Lat Pulldown, Pull-up, Seated Cable Row, Face Pull, Back Squat, Goblet Squat, Leg Press, Bulgarian Split Squat, Lunge, Calf Raise, Deadlift, Romanian Deadlift, Hip Thrust, Kettlebell Swing, Back Extension, Bicep Curl, Hammer Curl, Lateral Raise, Front Raise, Plank, Side Plank, Hanging Leg Raise, Lying Leg Raise, Crunch, Reverse Crunch, Overhead Tricep Extension

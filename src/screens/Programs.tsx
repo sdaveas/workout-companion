@@ -20,7 +20,6 @@ export function Programs() {
   const conflict = usePrograms((s) => s.conflict);
   const preview = usePrograms((s) => s.preview);
   const save = usePrograms((s) => s.save);
-  const [editing, setEditing] = useState<Program | null>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // null = not choosing; a list of ids = choosing what to send together.
@@ -30,12 +29,7 @@ export function Programs() {
   // #/programs is the list of saved programs.
   const building = route.param === 'build';
   const adding = route.param === 'new';
-  const others = editing ? programs.filter((p) => p.id !== editing.id) : programs;
-
-  const build = (program?: Program) => {
-    setEditing(program ?? null);
-    window.location.hash = '#/programs/build';
-  };
+  const others = programs;
 
   async function shareMany(ids: string[]) {
     setShared(null);
@@ -61,19 +55,11 @@ export function Programs() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={
-          building || adding
-            ? {
-                to: '#/programs',
-                label: 'Programs',
-                compact: true,
-                onSelect: () => setEditing(null),
-              }
-            : { to: '#/', label: 'Home', compact: true, onSelect: () => setEditing(null) }
-        }
+        // Everything starts at Home now; the list below is not a place in the flow.
+        back={{ to: '#/', label: 'Home', compact: true }}
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
-            {building ? (editing ? 'Edit program' : 'New program') : adding ? 'Add a program' : 'Programs'}
+            {building ? 'New program' : adding ? 'Add a program' : 'Programs'}
           </h1>
         }
         actions={
@@ -81,7 +67,6 @@ export function Programs() {
             <a
               href="#/programs/new"
               aria-label="Add a program"
-              onClick={() => setEditing(null)}
               className={`flex h-11 w-11 items-center justify-center rounded-xl border text-xl leading-none ${
                 programs.length === 0
                   ? 'border-accent bg-accent font-semibold text-ink'
@@ -98,10 +83,7 @@ export function Programs() {
 
       {building && (
         <ProgramBuilder
-          key={editing?.id ?? 'new'}
-          initial={editing ?? undefined}
           onDone={() => {
-            setEditing(null);
             window.location.hash = '#/programs';
           }}
         />
@@ -129,11 +111,10 @@ export function Programs() {
           busy={busy}
           onSave={(name) => {
             setBusy(true);
-            void save({ update: editing != null, name })
+            void save({ name })
               .then((ok) => {
                 // land on the list so the new copy is visible straight away
                 if (ok) {
-                  setEditing(null);
                   window.location.hash = '#/programs';
                 }
               })
@@ -160,7 +141,6 @@ export function Programs() {
               type="button"
               onClick={() => {
                 clear();
-                setEditing(null);
                 window.location.hash = '#/programs/new';
               }}
               className="h-11 flex-1 rounded-lg border border-line text-sm"
@@ -245,13 +225,12 @@ export function Programs() {
                   >
                     Share
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => build(p)}
-                    className="h-11 rounded-lg border border-line px-3 text-xs"
+                  <a
+                    href={`#/program/${p.id}/edit`}
+                    className="flex h-11 items-center rounded-lg border border-line px-3 text-xs"
                   >
                     Edit
-                  </button>
+                  </a>
                   <button
                     type="button"
                     onClick={() => {

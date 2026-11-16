@@ -30,12 +30,14 @@ const SHIPPED: Record<string, true> = Object.fromEntries(
     'lat-pulldown',
     'lateral-raise',
     'leg-press',
+    'lying-leg-raise',
     'one-arm-dumbbell-row',
     'overhead-press',
     'overhead-tricep-extension',
     'plank',
     'pull-up',
     'push-up',
+    'reverse-crunch',
     'romanian-deadlift',
     'seated-row',
     'side-plank',
@@ -90,8 +92,13 @@ export const FAMILY: Array<[RegExp, string | null]> = [
   [/curl/i, 'bicep-curl'],
   // Core, then the catch-alls
   [/side plank/i, 'side-plank'],
+  // Leg raises get the leg-raise drawing; the plank catch-all used to eat them.
+  // A hanging leg raise resolves above through its own library slug.
+  [/leg ?(raise|rise)|leg lift/i, 'lying-leg-raise'],
+  // A crunch that has no drawing of its own is still a crunch, not a plank.
+  [/crunch|sit.?up/i, 'crunch'],
   [
-    /plank|crunch|sit.?up|leg raise|knee raise|hollow|tuck|v-up|russian twist|ab wheel|dead bug|mountain climber|bird dog|superman|flutter|toe touch/i,
+    /plank|knee raise|hollow|tuck|v-up|russian twist|ab wheel|dead bug|mountain climber|bird dog|superman|flutter|toe touch/i,
     'plank',
   ],
   [/\braise\b/i, 'lateral-raise'],
