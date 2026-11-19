@@ -67,11 +67,21 @@ Hard constraints, in order:
      it. If the click happens before the script lands, load it and ask for a
      second tap — iOS drops user activation across an `await`, so a single tap
      cannot do both. Offline → skip sync and say nothing.
-   - OAuth consent screen stays in **Testing** with the owner's address as a
-     test user. No verification review; the owner does see Google's "unverified
-     app" interstitial once. There is no refresh token, so the testing 7-day
-     token rule does not apply; the ~1 hour access-token expiry is what bites,
-     and every trigger handles it (below).
+   - OAuth consent screen is **External, in production**, published
+     2026-11-19, with the privacy policy at
+     `https://sdaveas.github.io/workout-companion/privacy.html`
+     (`public/privacy.html`). No scope verification: `drive.file` is
+     non-sensitive, so publishing needed no review and there is no user cap.
+     **Correction:** the first draft said the screen would stay in Testing with
+     the owner as a test user, assuming everyone else got a click-through
+     "unverified app" interstitial. They do not — Testing blocks every account
+     that is not on the test users list. That shipped, and Drive login failed
+     for every user but the owner with a bare `access_denied`. Google also does
+     not mark the privacy policy link as required on the Branding page, yet
+     without it `Publish app` stays disabled. Both are fixed above.
+   - There is no refresh token, so the 7-day testing token rule never applied;
+     the ~1 hour access-token expiry is what bites, and every trigger handles
+     it (below).
    - Token in memory only. `localStorage['wc:drive']` holds
      `{ connected, folderId, fileId, lastSyncedAt, lastError }` — Dexie's
      `SettingRow.key` is a closed union and would need a migration for no gain.
