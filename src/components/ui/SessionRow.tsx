@@ -61,7 +61,7 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
           <p className="mt-1 text-xs text-muted">
             {formatDuration(summary.durationMs)} · {summary.setsCompleted} sets
             {summary.volumeKg > 0 && ` · ${Math.round(summary.volumeKg)} kg`}
-            {summary.endedEarly && <span className="text-danger"> · ended early</span>}
+            {summary.endedEarly && ' · ended early'}
           </p>
         </a>
         {actions && (

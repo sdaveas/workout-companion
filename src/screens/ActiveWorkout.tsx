@@ -920,11 +920,18 @@ export function ActiveWorkout() {
 
         {/* The exercise break previews the next lift: the plan with the next exercise lit
             up, then its drawing under that label. The drawing takes whatever height the
-            list leaves, so a short list does not leave a void and a long one still fits. */}
+            list leaves, so a short list does not leave a void and a long one still fits;
+            `min-h-[24%]` is its floor in the column, so it cannot be squeezed to a smudge
+            (18 % of the stage — the drawing is the instruction here, the words are not).
+            The `REST` word below is the first thing to go when the stage is short: the
+            countdown above it already says the same thing in bigger type. 949 px of
+            viewport is 700 px of stage (header + footer = 249 px on every phone). */}
         {inExerciseBreak && nextExercise && (
           <div data-testid="rest-cue" className="mt-2 flex min-h-0 flex-1 flex-col">
             {restIsTimed && (
-              <p className="text-3xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+              <p className="hidden text-3xl font-semibold uppercase tracking-[0.3em] text-muted [@media(min-height:949px)]:block">
+                Rest
+              </p>
             )}
             {/* Same for the exercise just finished: correct it on its own screen. */}
             {exercise && doneSets > 0 && (
@@ -949,9 +956,11 @@ export function ActiveWorkout() {
               activeId={nextExercise.id}
             />
             {laterCount > 0 && (
-              <p className="shrink-0 pt-1 text-xs text-muted">+{laterCount} more</p>
+              <p className="shrink-0 pt-1 text-xs text-muted [@media(max-height:948px)]:hidden">
+                +{laterCount} more
+              </p>
             )}
-            <div className="mt-2 flex min-h-0 flex-1 items-center justify-center">
+            <div className="mt-2 flex min-h-[24%] flex-1 items-center justify-center">
               {nextSlug ? (
                 <ExerciseMotion slug={nextSlug} className="h-full max-h-56 w-full" />
               ) : (

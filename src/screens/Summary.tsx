@@ -181,7 +181,11 @@ export function Summary() {
           {shareNote}
         </p>
       )}
-      <p className="mt-4 text-xs uppercase tracking-widest text-accent">
+      <p
+        className={`mt-4 text-xs uppercase tracking-widest ${
+          summary.endedEarly ? 'text-muted' : 'text-accent'
+        }`}
+      >
         {summary.endedEarly ? 'Ended early' : 'Session complete'}
       </p>
       <h1 className="mt-2 text-3xl font-semibold">{summary.programName}</h1>
@@ -196,9 +200,16 @@ export function Summary() {
       <section className="mt-6 grid grid-cols-2 gap-2">
         <Stat label="Duration" value={formatClock(summary.durationMs)} />
         <Stat label="Sets" value={`${summary.setsCompleted}`} unit={`of ${summary.exercises.reduce((n, e) => n + e.sets.length, 0)}`} />
-        <Stat label="Reps" value={String(summary.totalReps)} />
-        {summary.volumeKg > 0 && (
-          <Stat label="Volume" value={String(Math.round(summary.volumeKg))} unit="kg" />
+        {summary.volumeKg > 0 ? (
+          <>
+            <Stat label="Reps" value={String(summary.totalReps)} />
+            <Stat label="Volume" value={String(Math.round(summary.volumeKg))} unit="kg" />
+          </>
+        ) : (
+          // Three tiles: the last one takes the whole row instead of leaving a gap.
+          <div className="col-span-2">
+            <Stat label="Reps" value={String(summary.totalReps)} />
+          </div>
         )}
       </section>
 

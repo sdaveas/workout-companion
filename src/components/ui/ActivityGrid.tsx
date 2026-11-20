@@ -1,3 +1,4 @@
+import { useRef, useState, type KeyboardEvent } from 'react';
 import { activityGrid, dayKey, monthLabels, type DayCell } from '../../lib/activity';
 
 const TONES = ['bg-line', 'bg-accent/30', 'bg-accent/60', 'bg-accent'] as const;
@@ -16,10 +17,21 @@ function label(cell: DayCell): string {
 
 const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
 
+/** One day up or down, one week left or right. */
+const STEPS: Record<string, number> = {
+  ArrowUp: -1,
+  ArrowDown: 1,
+  ArrowLeft: -7,
+  ArrowRight: 7,
+};
+
 /**
  * Training days, GitHub style: one column per week, Monday at the top, months
  * along the top edge. A cell is a button: tapping a day filters the list under
  * it, tapping it again clears.
+ *
+ * The grid is one tab stop, not 126: only the cursor cell is in the tab order and
+ * the arrows walk it, so History's first row is a Tab away instead of 130 of them.
  */
 export function ActivityGrid({
   sessions,
@@ -36,6 +48,26 @@ export function ActivityGrid({
   const grid = activityGrid(sessions, now, WEEKS);
   const months = monthLabels(grid);
   const today = dayKey(now);
+  const cells = grid.flat();
+  // Today is the last day there is anything to say about; later cells are invisible.
+  const last = cells.reduce((found, cell, i) => (cell.day <= today ? i : found), 0);
+  const [cursor, setCursor] = useState(last);
+  const board = useRef<HTMLDivElement>(null);
+
+  // Nothing has been logged yet: 126 grey squares would be the loudest thing on the
+  // screen, and the screen already has a sentence saying there is nothing here.
+  if (!sessions.some((session) => session.finishedAt != null)) return null;
+
+  const at = Math.min(cursor, last);
+
+  function move(event: KeyboardEvent) {
+    const step = STEPS[event.key];
+    if (step == null) return;
+    event.preventDefault();
+    const next = Math.min(Math.max(at + step, 0), last);
+    setCursor(next);
+    board.current?.querySelector<HTMLElement>(`[data-i="${next}"]`)?.focus();
+  }
 
   return (
     <section aria-label="Training days" className="shrink-0">
@@ -74,10 +106,18 @@ export function ActivityGrid({
           </div>
 
           <div
+            ref={board}
             className="grid grid-flow-col gap-[2px]"
             style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}
+            onKeyDown={move}
+            // Clicking or tabbing a cell moves the cursor with it, so the next Tab
+            // comes back here rather than to today.
+            onFocus={(event) => {
+              const i = Number((event.target as HTMLElement).dataset.i);
+              if (!Number.isNaN(i)) setCursor(i);
+            }}
           >
-            {grid.flat().map((cell) => {
+            {cells.map((cell, i) => {
               const look = `rounded-[3px] ${tone(cell.count)} ${
                 selected === cell.day ? 'ring-1 ring-accent' : ''
               } ${cell.day > today ? 'invisible' : ''}`;
@@ -85,6 +125,8 @@ export function ActivityGrid({
                 <button
                   key={cell.day}
                   type="button"
+                  data-i={i}
+                  tabIndex={i === at ? 0 : -1}
                   onClick={() => onSelect(cell.day)}
                   aria-label={label(cell)}
                   aria-pressed={selected === cell.day}
