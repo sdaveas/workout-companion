@@ -32,6 +32,12 @@ and the summary's stat row spans its grid. `flows.mjs` asserts the last three.
 **Landed 20 Nov 2026: U14.** The add-door's interview is the screen's single accent fill;
 the other three stay outlined under it, and "routines" is now "programs" everywhere.
 
+**Landed 20 Nov 2026: U6, U10.** Home was the pilot; the type scale and the accent role
+now cover all nine screens and every audited state. Four size jobs instead of thirteen
+one-offs, one solid fill per screen (zero where the screen only browses), and accent on
+state — a pressed chip, a progress fill — is the only other place it appears.
+`style-rules.mjs` audits fourteen states, a live session and a summary included.
+
 **Landed 20 Nov 2026: U11, U18.** Every measured sub-44 target is 44×44 now (Add +, More,
 Show all, How ▾, the detail row buttons, the sheet's Cancel), and the per-side box has an
 `aria-label`. The day chips are seven equal columns, so Sunday stays on Monday's line at

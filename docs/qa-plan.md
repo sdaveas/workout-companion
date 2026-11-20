@@ -13,7 +13,7 @@ smaller than a thumb".
 | Build + service worker | `npm run build` | broken imports, PWA manifest |
 | Journeys | `node scripts/flows.mjs` | seed through the sheet, a whole session, reload mid-set, Delete, every screen's back target, the calendar's one tab stop |
 | Sheet keyboard | `node scripts/a11y-sheets.mjs` | focus trap, Escape, focus returned to the trigger, a covered control never takes Enter |
-| Accent and type rules | `node scripts/style-rules.mjs` | one accent fill per screen, no accent borders, no off-scale sizes (Home, the pilot screen) |
+| Accent and type rules | `node scripts/style-rules.mjs` | fourteen screen states: one accent fill per screen, no accent borders on secondary controls, no off-scale sizes, no target under 44 |
 | Screenshot sweep | `node scripts/qa-shots.mjs` | layout at 5 viewports, target sizes, overflow |
 
 All of these need the dev server: `npx vite --port 5183`. `flows.mjs` accepts `BASE=`.
