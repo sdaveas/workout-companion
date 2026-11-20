@@ -8,6 +8,22 @@
   --color-muted: #8b8f98;
   --color-accent: #d7ff3f;
   --color-danger: #ff5c5c;
+
+  /* Five type jobs, and nothing else on a screen uses a raw size. --text-label is
+     the single label style: uppercase, one size, one tracking. font-gym is the
+     separate display register and is deliberately not part of this scale. */
+  --text-label: 0.6875rem; /* 11px — chrome: section labels, eyebrows, header */
+  --text-label--line-height: 1.2;
+  --tracking-label: 0.14em;
+
+  --text-body: 0.875rem; /* 14px — prose, metadata, small text links */
+  --text-body--line-height: 1.45;
+
+  --text-row: 1rem; /* 16px — the name on a tappable row */
+  --text-row--line-height: 1.35;
+
+  --text-screen: 1.25rem; /* 20px — the hero title of the screen */
+  --text-screen--line-height: 1.15;
 }
 
 :root {

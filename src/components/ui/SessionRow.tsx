@@ -45,7 +45,7 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
   return (
     <li className="flex flex-col gap-1">
       {actions && note && (
-        <p role="status" className="px-1 text-xs text-accent">
+        <p role="status" className="px-1 text-body text-accent">
           {note}
         </p>
       )}
@@ -55,10 +55,10 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
           className="block min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-3"
         >
           <div className="flex items-baseline justify-between gap-3">
-            <p className="truncate font-medium">{row.programName}</p>
-            <p className="shrink-0 text-xs text-muted">{formatDate(row.finishedAt)}</p>
+            <p className="truncate text-row font-medium">{row.programName}</p>
+            <p className="shrink-0 text-body text-muted">{formatDate(row.finishedAt)}</p>
           </div>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-body text-muted">
             {formatDuration(summary.durationMs)} · {summary.setsCompleted} sets
             {summary.volumeKg > 0 && ` · ${Math.round(summary.volumeKg)} kg`}
             {summary.endedEarly && ' · ended early'}

@@ -1,7 +1,9 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { activityGrid, dayKey, monthLabels, type DayCell } from '../../lib/activity';
 
-const TONES = ['bg-line', 'bg-accent/30', 'bg-accent/60', 'bg-accent'] as const;
+// Data, not a button: the ramp stops at /60 so a full-strength accent always means
+// "the one thing to press".
+const TONES = ['bg-line', 'bg-accent/30', 'bg-accent/60', 'bg-accent/60'] as const;
 const WEEKS = 18;
 const CELL = 14;
 
@@ -73,7 +75,7 @@ export function ActivityGrid({
     <section aria-label="Training days" className="shrink-0">
       <div className="flex gap-2">
         <div
-          className="flex flex-col gap-[2px] pt-[18px] text-[10px] leading-none text-muted"
+          className="flex flex-col gap-[2px] pt-[18px] text-label leading-none text-muted"
           aria-hidden
         >
           {WEEKDAYS.map((name, i) => (
@@ -85,7 +87,7 @@ export function ActivityGrid({
 
         <div className="min-w-0">
           <div
-            className="grid h-4 gap-[2px] text-[10px] leading-none text-muted"
+            className="grid h-4 gap-[2px] text-label leading-none text-muted"
             style={{ gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)` }}
             aria-hidden
           >

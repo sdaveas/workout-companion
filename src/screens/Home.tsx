@@ -72,7 +72,6 @@ export function Home() {
         )} elapsed`,
         action: 'Resume workout',
         programId: active.programId,
-        primary: true,
       }
     : next.kind === 'today'
       ? {
@@ -81,7 +80,6 @@ export function Home() {
           meta: meta(next.program),
           action: 'Start workout',
           programId: next.program.id,
-          primary: true,
         }
       : next.kind === 'upcoming'
         ? {
@@ -90,7 +88,6 @@ export function Home() {
             meta: meta(next.program),
             action: 'Start anyway',
             programId: next.program.id,
-            primary: false,
           }
         : next.kind === 'done_today'
           ? {
@@ -99,7 +96,6 @@ export function Home() {
               meta: 'Logged. Extras are optional.',
               action: 'Do it again',
               programId: next.program.id,
-              primary: false,
             }
           : null;
 
@@ -121,11 +117,11 @@ export function Home() {
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
             >
               {/* A drawn glyph, not the emoji: Apple's ℹ️ is a blue tile that fights the theme. */}
-              <span aria-hidden className="font-serif text-xl italic leading-none">
+              <span aria-hidden className="font-serif text-screen italic leading-none">
                 i
               </span>
             </a>
-            <h1 className="truncate text-sm font-semibold uppercase tracking-widest">
+            <h1 className="truncate text-label font-semibold uppercase tracking-label">
               My Workouts
             </h1>
           </div>
@@ -156,15 +152,13 @@ export function Home() {
 
       {card && (
         <section
-          className={`mt-3 shrink-0 rounded-2xl border bg-surface p-4 ${card.primary ? 'border-accent/50' : 'border-line'}`}
+          className="mt-3 shrink-0 rounded-2xl border border-line bg-surface p-4"
         >
-          <p className={`text-xs uppercase tracking-widest ${card.primary ? 'text-accent' : 'text-muted'}`}>
-            {card.eyebrow}
-          </p>
-          <h2 className="mt-1 truncate text-xl font-semibold">{card.name}</h2>
-          <p className="mt-0.5 text-xs text-muted">{card.meta}</p>
+          <p className="text-label uppercase tracking-label text-muted">{card.eyebrow}</p>
+          <h2 className="mt-1 truncate text-screen font-semibold">{card.name}</h2>
+          <p className="mt-0.5 text-body text-muted">{card.meta}</p>
           <Button
-            variant={card.primary ? 'primary' : 'secondary'}
+            variant="primary"
             className="mt-3 h-12 w-full"
             disabled={starting != null}
             onClick={() => (active ? navigate('#/session') : void start(card.programId))}
@@ -180,13 +174,13 @@ export function Home() {
             {/* The heading is the way to the list: Select and Delete only live there. */}
             <a
               href="#/programs"
-              className="-my-2 py-2 text-xs uppercase tracking-widest text-muted"
+              className="-my-3 py-3 text-label uppercase tracking-label text-muted"
             >
               Programs ›
             </a>
             <a
               href="#/programs/new"
-              className="-my-2 ml-auto py-2 text-xs text-muted underline underline-offset-4"
+              className="-my-2 ml-auto py-2 text-body text-muted underline underline-offset-4"
             >
               Add +
             </a>
@@ -194,7 +188,7 @@ export function Home() {
           {programs.length === 0 ? (
             <a
               href="#/programs/new"
-              className="mt-2 flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+              className="mt-2 flex h-12 items-center justify-center rounded-xl bg-accent text-body font-gym text-ink"
             >
               Build your first program
             </a>
@@ -205,10 +199,10 @@ export function Home() {
                   {/* Tapping a program opens it; starting is a decision, not a link. */}
                   <a
                     href={`#/program/${p.id}`}
-                    className="flex h-12 w-full items-center justify-between rounded-lg border border-line bg-surface px-4 text-sm"
+                    className="flex h-12 w-full items-center justify-between rounded-lg border border-line bg-surface px-4"
                   >
-                    <span className="truncate">{p.name}</span>
-                    <span className="ml-3 shrink-0 text-xs text-muted">
+                    <span className="truncate text-row">{p.name}</span>
+                    <span className="ml-3 shrink-0 text-body text-muted">
                       {p.scheduleDays.length > 0
                         ? formatDays(p.scheduleDays)
                         : exerciseCount(p.exercises.length)}
@@ -222,8 +216,8 @@ export function Home() {
 
         <section className="mt-5 pb-2">
           <div className="flex items-baseline justify-between">
-            <p className="text-xs uppercase tracking-widest text-muted">History</p>
-            <a href="#/history" className="text-xs text-muted underline underline-offset-4">
+            <p className="text-label uppercase tracking-label text-muted">History</p>
+            <a href="#/history" className="text-body text-muted underline underline-offset-4">
               More
             </a>
           </div>
@@ -245,7 +239,7 @@ export function Home() {
             </ul>
           )}
           {loaded && shown.length === 0 && (
-            <p className="mt-3 text-center text-sm text-muted">
+            <p className="mt-3 text-center text-body text-muted">
               {day === null ? 'No finished sessions yet.' : 'Nothing logged that day.'}
             </p>
           )}
