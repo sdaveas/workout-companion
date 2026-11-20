@@ -110,14 +110,11 @@ export function Home() {
   return (
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        // The title sits on the page gutter, not behind an icon: with no back control
-        // here, hanging it off the Credits square put it 52 px in while every section
-        // under it started at 20. Both tools are actions, so both sit on the right.
+        // No visible name on the root screen: the next-workout card is the headline.
+        // Credits keeps the left corner (where a back control sits on every other
+        // screen) and Data the right, so the two tools balance the row on their own.
         title={
-          <h1 className="truncate text-label font-semibold uppercase tracking-label">My Workouts</h1>
-        }
-        actions={
-          <>
+          <div className="flex items-center">
             <a
               href="#/credits"
               aria-label="Credits"
@@ -128,16 +125,19 @@ export function Home() {
                 i
               </span>
             </a>
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => setSheet('import')}
-              aria-label="Data"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              <DataIcon />
-            </button>
-          </>
+            <h1 className="sr-only">Home</h1>
+          </div>
+        }
+        actions={
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setSheet('import')}
+            aria-label="Data"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
+          >
+            <DataIcon />
+          </button>
         }
       />
 
