@@ -12,6 +12,7 @@ import { Banner } from '../components/ui/Banner';
 import { Button } from '../components/ui/Button';
 import { InstallHint } from '../components/ui/InstallHint';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { DataIcon } from '../components/ui/icons';
 import { ActivityGrid } from '../components/ui/ActivityGrid';
 import { SessionRow } from '../components/ui/SessionRow';
 import { TransferSheet } from '../components/ui/TransferSheet';
@@ -109,8 +110,14 @@ export function Home() {
   return (
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
+        // The title sits on the page gutter, not behind an icon: with no back control
+        // here, hanging it off the Credits square put it 52 px in while every section
+        // under it started at 20. Both tools are actions, so both sit on the right.
         title={
-          <div className="flex items-center gap-2">
+          <h1 className="truncate text-label font-semibold uppercase tracking-label">My Workouts</h1>
+        }
+        actions={
+          <>
             <a
               href="#/credits"
               aria-label="Credits"
@@ -121,20 +128,16 @@ export function Home() {
                 i
               </span>
             </a>
-            <h1 className="truncate text-label font-semibold uppercase tracking-label">
-              My Workouts
-            </h1>
-          </div>
-        }
-        actions={
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => setSheet('import')}
-            className="flex h-11 items-center rounded-xl border border-line px-3 text-body text-muted"
-          >
-            Transfer
-          </button>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setSheet('import')}
+              aria-label="Data"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
+            >
+              <DataIcon />
+            </button>
+          </>
         }
       />
 

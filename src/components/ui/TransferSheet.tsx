@@ -88,7 +88,7 @@ export function TransferSheet({
   return (
     <dialog
       ref={sheet}
-      aria-label="Transfer"
+      aria-label="Data"
       // Esc and the backdrop both land here; the parent owns whether the sheet exists.
       onClose={onClose}
       onClick={(event) => {
@@ -98,7 +98,7 @@ export function TransferSheet({
     >
       <div className="p-4">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-widest">Transfer</h2>
+          <h2 className="text-label font-semibold uppercase tracking-label">Data</h2>
           <button
             type="button"
             onClick={() => sheet.current?.close()}

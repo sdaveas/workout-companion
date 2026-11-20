@@ -66,7 +66,7 @@ async function seed() {
   const file = join(dir, 'workout-b.json');
   await writeFile(file, program);
   await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: 'Transfer', exact: true }).click();
+  await page.getByRole('button', { name: 'Data', exact: true }).click();
   await page.locator('input[type=file]').setInputFiles(file);
   await page.getByText(/^Imported/).waitFor({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -74,11 +74,11 @@ async function seed() {
 
 // ── U2: transfer sheet ────────────────────────────────────────────────────────
 await page.goto(`${BASE}/#/`);
-const transferButton = page.getByRole('button', { name: 'Transfer', exact: true });
+const transferButton = page.getByRole('button', { name: 'Data', exact: true });
 await transferButton.click();
 await page.waitForSelector('dialog[open]');
 
-check('transfer: focus moves into the dialog', await focusInDialog(), await focused());
+check('data: focus moves into the dialog', await focusInDialog(), await focused());
 
 const left = [];
 for (let i = 0; i < 5; i++) {
@@ -86,12 +86,12 @@ for (let i = 0; i < 5; i++) {
   const escaped = await focusEscaped();
   if (escaped) left.push(`${i + 1}:${escaped}`);
 }
-check('transfer: 5× Tab never reaches the page behind', left.length === 0, left.join(', '));
+check('data: 5× Tab never reaches the page behind', left.length === 0, left.join(', '));
 
 await page.keyboard.press('Escape');
 await page.waitForFunction(() => !document.querySelector('dialog[open]'), null, { timeout: 2000 });
-check('transfer: Escape closes it', (await openDialogCount()) === 0);
-check('transfer: focus returns to the Transfer button', await waitForFocus(transferButton), await focused());
+check('data: Escape closes it', (await openDialogCount()) === 0);
+check('data: focus returns to the Data button', await waitForFocus(transferButton), await focused());
 
 // ── U1: how-to sheet over a live set ─────────────────────────────────────────
 await seed();

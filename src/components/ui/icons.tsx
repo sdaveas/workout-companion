@@ -18,6 +18,27 @@ export function ChevronIcon({ className = 'h-4 w-4' }: { className?: string }) {
   );
 }
 
+/** Data: what moves in and out of this browser — programs and history. A cylinder,
+    because a tray-with-an-arrow is exactly the ambiguity this replaced. */
+export function DataIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <ellipse cx="12" cy="6" rx="8" ry="3" />
+      <path d="M4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6" />
+      <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+    </svg>
+  );
+}
+
 export function ShareIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg

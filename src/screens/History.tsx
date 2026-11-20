@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { DataIcon } from '../components/ui/icons';
 import { ActivityGrid } from '../components/ui/ActivityGrid';
 import { SessionRow } from '../components/ui/SessionRow';
 import { usePrograms } from '../store/programsStore';
@@ -51,9 +52,10 @@ export function History() {
             type="button"
             aria-haspopup="dialog"
             onClick={() => setSheet('export')}
-            className="flex h-11 items-center rounded-xl border border-line px-3 text-body text-muted"
+            aria-label="Data"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-muted"
           >
-            Transfer
+            <DataIcon />
           </button>
         }
       />
