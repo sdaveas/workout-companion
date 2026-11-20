@@ -99,7 +99,11 @@ export function TransferSheet({
           <h2 className="text-sm font-semibold uppercase tracking-widest">
             {mode === 'import' ? 'Import' : 'Export'}
           </h2>
-          <button type="button" onClick={() => sheet.current?.close()} className="text-sm text-muted">
+          <button
+            type="button"
+            onClick={() => sheet.current?.close()}
+            className="-my-3 flex min-h-11 min-w-11 items-center justify-center py-3 text-sm text-muted"
+          >
             Cancel
           </button>
         </div>

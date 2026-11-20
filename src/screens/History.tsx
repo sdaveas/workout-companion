@@ -82,7 +82,13 @@ export function History() {
       <div className="mt-4 flex shrink-0 items-baseline justify-between">
         <p className="text-xs uppercase tracking-widest text-muted">{heading}</p>
         {day !== null && (
-          <button type="button" onClick={() => setDay(null)} className="text-xs text-accent">
+          <button
+            type="button"
+            onClick={() => setDay(null)}
+            // 44 tall, sunk into the 20 px gap above and the 8 px below it: neither
+            // band holds anything tappable, so the words stay where they were.
+            className="-mt-5 -mb-2 flex min-h-11 min-w-11 items-start justify-center pb-2 pt-5 text-xs text-accent"
+          >
             Show all
           </button>
         )}

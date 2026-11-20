@@ -170,17 +170,20 @@ export function Home() {
 
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
         <section>
-          <div className="flex items-baseline justify-between">
+          {/* Both boxes are 44 tall so the targets are. The words keep the y they had
+              (the old 12 px pad only fitted a 20 px box), and the list under them
+              starts 24 px lower: nothing else moves. */}
+          <div className="flex items-start justify-between">
             {/* The heading is the way to the list: Select and Delete only live there. */}
             <a
               href="#/programs"
-              className="-my-3 py-3 text-label uppercase tracking-label text-muted"
+              className="flex h-11 items-start pt-1 text-label uppercase tracking-label text-muted"
             >
               Programs ›
             </a>
             <a
               href="#/programs/new"
-              className="-my-2 ml-auto py-2 text-body text-muted underline underline-offset-4"
+              className="ml-auto flex h-11 min-w-11 items-start justify-end text-body text-muted underline underline-offset-4"
             >
               Add +
             </a>
@@ -217,7 +220,13 @@ export function Home() {
         <section className="mt-5 pb-2">
           <div className="flex items-baseline justify-between">
             <p className="text-label uppercase tracking-label text-muted">History</p>
-            <a href="#/history" className="text-body text-muted underline underline-offset-4">
+            {/* 44 tall with pt exactly cancelling -mt: the words sit where they always
+                did, and the hit area fills the 20 px above them (empty) and the 4 px
+                below (the month labels, which are not tappable). */}
+            <a
+              href="#/history"
+              className="-mt-5 -mb-1 flex min-h-11 min-w-11 items-start justify-end pb-1 pt-5 text-body text-muted underline underline-offset-4"
+            >
               More
             </a>
           </div>

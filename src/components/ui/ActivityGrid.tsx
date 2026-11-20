@@ -4,8 +4,17 @@ import { activityGrid, dayKey, monthLabels, type DayCell } from '../../lib/activ
 // Data, not a button: the ramp stops at /60 so a full-strength accent always means
 // "the one thing to press".
 const TONES = ['bg-line', 'bg-accent/30', 'bg-accent/60', 'bg-accent/60'] as const;
-const WEEKS = 18;
-const CELL = 14;
+// 20 px cells with a 4 px gutter: 24 px between neighbouring centres, which is
+// WCAG 2.5.8's spacing exception for a target under 24 px. 18 weeks at 14 px left
+// 16 px between centres and failed.
+//
+// The week count is what 360 px wide allows: the column there is 320 px, and N
+// weeks cost 24(N-1) + 20. 13 would need 308 + the 14 px weekday axis = 322 > 320;
+// 12 needs 284 + 14 = 298. At 390 the same grid sits inside 350 with air on the
+// right, which is how 14 px cells at 18 weeks already sat (317 of 350).
+const WEEKS = 12;
+const CELL = 20;
+const GAP = 4;
 
 function tone(count: number): string {
   return TONES[Math.min(count, TONES.length - 1)];
@@ -17,7 +26,7 @@ function label(cell: DayCell): string {
   return `${date} · ${cell.count} session${cell.count === 1 ? '' : 's'}`;
 }
 
-const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+const WEEKDAYS = ['M', '', 'W', '', 'F', '', '']; // letters: the axis gets 14 px
 
 /** One day up or down, one week left or right. */
 const STEPS: Record<string, number> = {
@@ -32,8 +41,8 @@ const STEPS: Record<string, number> = {
  * along the top edge. A cell is a button: tapping a day filters the list under
  * it, tapping it again clears.
  *
- * The grid is one tab stop, not 126: only the cursor cell is in the tab order and
- * the arrows walk it, so History's first row is a Tab away instead of 130 of them.
+ * The grid is one tab stop, not 84: only the cursor cell is in the tab order and
+ * the arrows walk it, so History's first row is a Tab away instead of 84 of them.
  */
 export function ActivityGrid({
   sessions,
@@ -56,7 +65,7 @@ export function ActivityGrid({
   const [cursor, setCursor] = useState(last);
   const board = useRef<HTMLDivElement>(null);
 
-  // Nothing has been logged yet: 126 grey squares would be the loudest thing on the
+  // Nothing has been logged yet: 84 grey squares would be the loudest thing on the
   // screen, and the screen already has a sentence saying there is nothing here.
   if (!sessions.some((session) => session.finishedAt != null)) return null;
 
@@ -73,9 +82,10 @@ export function ActivityGrid({
 
   return (
     <section aria-label="Training days" className="shrink-0">
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         <div
-          className="flex flex-col gap-[2px] pt-[18px] text-label leading-none text-muted"
+          className="flex flex-col pt-5 text-label leading-none text-muted"
+          style={{ gap: GAP }}
           aria-hidden
         >
           {WEEKDAYS.map((name, i) => (
@@ -87,8 +97,8 @@ export function ActivityGrid({
 
         <div className="min-w-0">
           <div
-            className="grid h-4 gap-[2px] text-label leading-none text-muted"
-            style={{ gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)` }}
+            className="grid h-4 text-label leading-none text-muted"
+            style={{ gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)`, gap: GAP }}
             aria-hidden
           >
             {months.map((month) => (
@@ -109,8 +119,8 @@ export function ActivityGrid({
 
           <div
             ref={board}
-            className="grid grid-flow-col gap-[2px]"
-            style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}
+            className="grid grid-flow-col"
+            style={{ gridTemplateRows: `repeat(7, ${CELL}px)`, gap: GAP }}
             onKeyDown={move}
             // Clicking or tabbing a cell moves the cursor with it, so the next Tab
             // comes back here rather than to today.

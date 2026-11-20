@@ -24,7 +24,7 @@ function addDays(day: number, n: number): number {
 export function activityGrid(
   sessions: Array<{ finishedAt: number | null }>,
   now: number,
-  weeks = 18,
+  weeks = 12,
 ): DayCell[][] {
   const counts = new Map<number, number>();
   for (const s of sessions) {

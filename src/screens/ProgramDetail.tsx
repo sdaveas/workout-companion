@@ -213,10 +213,10 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
           value={d.draft.name}
           onChange={(e) => d.patch({ name: e.target.value })}
           placeholder="Program name"
-          className="mt-3 h-10 w-full rounded-lg bg-field px-2 text-2xl font-semibold outline-none focus:ring-2 focus:ring-accent"
+          className="mt-3 h-11 w-full rounded-lg bg-field px-2 text-2xl font-semibold outline-none focus:ring-2 focus:ring-accent"
         />
       ) : (
-        <h1 className="mt-3 flex h-10 items-center px-2 text-2xl font-semibold">{program.name}</h1>
+        <h1 className="mt-3 flex h-11 items-center px-2 text-2xl font-semibold">{program.name}</h1>
       )}
 
       <p className="mt-1 px-2 text-sm text-muted">
@@ -302,13 +302,17 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
               />
               <Cell label="×2">
                 {editing ? (
-                  <input
-                    type="checkbox"
-                    aria-label={`Exercise ${i + 1} is per side`}
-                    checked={row.perHand}
-                    onChange={(e) => d.patchExercise(i, { perHand: e.target.checked })}
-                    className="h-5 w-5 accent-accent"
-                  />
+                  // The label is the target: 44×44 around a 20 px box, so the tick
+                  // keeps its size and the tap area is a thumb.
+                  <label className="flex h-11 w-full cursor-pointer items-center justify-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Exercise ${i + 1} is per side`}
+                      checked={row.perHand}
+                      onChange={(e) => d.patchExercise(i, { perHand: e.target.checked })}
+                      className="h-5 w-5 accent-accent"
+                    />
+                  </label>
                 ) : (
                   <span className={row.perHand ? 'text-accent' : 'text-muted'}>
                     {row.perHand ? '✓' : '—'}
@@ -325,7 +329,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                   <button
                     type="button"
                     onClick={() => setHow(how === i ? null : i)}
-                    className="text-xs text-accent"
+                    className="flex h-11 min-w-11 items-center text-xs text-accent"
                   >
                     How {how === i ? '▴' : '▾'}
                   </button>
@@ -339,7 +343,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                   tabIndex={editing ? undefined : -1}
                   disabled={i === 0}
                   onClick={() => d.moveExercise(i, -1)}
-                  className={`h-11 w-9 rounded-lg bg-field text-muted disabled:opacity-30 ${
+                  className={`h-11 w-11 rounded-lg bg-field text-muted disabled:opacity-30 ${
                     editing ? '' : 'invisible'
                   }`}
                 >
@@ -352,7 +356,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                   tabIndex={editing ? undefined : -1}
                   disabled={i === rows.length - 1}
                   onClick={() => d.moveExercise(i, 1)}
-                  className={`h-11 w-9 rounded-lg bg-field text-muted disabled:opacity-30 ${
+                  className={`h-11 w-11 rounded-lg bg-field text-muted disabled:opacity-30 ${
                     editing ? '' : 'invisible'
                   }`}
                 >
@@ -364,7 +368,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                   aria-hidden={!editing}
                   tabIndex={editing ? undefined : -1}
                   onClick={() => d.removeExercise(i)}
-                  className={`h-11 w-9 rounded-lg bg-field text-danger ${editing ? '' : 'invisible'}`}
+                  className={`h-11 w-11 rounded-lg bg-field text-danger ${editing ? '' : 'invisible'}`}
                 >
                   ×
                 </button>
