@@ -161,7 +161,7 @@ export function Summary() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-md px-5 pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
         back={{ to: '#/history', label: 'History', compact: true }}
         actions={
@@ -328,10 +328,11 @@ export function Summary() {
         openLabel="Open ChatGPT with this workout"
       />
 
-      <div className="mt-8 space-y-2">
+      {/* Pinned: the exit used to sit 850 px down the page on a 390-wide phone. */}
+      <div className="sticky bottom-0 z-10 -mx-5 mt-8 flex gap-2 border-t border-line bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
         <Button
           variant="primary"
-          className="h-14 w-full text-base"
+          className="h-14 flex-1 text-base"
           onClick={() => {
             reset();
             navigate('#/');
@@ -339,7 +340,7 @@ export function Summary() {
         >
           Done
         </Button>
-        <Button className="w-full" onClick={() => navigate('#/history')}>
+        <Button className="h-14 px-5" onClick={() => navigate('#/history')}>
           History
         </Button>
       </div>

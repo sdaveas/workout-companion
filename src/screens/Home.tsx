@@ -177,8 +177,17 @@ export function Home() {
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
         <section>
           <div className="flex items-baseline justify-between">
-            <p className="text-xs uppercase tracking-widest text-muted">Programs</p>
-            <a href="#/programs/new" className="text-xs text-muted underline underline-offset-4">
+            {/* The heading is the way to the list: Select and Delete only live there. */}
+            <a
+              href="#/programs"
+              className="-my-2 py-2 text-xs uppercase tracking-widest text-muted"
+            >
+              Programs ›
+            </a>
+            <a
+              href="#/programs/new"
+              className="-my-2 ml-auto py-2 text-xs text-muted underline underline-offset-4"
+            >
               Add +
             </a>
           </div>

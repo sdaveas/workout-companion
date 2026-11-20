@@ -447,11 +447,12 @@ export function ActiveWorkout() {
   const startWorkout = useSession((s) => s.startWorkout);
   const endDialog = useRef<HTMLDialogElement>(null);
   const menuDialog = useRef<HTMLDialogElement>(null);
+  const howToDialog = useRef<HTMLDialogElement>(null);
+  const howToTrigger = useRef<HTMLButtonElement>(null);
   // The right hand ends a two-hand set: hold the screen briefly so the tick is seen.
   const [flashDone, setFlashDone] = useState(false);
   // A second tap during the hold must not queue a second completion.
   const holdRef = useRef(false);
-  const [howTo, setHowTo] = useState(false);
   /** What the break is correcting: the set just done, or the exercise just done. */
   const [editing, setEditing] = useState<'set' | 'exercise' | null>(null);
   const [keepAwake, toggleKeepAwake] = useKeepAwake();
@@ -817,8 +818,9 @@ export function ActiveWorkout() {
             {canExplain && (
               <button
                 type="button"
+                ref={howToTrigger}
                 aria-label="How to do it"
-                onClick={() => setHowTo(true)}
+                onClick={() => howToDialog.current?.showModal()}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line font-serif text-base italic text-muted"
               >
                 i
@@ -1152,25 +1154,35 @@ export function ActiveWorkout() {
         />
       )}
 
-      {howTo && exercise && (
-        <div className="absolute inset-0 z-40 overflow-y-auto bg-ink px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{exercise.name}</h2>
-            <Button className="h-11 font-gym" onClick={() => setHowTo(false)}>
-              Close
-            </Button>
+      {/* A native modal: full screen, but the set behind it cannot be reached by Tab
+          or Enter, and Esc/close hand focus back to the i button. It fills the screen,
+          so there is no backdrop to tap. */}
+      {exercise && (
+        <dialog
+          ref={howToDialog}
+          aria-label={exercise.name}
+          onClose={() => howToTrigger.current?.focus()}
+          className="m-0 h-full max-h-none w-full max-w-none overflow-hidden border-0 bg-ink p-0 text-white"
+        >
+          <div className="flex h-full flex-col overflow-y-auto px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{exercise.name}</h2>
+              <Button className="h-11 font-gym" onClick={() => howToDialog.current?.close()}>
+                Close
+              </Button>
+            </div>
+            {slug ? (
+              <div className="mt-4">
+                <ExerciseMotion slug={slug} className="h-40 w-full" />
+              </div>
+            ) : exercise.imageUrl ? (
+              <div className="mt-4">
+                <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-40 w-full" />
+              </div>
+            ) : null}
+            <ExerciseDetails exercise={exercise} open />
           </div>
-          {slug ? (
-            <div className="mt-4">
-              <ExerciseMotion slug={slug} className="h-40 w-full" />
-            </div>
-          ) : exercise.imageUrl ? (
-            <div className="mt-4">
-              <ExerciseImage src={exercise.imageUrl} alt={exercise.name} className="h-40 w-full" />
-            </div>
-          ) : null}
-          <ExerciseDetails exercise={exercise} open />
-        </div>
+        </dialog>
       )}
     </main>
   );

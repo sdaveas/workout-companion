@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { exportParts, importFromDrive, importParts, type Parts } from '../../lib/transfer';
 
 function Check({
@@ -51,6 +51,19 @@ export function TransferSheet({
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const sheet = useRef<HTMLDialogElement>(null);
+
+  // A native modal bottom sheet: it traps focus, dims the page and gives Esc, a tap
+  // outside and focus return for free. The parent unmounts it on close, so the opener
+  // has to be remembered here: the browser's own restore needs the dialog to survive.
+  useEffect(() => {
+    const dialog = sheet.current;
+    const opener = document.activeElement as HTMLElement | null;
+    if (!dialog) return;
+    // StrictMode runs this twice; a second showModal on an open dialog throws.
+    if (!dialog.open) dialog.showModal();
+    return () => opener?.focus();
+  }, []);
 
   const parts: Parts = { programs, history };
   const none = !programs && !history;
@@ -71,23 +84,22 @@ export function TransferSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/60 p-3"
-      role="presentation"
-      onClick={onClose}
+    <dialog
+      ref={sheet}
+      aria-label={mode === 'import' ? 'Import' : 'Export'}
+      // Esc and the backdrop both land here; the parent owns whether the sheet exists.
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) event.currentTarget.close();
+      }}
+      className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 [&::backdrop]:bg-black/60"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={mode === 'import' ? 'Import' : 'Export'}
-        className="w-full rounded-2xl border border-line bg-surface p-4"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="p-4">
         <div className="flex items-baseline justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-widest">
             {mode === 'import' ? 'Import' : 'Export'}
           </h2>
-          <button type="button" onClick={onClose} className="text-sm text-muted">
+          <button type="button" onClick={() => sheet.current?.close()} className="text-sm text-muted">
             Cancel
           </button>
         </div>
@@ -158,6 +170,6 @@ export function TransferSheet({
           </p>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }

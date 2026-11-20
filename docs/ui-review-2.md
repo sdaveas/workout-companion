@@ -18,6 +18,10 @@ node scripts/qa-shots.mjs --out /tmp/wc-review
 
 ## Tier 1 — data or reach, all S
 
+**Landed 20 Nov 2026: U1, U2, U3, U5.** Both sheets are native `<dialog>`s with an
+opener restored on close (`scripts/a11y-sheets.mjs` asserts all ten behaviours), Summary
+pins `Done` to the bottom, and Home's `PROGRAMS ›` heading links to `#/programs`.
+
 | # | Issue | Evidence | Where |
 | --- | --- | --- | --- |
 | U1 | **The how-to sheet is a div over a live set.** It has no `role`, no Esc and no focus trap; **measured**: with it open, Tab reached the covered `Skip set` and Enter moved the pips `Set 1/3` → `Set 2/3`. A covered control takes the keyboard's Enter. | `b-09-sheet` | `ActiveWorkout.tsx:224`, `:1156` |
