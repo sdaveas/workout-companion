@@ -646,8 +646,11 @@ export function ActiveWorkout() {
    */
   const announcement = (() => {
     const name = exercise?.name ?? '';
+    // Spoken, not read: "1 of 3", where the screen writes "1 / 3".
     const thisSet = exercise
       ? formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)
+          .replace(' / ', ' of ')
+          .replace(' · ', ', ')
       : '';
     if (isReady) return `Ready. ${state.program.name}. Start when you are ready.`;
     if (state.status === 'exercise_active' && exercise)
