@@ -75,10 +75,13 @@ async function shoot(page, name) {
   }
 }
 
+/** Seeds one program through the real import sheet; `#/settings` no longer exists. */
 async function ready(page) {
-  await page.goto(`${BASE}/#/settings`);
-  await page.setInputFiles('#backup-file', `${OUT}/program.json`);
-  await page.waitForSelector('text=Imported');
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await page.locator('input[type=file]').setInputFiles(`${OUT}/program.json`);
+  await page.getByText(/^Imported/).waitFor({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 }
 
 /** Everything that can be reached without a running session. */
@@ -89,8 +92,10 @@ async function staticScreens(page, prefix) {
   await shoot(page, `${prefix}-02-programs`);
   await page.goto(`${BASE}/#/program/workout-b`);
   await shoot(page, `${prefix}-03-program`);
-  await page.goto(`${BASE}/#/settings`);
-  await shoot(page, `${prefix}-04-settings`);
+  await page.goto(`${BASE}/#/`);
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await shoot(page, `${prefix}-04-export-sheet`);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.goto(`${BASE}/#/history`);
   await shoot(page, `${prefix}-05-history`);
   await page.goto(`${BASE}/#/paste`);
@@ -112,27 +117,32 @@ async function sessionScreens(page, prefix) {
   await shoot(page, `${prefix}-09-sheet`);
   await page.getByRole('button', { name: 'Close' }).click();
 
-  await page.getByRole('button', { name: 'Start auto' }).click();
-  await shoot(page, `${prefix}-10-auto`);
+  // Auto moved into the gear sheet; the dialog stays open after the toggle.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await shoot(page, `${prefix}-10-options-sheet`);
+  await page.getByRole('button', { name: /^Auto/ }).click();
+  await page.keyboard.press('Escape');
+  await shoot(page, `${prefix}-11-auto`);
 
   await page.getByRole('button', { name: 'Done now' }).click();
-  await shoot(page, `${prefix}-11-rest`);
+  await shoot(page, `${prefix}-12-rest`);
   await page.getByRole('button', { name: 'Skip rest' }).click();
 
   // Two sets left in the first exercise: finish them to reach its break screen.
   await tap(page, ['Done now']);
   await tap(page, ['Skip rest']);
   await tap(page, ['Done now']);
-  await shoot(page, `${prefix}-12-exercise-break`);
-  await page.getByRole('button', { name: 'End' }).click();
+  await shoot(page, `${prefix}-13-exercise-break`);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'End session' }).click();
   await page.getByRole('button', { name: 'Finish & save' }).click();
   await page.waitForURL(/#\/summary\//);
   await page.waitForTimeout(600);
   await page.reload();
-  await page.waitForSelector('a[aria-label="Back to Home"]');
-  await shoot(page, `${prefix}-13-summary`);
+  await page.waitForSelector('a[aria-label^="Back to"]');
+  await shoot(page, `${prefix}-14-summary`);
   await page.goto(`${BASE}/#/`);
-  await shoot(page, `${prefix}-14-home-after`);
+  await shoot(page, `${prefix}-15-home-after`);
 }
 
 async function run(viewport, prefix, { all = true } = {}) {
@@ -161,6 +171,22 @@ for (const [viewport, prefix] of [
   await page.goto(`${BASE}/#/program/workout-b`);
   await shoot(page, `${prefix}-03-program`);
   await sessionScreens(page, prefix);
+  await ctx.close();
+}
+
+// Cold start, no seeded data: the first-run states nothing else captures.
+{
+  const ctx = await browser.newContext({ viewport: FULL, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  for (const [route, name] of [
+    ['#/', 'f-390x844-01-home-empty'],
+    ['#/programs', 'f-390x844-02-programs-empty'],
+    ['#/history', 'f-390x844-03-history-empty'],
+    ['#/programs/build', 'f-390x844-04-build-empty'],
+  ]) {
+    await page.goto(`${BASE}/${route}`);
+    await shoot(page, name);
+  }
   await ctx.close();
 }
 
