@@ -231,10 +231,9 @@ export function Home() {
           </div>
           {shown.length > 0 && (
             <ul className="mt-2 space-y-2">
+              {/* SessionRow is its own <li>; wrapping it here nested two of them. */}
               {shown.slice(0, 5).map((row) => (
-                <li key={row.id}>
-                  <SessionRow row={row} actions={false} />
-                </li>
+                <SessionRow key={row.id} row={row} actions={false} />
               ))}
             </ul>
           )}
