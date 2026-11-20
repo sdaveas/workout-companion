@@ -41,7 +41,7 @@ export function SyncFromDisk() {
   }
 
   return (
-    <div className="mt-3 text-xs text-muted">
+    <div className="mt-3 text-body text-muted">
       <button
         type="button"
         disabled={state === 'busy'}

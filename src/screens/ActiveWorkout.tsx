@@ -41,10 +41,10 @@ const BREAK_LIST_MAX = 3;
 const HAND_TICK_MS = 600;
 
 const TRANSPORT_BTN =
-  'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-sm disabled:opacity-40';
+  'flex h-12 flex-1 items-center justify-center rounded-xl border font-gym text-body disabled:opacity-40';
 
 /** The primary action keeps the same size and type in every stage of the session. */
-const PRIMARY_BTN = 'h-14 w-full font-gym text-base';
+const PRIMARY_BTN = 'h-14 w-full font-gym text-row';
 
 /** "6–10", or just "6" when the prescription is a single number. */
 const repsText = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`);
@@ -124,7 +124,7 @@ function SessionMenu({
             type="button"
             disabled={!started}
             onClick={onRestart}
-            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger disabled:text-muted disabled:opacity-50"
+            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-body text-danger disabled:text-muted disabled:opacity-50"
           >
             Restart
           </button>
@@ -132,7 +132,7 @@ function SessionMenu({
             type="button"
             disabled={!started}
             onClick={onEnd}
-            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-sm text-danger disabled:text-muted disabled:opacity-50"
+            className="flex h-12 w-full items-center rounded-xl px-3 text-left text-body text-danger disabled:text-muted disabled:opacity-50"
           >
             End session
           </button>
@@ -146,7 +146,7 @@ function SessionMenu({
 function MenuGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mt-1 first:mt-0">
-      <p className="px-3 pb-1 pt-2 text-xs uppercase tracking-[0.2em] text-muted">{label}</p>
+      <p className="px-3 pb-1 pt-2 text-label uppercase tracking-label text-muted">{label}</p>
       {children}
     </div>
   );
@@ -173,13 +173,13 @@ function MenuRow({
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`flex h-12 w-full items-center justify-between rounded-xl pr-3 text-left text-sm ${
+      className={`flex h-12 w-full items-center justify-between rounded-xl pr-3 text-left text-body ${
         sub ? 'pl-7 text-muted' : 'pl-3'
       }`}
     >
       <span>{label}</span>
       <span
-        className={`font-gym text-xs ${
+        className={`font-gym text-label ${
           note ? 'text-danger' : on ? 'text-accent' : 'text-muted'
         }`}
       >
@@ -223,20 +223,20 @@ function ResultEdit({
   return (
     <div className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">
+        <p className="text-label uppercase tracking-label text-muted">
           {mode === 'set' ? 'Correct the set' : 'Correct the exercise'}
         </p>
         <button
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-lg text-muted"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-screen text-muted"
         >
           ×
         </button>
       </div>
-      <h2 className="mt-1 truncate text-xl font-semibold">{exercise.name}</h2>
-      <p className="mt-0.5 text-xs text-muted">
+      <h2 className="mt-1 truncate text-screen font-semibold">{exercise.name}</h2>
+      <p className="mt-0.5 text-body text-muted">
         {mode === 'set' && lastSet
           ? `Set ${formatSet(lastSet.side, lastSet.setNumber, total)} · what you actually did`
           : 'What you actually did, set by set'}
@@ -267,7 +267,7 @@ function ResultEdit({
         )}
       </div>
 
-      <p className="mt-3 text-xs text-muted">
+      <p className="mt-3 text-body text-muted">
         The program itself does not change; this is what goes in the log.
       </p>
 
@@ -300,27 +300,27 @@ function ExerciseOverview({
 }) {
   return (
     <div data-testid="overview" className={className}>
-      <p className="text-xs uppercase tracking-[0.2em] text-muted">Up next</p>
+      <p className="text-label uppercase tracking-label text-muted">Up next</p>
       <ul className="mt-1 divide-y divide-line">
         {exercises.map((next, i) => {
           const active = next.id === activeId;
           return (
             <li key={next.id} className="flex items-center gap-3 py-1.5">
               <span
-                className={`w-5 shrink-0 text-right text-xs tabular-nums ${
+                className={`w-5 shrink-0 text-right text-label tabular-nums ${
                   active ? 'text-accent' : 'text-muted'
                 }`}
               >
                 {firstNumber + i}
               </span>
               <span
-                className={`min-w-0 flex-1 truncate text-sm ${
+                className={`min-w-0 flex-1 truncate text-row ${
                   active ? 'font-semibold text-white' : 'font-medium'
                 }`}
               >
                 {next.name}
               </span>
-              <span className="shrink-0 text-xs text-muted">
+              <span className="shrink-0 text-body text-muted">
                 {next.sets} × {repsText(next.reps)} · {formatWeight(next.weightKg, next.perHand)}
               </span>
             </li>
@@ -355,7 +355,7 @@ function SetPips({ sets, current, perHand }: { sets: SetRecord[]; current: numbe
   const position = formatSetNumber(perHand, current + 1, sets.length);
   return (
     <div role="img" aria-label={`Set ${position}`} className="flex shrink-0 items-center gap-2">
-      <span className="text-xs uppercase tracking-[0.2em] text-muted">Sets</span>
+      <span className="text-label uppercase tracking-label text-muted">Sets</span>
       <span className="flex gap-1">
         {pips.map((color, i) => (
           <span key={i} className={`h-1.5 w-4 rounded-full ${color}`} />
@@ -376,7 +376,7 @@ function RepsTarget({ reps }: { reps: { min: number; max: number } }) {
           {reps.max}
         </>
       )}
-      <span className="ml-2 text-xl text-muted">reps</span>
+      <span className="ml-2 text-screen text-muted">reps</span>
     </>
   );
 }
@@ -689,7 +689,7 @@ export function ActiveWorkout() {
     state.status === 'resting' || pausedInRest
       ? bigNumber
       : state.status === 'exercise_complete'
-        ? 'text-3xl'
+        ? 'text-screen'
         : bigNumber;
 
   return (
@@ -713,10 +713,10 @@ export function ActiveWorkout() {
         }}
         title={
           <div>
-            <p className="truncate text-xs uppercase tracking-[0.2em] text-muted">
+            <p className="truncate text-label uppercase tracking-label text-muted">
               {state.program.name}
             </p>
-            {!isReady && <p className="truncate text-xs tabular-nums text-muted">{metaLine}</p>}
+            {!isReady && <p className="truncate text-body tabular-nums text-muted">{metaLine}</p>}
           </div>
         }
         actions={
@@ -732,7 +732,7 @@ export function ActiveWorkout() {
                 aria-label={state.status === 'paused' ? 'Resume' : 'Pause'}
                 onClick={() => dispatch({ type: state.status === 'paused' ? 'RESUME' : 'PAUSE' })}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
-                  state.status === 'paused' ? 'border-accent text-accent' : 'border-line text-muted'
+                  state.status === 'paused' ? 'border-line text-accent' : 'border-line text-muted'
                 }`}
               >
                 {state.status === 'paused' ? <PlayIcon /> : <PauseIcon />}
@@ -754,10 +754,10 @@ export function ActiveWorkout() {
           <>
             {/* One tick drives both clocks, so they change together. */}
             <div className="mt-1 flex min-h-11 items-center gap-2">
-              <p className="text-xl font-semibold tabular-nums" aria-label="elapsed time">
+              <p className="text-screen font-semibold tabular-nums" aria-label="elapsed time">
                 {formatClock(elapsedMs(state, now))}
               </p>
-              <p className="text-xs text-muted">{`${formatDuration(estimatedRemainingMs(state, now))} left`}</p>
+              <p className="text-body text-muted">{`${formatDuration(estimatedRemainingMs(state, now))} left`}</p>
             </div>
             <div className="mt-1">
               <ProgressBar
@@ -795,7 +795,7 @@ export function ActiveWorkout() {
           {announcement}
         </p>
         <div className="flex shrink-0 items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
+          <p className="text-label uppercase tracking-label text-muted">{kicker}</p>
           {(inSet || isReady) && exercise && exercise.sets > 1 && record && (
             <SetPips sets={record.sets} current={state.currentSetIndex} perHand={exercise.perHand} />
           )}
@@ -847,7 +847,7 @@ export function ActiveWorkout() {
         {(inSet || isReady) && exercise && (
           <div className="mt-2 flex shrink-0 items-center gap-2">
             <h1
-              className="min-w-0 flex-1 truncate text-2xl font-semibold leading-tight"
+              className="min-w-0 flex-1 truncate text-screen font-semibold leading-tight"
               title={exercise.name}
             >
               {exercise.name}
@@ -858,7 +858,7 @@ export function ActiveWorkout() {
                 ref={howToTrigger}
                 aria-label="How to do it"
                 onClick={() => howToDialog.current?.showModal()}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line font-serif text-base italic text-muted"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line font-serif text-screen italic text-muted"
               >
                 i
               </button>
@@ -868,7 +868,7 @@ export function ActiveWorkout() {
         {/* A manual set already says this: the reps are the big number, the weight is in
             the stepper. Auto (a clock up there) and the preview still need the line. */}
         {(inSet || isReady) && exercise && bigSlot !== repsText(exercise.reps) && (
-          <p className="shrink-0 truncate text-sm text-muted">
+          <p className="shrink-0 truncate text-body text-muted">
             {repsText(exercise.reps)} · {formatWeight(exercise.weightKg, exercise.perHand)}
           </p>
         )}
@@ -878,7 +878,7 @@ export function ActiveWorkout() {
             {handRows.map((hand) => (
               <div
                 key={hand.setNumber}
-                className={`flex items-center justify-between rounded-xl border px-3 py-1.5 text-xs ${
+                className={`flex items-center justify-between rounded-xl border px-3 py-1.5 text-body ${
                   hand.completed || (flashDone && hand.side === side)
                     ? 'border-accent text-accent'
                     : 'border-line text-muted'
@@ -940,14 +940,14 @@ export function ActiveWorkout() {
             className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center"
           >
             {restIsTimed && (
-              <p className="text-4xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+              <p className="text-screen font-semibold uppercase tracking-label text-muted">Rest</p>
             )}
             {exercise && (
               <div className="min-w-0 space-y-1">
-                <p className="text-base font-semibold">
+                <p className="text-row font-semibold">
                   {`Next · set ${formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)}`}
                 </p>
-                <p className="truncate text-sm text-muted">
+                <p className="truncate text-body text-muted">
                   {exercise.name} · {repsText(exercise.reps)} reps
                 </p>
               </div>
@@ -966,7 +966,7 @@ export function ActiveWorkout() {
         {inExerciseBreak && nextExercise && (
           <div data-testid="rest-cue" className="mt-2 flex min-h-0 flex-1 flex-col">
             {restIsTimed && (
-              <p className="hidden text-3xl font-semibold uppercase tracking-[0.3em] text-muted [@media(min-height:949px)]:block">
+              <p className="hidden text-screen font-semibold uppercase tracking-label text-muted [@media(min-height:949px)]:block">
                 Rest
               </p>
             )}
@@ -993,7 +993,7 @@ export function ActiveWorkout() {
               activeId={nextExercise.id}
             />
             {laterCount > 0 && (
-              <p className="shrink-0 pt-1 text-xs text-muted [@media(max-height:948px)]:hidden">
+              <p className="shrink-0 pt-1 text-body text-muted [@media(max-height:948px)]:hidden">
                 +{laterCount} more
               </p>
             )}
@@ -1017,9 +1017,9 @@ export function ActiveWorkout() {
             className="mt-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center"
           >
             {restIsTimed && (
-              <p className="text-4xl font-semibold uppercase tracking-[0.3em] text-muted">Rest</p>
+              <p className="text-screen font-semibold uppercase tracking-label text-muted">Rest</p>
             )}
-            <p className="text-base font-semibold">Last exercise done</p>
+            <p className="text-row font-semibold">Last exercise done</p>
           </div>
         )}
       </section>
@@ -1083,7 +1083,7 @@ export function ActiveWorkout() {
         )}
 
         {state.status === 'paused' && (
-          <Button variant="primary" className="h-14 w-full font-gym text-base" onClick={() => dispatch({ type: 'RESUME' })}>
+          <Button variant="primary" className="h-14 w-full font-gym text-row" onClick={() => dispatch({ type: 'RESUME' })}>
             Resume
           </Button>
         )}
@@ -1143,7 +1143,7 @@ export function ActiveWorkout() {
         className="mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] mt-auto w-[calc(100%-2.5rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-white"
       >
         <div className="p-4">
-          <p className="mb-3 text-sm font-semibold">End this session?</p>
+          <p className="mb-3 text-body font-semibold">End this session?</p>
           <div className="flex gap-2">
             <Button className="flex-1 font-gym" onClick={() => dispatch({ type: 'FINISH' })}>
               Finish &amp; save
@@ -1212,7 +1212,7 @@ export function ActiveWorkout() {
         >
           <div className="flex h-full flex-col overflow-y-auto px-5 pb-6 pt-[max(1rem,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{exercise.name}</h2>
+              <h2 className="text-screen font-semibold">{exercise.name}</h2>
               <Button className="h-11 font-gym" onClick={() => howToDialog.current?.close()}>
                 Close
               </Button>

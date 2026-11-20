@@ -60,8 +60,8 @@ export function AddProgram() {
         className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-accent px-4 py-3 text-ink"
       >
         <span>
-          <span className="block font-medium">Talk to ChatGPT</span>
-          <span className="block text-xs text-ink/70">
+          <span className="block text-row font-medium">Talk to ChatGPT</span>
+          <span className="block text-body text-ink/70">
             It interviews you, then writes a program for each training day.
           </span>
         </span>
@@ -76,8 +76,8 @@ export function AddProgram() {
         className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left"
       >
         <span>
-          <span className="block font-medium">Paste a link</span>
-          <span className="block text-xs text-muted">
+          <span className="block text-row font-medium">Paste a link</span>
+          <span className="block text-body text-muted">
             A program someone shared with you. Copy the link first.
           </span>
         </span>
@@ -91,8 +91,8 @@ export function AddProgram() {
         className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3"
       >
         <span>
-          <span className="block font-medium">Build your own</span>
-          <span className="block text-xs text-muted">
+          <span className="block text-row font-medium">Build your own</span>
+          <span className="block text-body text-muted">
             Pick the exercises, set the sets and the days.
           </span>
         </span>
@@ -108,8 +108,8 @@ export function AddProgram() {
         className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left disabled:text-muted"
       >
         <span>
-          <span className="block font-medium">Import a program</span>
-          <span className="block text-xs text-muted">
+          <span className="block text-row font-medium">Import a program</span>
+          <span className="block text-body text-muted">
             {busy ? 'Reading the file…' : 'A program json, or a whole backup.'}
           </span>
         </span>
@@ -133,13 +133,13 @@ export function AddProgram() {
       {error && (
         <p
           role="alert"
-          className="whitespace-pre-line rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+          className="whitespace-pre-line rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-body text-danger"
         >
           {error}
         </p>
       )}
 
-      <p className="pt-1 text-xs text-muted">
+      <p className="pt-1 text-body text-muted">
         Nothing is uploaded. Every program stays in this browser.
       </p>
     </div>

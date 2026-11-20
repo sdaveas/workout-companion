@@ -34,7 +34,7 @@ export function ProgramDetail({ id, startEditing = false }: { id: string; startE
     return (
       <main className="mx-auto max-w-md px-5 pt-[max(1rem,env(safe-area-inset-top))]">
         <ScreenHeader back={{ to: '#/', label: 'Home', compact: true }} />
-        <p className="mt-6 text-sm text-muted">That program is not saved here.</p>
+        <p className="mt-6 text-body text-muted">That program is not saved here.</p>
       </main>
     );
   }
@@ -201,7 +201,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
       />
 
       {shareNote && (
-        <p role="status" className="mt-2 text-xs text-accent">
+        <p role="status" className="mt-2 text-body text-accent">
           {shareNote}
         </p>
       )}
@@ -213,13 +213,13 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
           value={d.draft.name}
           onChange={(e) => d.patch({ name: e.target.value })}
           placeholder="Program name"
-          className="mt-3 h-11 w-full rounded-lg bg-field px-2 text-2xl font-semibold outline-none focus:ring-2 focus:ring-accent"
+          className="mt-3 h-11 w-full rounded-lg bg-field px-2 text-screen font-semibold outline-none focus:ring-2 focus:ring-accent"
         />
       ) : (
-        <h1 className="mt-3 flex h-11 items-center px-2 text-2xl font-semibold">{program.name}</h1>
+        <h1 className="mt-3 flex h-11 items-center px-2 text-screen font-semibold">{program.name}</h1>
       )}
 
-      <p className="mt-1 px-2 text-sm text-muted">
+      <p className="mt-1 px-2 text-body text-muted">
         {exerciseCount} exercise{exerciseCount === 1 ? '' : 's'} · {sets} set{sets === 1 ? '' : 's'}
       </p>
 
@@ -232,7 +232,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
       </div>
 
       {program.description && (
-        <p className="mt-3 text-sm text-muted">{program.description}</p>
+        <p className="mt-3 text-body text-muted">{program.description}</p>
       )}
 
       {error && <Banner message={error} onDismiss={clearError} />}
@@ -252,7 +252,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                     className="h-11 w-full rounded-lg bg-field px-2 font-medium outline-none focus:ring-2 focus:ring-accent"
                   />
                 ) : (
-                  <p className="flex h-11 items-center truncate px-2 font-medium">{row.name}</p>
+                  <p className="flex h-11 items-center truncate px-2 text-row font-medium">{row.name}</p>
                 )}
               </div>
             </div>
@@ -288,7 +288,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                     onChange={(e) => d.patchExercise(i, { weightKg: e.target.value })}
                     onFocus={(e) => e.currentTarget.select()}
                     placeholder="bodyweight"
-                    className="h-11 w-full bg-transparent px-1 text-center tabular-nums outline-none placeholder:text-xs focus:ring-2 focus:ring-accent"
+                    className="h-11 w-full bg-transparent px-1 text-center tabular-nums outline-none placeholder:text-body focus:ring-2 focus:ring-accent"
                   />
                 ) : (
                   <span>{row.weight}</span>
@@ -330,7 +330,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                     type="button"
                     onClick={() => setHow(how === i ? null : i)}
                     aria-expanded={how === i}
-                    className="flex h-11 min-w-11 items-center gap-1 text-xs text-accent"
+                    className="flex h-11 min-w-11 items-center gap-1 text-label uppercase tracking-label text-accent"
                   >
                     How
                     <ChevronIcon
@@ -380,7 +380,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
             </div>
 
             {!editing && how === i && row.instructions.length > 0 && (
-              <p className="pb-1 text-xs leading-relaxed text-muted">{row.instructions.join(' ')}</p>
+              <p className="pb-1 text-body leading-relaxed text-muted">{row.instructions.join(' ')}</p>
             )}
           </li>
         ))}
@@ -396,7 +396,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
         <button
           type="button"
           onClick={() => void deleteProgram()}
-          className="mt-4 h-12 w-full rounded-xl border border-danger/40 text-sm font-semibold text-danger"
+          className="mt-4 h-12 w-full rounded-xl border border-danger/40 text-body font-semibold text-danger"
         >
           Delete this program
         </button>
@@ -419,7 +419,7 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
             <button
               type="button"
               onClick={() => setMode(false)}
-              className="h-14 flex-1 rounded-xl border border-line text-sm text-muted"
+              className="h-14 flex-1 rounded-xl border border-line text-body text-muted"
             >
               Cancel
             </button>
@@ -457,14 +457,14 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
           // The way back is a paste, so the app waits on the paste step.
           onOpened={() => navigate(`#/paste/${program.id}`)}
         >
-          <p className="mt-4 text-[10px] uppercase tracking-widest text-accent">Step 2</p>
-          <h3 className="mt-1 text-sm font-semibold">When the coach answers</h3>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-4 text-label uppercase tracking-label text-muted">Step 2</p>
+          <h3 className="mt-1 text-body font-semibold">When the coach answers</h3>
+          <p className="mt-1 text-body text-muted">
             Paste its reply and the app lists what changed before touching this program.
           </p>
           <a
             href={`#/paste/${program.id}`}
-            className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-sm font-semibold"
+            className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line text-body font-semibold"
           >
             Paste the coach’s reply
           </a>
@@ -478,8 +478,8 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
 function Cell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="block">
-      <span className="text-[10px] uppercase tracking-widest text-muted">{label}</span>
-      <div className="mt-1 flex h-11 w-full items-center justify-center rounded-lg bg-field px-2 text-sm tabular-nums">
+      <span className="text-label uppercase tracking-label text-muted">{label}</span>
+      <div className="mt-1 flex h-11 w-full items-center justify-center rounded-lg bg-field px-2 text-row tabular-nums">
         {children}
       </div>
     </div>
@@ -504,7 +504,7 @@ function NumCell({
   if (!onChange) return <Cell label={label}>{value}</Cell>;
   return (
     <label className="block">
-      <span className="text-[10px] uppercase tracking-widest text-muted">{label}</span>
+      <span className="text-label uppercase tracking-label text-muted">{label}</span>
       <input
         type="number"
         inputMode="numeric"

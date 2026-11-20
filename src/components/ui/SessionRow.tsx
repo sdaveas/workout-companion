@@ -84,7 +84,7 @@ export function SessionRow({ row, actions = true }: { row: Row; actions?: boolea
               if (!confirm('Delete this session? It cannot be recovered.')) return;
               void removeSession(row.id);
             }}
-            className="w-11 shrink-0 rounded-xl border border-line bg-surface text-lg text-danger"
+            className="w-11 shrink-0 rounded-xl border border-line bg-surface text-screen text-danger"
           >
             ×
           </button>

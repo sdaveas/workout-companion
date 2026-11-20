@@ -40,7 +40,7 @@ export function App() {
   if (restoring) return <div className="min-h-dvh bg-ink" />;
 
   return (
-    <div className="min-h-dvh bg-ink text-[15px]">
+    <div className="min-h-dvh bg-ink text-body">
       {route.name === 'programs' && <Programs />}
       {route.name === 'add' && <AddShared payload={route.param ?? ''} />}
       {route.name === 'paste' && <PasteProgram from={route.param ?? undefined} />}
@@ -58,7 +58,7 @@ export function App() {
           <ScreenHeader back={{ to: '#/', label: 'Home', compact: true }} />
           <p className="mt-16 text-center text-muted">That page is not here.</p>
           <div className="mt-4 text-center">
-            <a href="#/" className="text-sm text-accent underline underline-offset-4">
+            <a href="#/" className="text-body text-accent underline underline-offset-4">
               Back to Home
             </a>
           </div>

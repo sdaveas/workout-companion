@@ -40,7 +40,7 @@ export function ScreenHeader({
             // (dropping an unstarted session). Preventing the default here would
             // leave the back control dead.
             onClick={back.onSelect}
-            className="flex h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-line px-3 text-sm text-muted"
+            className="flex h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-line px-3 text-body text-muted"
           >
             <span aria-hidden>←</span>
             {!back.compact && <span>{back.label}</span>}

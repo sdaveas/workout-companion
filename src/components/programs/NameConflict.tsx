@@ -24,15 +24,15 @@ export function NameConflict({
 
   return (
     <section className="mt-5 rounded-xl border border-line bg-surface p-4">
-      <p className="text-sm">
+      <p className="text-body">
         A program called <span className="font-semibold">{taken}</span> already exists.
       </p>
-      <p className="mt-1 text-xs text-muted">
+      <p className="mt-1 text-body text-muted">
         Give this one another name and it is saved next to the original — nothing is overwritten.
       </p>
 
       <label className="mt-3 block">
-        <span className="text-[10px] uppercase tracking-widest text-muted">New name</span>
+        <span className="text-label uppercase tracking-label text-muted">New name</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -40,7 +40,7 @@ export function NameConflict({
           className="mt-1 h-12 w-full rounded-lg bg-field px-3 outline-none focus:ring-2 focus:ring-accent"
         />
       </label>
-      {clash && <p className="mt-2 text-xs text-danger">“{trimmed}” is taken as well.</p>}
+      {clash && <p className="mt-2 text-body text-danger">“{trimmed}” is taken as well.</p>}
 
       <button
         type="button"

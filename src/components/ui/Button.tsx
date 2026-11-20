@@ -17,7 +17,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`min-h-12 rounded-xl px-4 text-sm disabled:opacity-40 ${styles[variant]} ${className}`}
+      className={`min-h-12 rounded-xl px-4 text-body disabled:opacity-40 ${styles[variant]} ${className}`}
     />
   );
 }

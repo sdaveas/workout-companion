@@ -48,12 +48,12 @@ export function ProgramBuilder({
 
   return (
     <section className="mt-6">
-      <p className="text-xs uppercase tracking-widest text-accent">
+      <p className="text-label uppercase tracking-label text-muted">
         {initial ? `Editing "${initial.name}"` : 'Build a program'}
       </p>
       <div className="mt-4 space-y-3">
         <label className="block">
-          <span className="text-[10px] uppercase tracking-widest text-muted">Program name</span>
+          <span className="text-label uppercase tracking-label text-muted">Program name</span>
           <input
             value={draft.name}
             onChange={(e) => patch({ name: e.target.value })}
@@ -63,7 +63,7 @@ export function ProgramBuilder({
         </label>
 
         <div className="block">
-          <span className="text-[10px] uppercase tracking-widest text-muted">Days</span>
+          <span className="text-label uppercase tracking-label text-muted">Days</span>
           <div className="mt-1">
             <DayChips days={draft.days} onChange={(days) => patch({ days })} />
           </div>
@@ -81,7 +81,7 @@ export function ProgramBuilder({
           >
             <div className="flex items-start gap-2">
               <label className="block flex-1">
-                <span className="text-[10px] uppercase tracking-widest text-muted">
+                <span className="text-label uppercase tracking-label text-muted">
                   Exercise {i + 1}
                 </span>
                 <input
@@ -150,7 +150,7 @@ export function ProgramBuilder({
 
             <div className="mt-3 grid grid-cols-3 gap-2">
               <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-muted">Weight kg</span>
+                <span className="text-label uppercase tracking-label text-muted">Weight kg</span>
                 <input
                   inputMode="decimal"
                   value={ex.weightKg}
@@ -166,7 +166,7 @@ export function ProgramBuilder({
                 max={600}
                 onChange={(restSeconds) => patchExercise(i, { restSeconds })}
               />
-              <label className="flex min-h-11 flex-col justify-end pb-1 text-sm">
+              <label className="flex min-h-11 flex-col justify-end pb-1 text-body">
                 <span className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -194,7 +194,7 @@ export function ProgramBuilder({
         type="button"
         disabled={!ready}
         onClick={() => void create()}
-        className="mt-4 h-12 w-full rounded-xl border border-line text-sm font-semibold text-accent disabled:text-muted"
+        className="mt-4 h-12 w-full rounded-xl border border-line text-body font-semibold text-accent disabled:text-muted"
       >
         {initial ? 'Update program' : 'Create program'}
       </button>

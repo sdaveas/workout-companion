@@ -85,7 +85,7 @@ export function ExercisePicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-12 w-full rounded-xl bg-accent text-sm font-semibold text-ink"
+        className="h-12 w-full rounded-xl border border-line text-body font-semibold text-accent"
       >
         + Add exercise
       </button>
@@ -102,12 +102,12 @@ export function ExercisePicker({
       >
         <div className="mx-auto flex h-full max-w-md flex-col">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Add an exercise</h2>
+            <h2 className="text-screen font-semibold">Add an exercise</h2>
             <button
               type="button"
               aria-label="Close"
               onClick={() => setOpen(false)}
-              className="-mr-2 grid h-11 w-11 place-items-center rounded-full text-xl text-muted"
+              className="-mr-2 grid h-11 w-11 place-items-center rounded-full text-screen text-muted"
             >
               ×
             </button>
@@ -136,7 +136,7 @@ export function ExercisePicker({
               type="button"
               aria-pressed={on}
               onClick={() => toggle(group)}
-              className={`min-h-11 rounded-full border px-3 text-xs ${
+              className={`min-h-11 rounded-full border px-3 text-label ${
                 on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
               }`}
             >
@@ -152,13 +152,13 @@ export function ExercisePicker({
           setOpen(false);
           onNew();
         }}
-        className="mt-3 h-11 w-full shrink-0 rounded-xl border border-dashed border-line text-sm text-muted"
+        className="mt-3 h-11 w-full shrink-0 rounded-xl border border-dashed border-line text-body text-muted"
       >
         + New exercise (my own)
       </button>
 
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">
+        <p className="mt-4 text-body text-muted">
           Nothing matches “{query.trim()}”. Add it as your own →
         </p>
       ) : (
@@ -177,12 +177,12 @@ export function ExercisePicker({
                 type="button"
                 aria-label={e.name}
                 onClick={() => add(e.name)}
-                className="flex min-h-11 flex-1 items-center justify-between gap-3 py-2 pl-3 text-left text-sm"
+                className="flex min-h-11 flex-1 items-center justify-between gap-3 py-2 pl-3 text-left text-body"
               >
                 <span className={added?.name === e.name ? 'font-semibold text-accent' : ''}>
                   {e.name}
                 </span>
-                <span aria-hidden className="shrink-0 text-[11px] text-muted">
+                <span aria-hidden className="shrink-0 text-body text-muted">
                   {e.muscle}
                 </span>
               </button>
@@ -194,7 +194,7 @@ export function ExercisePicker({
               >
                 <span
                   aria-hidden
-                  className="grid h-6 w-6 place-items-center rounded-full border border-current text-[11px] font-semibold"
+                  className="grid h-6 w-6 place-items-center rounded-full border border-current text-label font-semibold"
                 >
                   i
                 </span>
@@ -212,7 +212,7 @@ export function ExercisePicker({
           role="status"
           className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
-          <span className="block rounded-xl bg-field px-3 py-2 text-center text-sm text-accent shadow-lg ring-1 ring-line">
+          <span className="block rounded-xl bg-field px-3 py-2 text-center text-body text-accent shadow-lg ring-1 ring-line">
             {added.name} added
           </span>
         </p>
@@ -232,8 +232,8 @@ export function ExercisePicker({
           <div>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold">{preview.name}</h2>
-                <p className="text-xs text-muted">
+                <h2 className="text-screen font-semibold">{preview.name}</h2>
+                <p className="text-body text-muted">
                   {[preview.muscle, ...preview.also].filter(Boolean).join(' · ')}
                   {preview.equipment && ` — ${preview.equipment}`}
                 </p>
@@ -242,7 +242,7 @@ export function ExercisePicker({
                 type="button"
                 aria-label="Close"
                 onClick={() => setPreview(null)}
-                className="-mr-1 -mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-xl text-muted"
+                className="-mr-1 -mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-screen text-muted"
               >
                 ×
               </button>
@@ -254,7 +254,7 @@ export function ExercisePicker({
               </div>
             )}
 
-            <p className="mt-3 text-xs uppercase tracking-widest text-muted">
+            <p className="mt-3 text-label uppercase tracking-label text-muted">
               {preview.sets} × {preview.repsMin}
               {preview.repsMax > preview.repsMin ? `–${preview.repsMax}` : ''}
               {' · '}
@@ -262,10 +262,10 @@ export function ExercisePicker({
               {preview.perHand && ' · each side'}
             </p>
 
-            <h3 className="mt-4 text-[10px] uppercase tracking-widest text-muted">
+            <h3 className="mt-4 text-label uppercase tracking-label text-muted">
               {preview.howto ? 'How to do it' : `Basic ${preview.pattern ?? 'movement'} pattern`}
             </h3>
-            <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">
+            <ol className="mt-1 list-decimal space-y-1 pl-5 text-body">
               {(preview.howto ?? (preview.pattern ? PATTERN_CUE[preview.pattern] : [])).map((line) => (
                 <li key={line}>{line}</li>
               ))}

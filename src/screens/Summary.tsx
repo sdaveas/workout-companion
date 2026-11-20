@@ -18,10 +18,10 @@ import { coachBrief } from '../lib/coachBrief';
 function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-4 py-3">
-      <p className="text-xs uppercase tracking-widest text-muted">{label}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums">
+      <p className="text-label uppercase tracking-label text-muted">{label}</p>
+      <p className="mt-1 text-screen font-semibold tabular-nums">
         {value}
-        {unit && <span className="ml-1 text-sm font-normal text-muted">{unit}</span>}
+        {unit && <span className="ml-1 text-body font-normal text-muted">{unit}</span>}
       </p>
     </div>
   );
@@ -177,24 +177,24 @@ export function Summary() {
         }
       />
       {shareNote && (
-        <p role="status" className="mt-2 text-xs text-accent">
+        <p role="status" className="mt-2 text-body text-accent">
           {shareNote}
         </p>
       )}
       <p
-        className={`mt-4 text-xs uppercase tracking-widest ${
+        className={`mt-4 text-label uppercase tracking-label ${
           summary.endedEarly ? 'text-muted' : 'text-accent'
         }`}
       >
         {summary.endedEarly ? 'Ended early' : 'Session complete'}
       </p>
-      <h1 className="mt-2 text-3xl font-semibold">{summary.programName}</h1>
-      <p className="mt-1 text-sm text-muted">
+      <h1 className="mt-2 text-screen font-semibold">{summary.programName}</h1>
+      <p className="mt-1 text-body text-muted">
         {formatDate(summary.finishedAt)} · {summary.exercisesCompleted} of{' '}
         {summary.exercises.length} exercises
       </p>
       {source?.mode === 'auto' && (
-        <p className="mt-2 text-xs text-muted">Auto session · reps are the timed target.</p>
+        <p className="mt-2 text-body text-muted">Auto session · reps are the timed target.</p>
       )}
 
       <section className="mt-6 grid grid-cols-2 gap-2">
@@ -214,21 +214,21 @@ export function Summary() {
       </section>
 
       {summary.setsSkipped > 0 && (
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-body text-muted">
           {summary.setsSkipped} sets {summary.endedEarly ? 'not done' : 'skipped'}.
         </p>
       )}
 
       <section className="mt-6">
-        <p className="text-xs uppercase tracking-widest text-muted">Exercises</p>
+        <p className="text-label uppercase tracking-label text-muted">Exercises</p>
         <ul className="mt-3 space-y-2">
           {summary.exercises.map((ex) => {
             const done = ex.sets.filter((x) => x.completed).length;
             return (
               <li key={ex.exerciseId} className="rounded-xl border border-line bg-surface px-4 py-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <p className="font-medium">{ex.name}</p>
-                  <p className="shrink-0 text-xs text-muted">
+                  <p className="text-row font-medium">{ex.name}</p>
+                  <p className="shrink-0 text-body text-muted">
                     {ex.skipped
                       ? summary.endedEarly && done === 0
                         ? 'not done'
@@ -237,7 +237,7 @@ export function Summary() {
                   </p>
                 </div>
                 {!ex.skipped && (
-                  <p className="mt-1 font-mono text-xs leading-relaxed text-muted">
+                  <p className="mt-1 font-mono text-body leading-relaxed text-muted">
                     {ex.sets
                       .map((s) =>
                         s.completed
@@ -259,11 +259,11 @@ export function Summary() {
 
       {update && (
         <section className="mt-6 rounded-2xl border border-accent/50 bg-surface p-4">
-          <p className="text-xs uppercase tracking-widest text-accent">Keep today's numbers?</p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="text-label uppercase tracking-label text-muted">Keep today's numbers?</p>
+          <p className="mt-2 text-body text-muted">
             Update “{update.name}” with what you actually did:
           </p>
-          <ul className="mt-3 space-y-1 text-sm">
+          <ul className="mt-3 space-y-1 text-body">
             {update.lines.map((line) => (
               <li key={line} className="leading-snug">
                 {line}
@@ -272,7 +272,6 @@ export function Summary() {
           </ul>
           <div className="mt-4 space-y-2">
             <Button
-              variant="primary"
               className="h-12 w-full"
               disabled={updateState === 'busy'}
               onClick={() => void applyUpdate()}
@@ -287,13 +286,13 @@ export function Summary() {
       )}
 
       {updateState === 'applied' && (
-        <p role="status" className="mt-4 text-sm text-accent">
+        <p role="status" className="mt-4 text-body text-accent">
           Program updated with today's numbers.
         </p>
       )}
 
       <section className="mt-6">
-        <p className="text-xs uppercase tracking-widest text-muted">How hard was it?</p>
+        <p className="text-label uppercase tracking-label text-muted">How hard was it?</p>
         <div className="mt-3 grid grid-cols-5 gap-2">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => {
             const selected = summary.rpe === value;
@@ -303,7 +302,7 @@ export function Summary() {
                 type="button"
                 aria-pressed={selected}
                 onClick={() => void apply({ type: 'SET_RPE', rpe: selected ? null : value })}
-                className={`h-11 rounded-lg border text-sm tabular-nums ${
+                className={`h-11 rounded-lg border text-body tabular-nums ${
                   selected
                     ? 'border-accent bg-accent font-semibold text-ink'
                     : 'border-line bg-surface text-muted'
@@ -317,7 +316,7 @@ export function Summary() {
       </section>
 
       <section className="mt-6">
-        <label htmlFor="notes" className="text-xs uppercase tracking-widest text-muted">
+        <label htmlFor="notes" className="text-label uppercase tracking-label text-muted">
           Notes
         </label>
         <textarea
@@ -329,7 +328,7 @@ export function Summary() {
           }}
           rows={3}
           placeholder="How did it feel?"
-          className="mt-2 w-full rounded-xl border border-line bg-surface p-3 text-sm outline-none focus:border-accent"
+          className="mt-2 w-full rounded-xl border border-line bg-surface p-3 text-row outline-none focus:border-accent"
         />
       </section>
 
@@ -343,7 +342,7 @@ export function Summary() {
       <div className="sticky bottom-0 z-10 -mx-5 mt-8 flex gap-2 border-t border-line bg-ink px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
         <Button
           variant="primary"
-          className="h-14 flex-1 text-base"
+          className="h-14 flex-1"
           onClick={() => {
             reset();
             navigate('#/');

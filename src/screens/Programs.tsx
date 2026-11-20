@@ -63,20 +63,18 @@ export function Programs() {
             : { to: '#/', label: 'Home', compact: true }
         }
         title={
-          <h1 className="text-sm font-semibold uppercase tracking-widest">
+          <h1 className="text-label font-semibold uppercase tracking-label">
             {building ? 'New program' : adding ? 'Add a program' : 'Programs'}
           </h1>
         }
         actions={
           building || adding ? undefined : (
+            // Chrome, not the primary: on an empty list the fill goes on the sentence
+            // that says what to do, so the + stops being the loudest thing on the page.
             <a
               href="#/programs/new"
               aria-label="Add a program"
-              className={`flex h-11 w-11 items-center justify-center rounded-xl border text-xl leading-none ${
-                programs.length === 0
-                  ? 'border-accent bg-accent font-semibold text-ink'
-                  : 'border-line text-accent'
-              }`}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-screen leading-none text-muted"
             >
               +
             </a>
@@ -96,10 +94,10 @@ export function Programs() {
 
       {issues.length > 0 && (
         <section className="mt-5 rounded-xl border border-danger/40 bg-danger/10 p-4">
-          <p className="text-sm font-semibold text-danger">Invalid program</p>
+          <p className="text-body font-semibold text-danger">Invalid program</p>
           <ul className="mt-2 space-y-1">
             {issues.map((i, n) => (
-              <li key={n} className="font-mono text-xs text-danger/90">
+              <li key={n} className="font-mono text-body text-danger/90">
                 {i.path ? `${i.path}: ${i.message}` : i.message}
               </li>
             ))}
@@ -134,11 +132,11 @@ export function Programs() {
           aria-live="polite"
           className="mt-5 rounded-xl border border-accent/50 bg-surface p-4"
         >
-          <p className="text-sm">{notice}</p>
+          <p className="text-body">{notice}</p>
           <div className="mt-3 flex gap-2">
             <a
               href="#/"
-              className="flex h-11 flex-1 items-center justify-center rounded-lg bg-accent text-sm font-semibold text-ink"
+              className="flex h-11 flex-1 items-center justify-center rounded-lg bg-accent text-body font-semibold text-ink"
             >
               Back home
             </a>
@@ -148,7 +146,7 @@ export function Programs() {
                 clear();
                 window.location.hash = '#/programs/new';
               }}
-              className="h-11 flex-1 rounded-lg border border-line text-sm"
+              className="h-11 flex-1 rounded-lg border border-line text-body"
             >
               Add another
             </button>
@@ -161,24 +159,32 @@ export function Programs() {
       {!building && !adding && (
       <section className="mt-8">
         <div className="flex items-center justify-between">
-          <p className="text-xs uppercase tracking-widest text-muted">Saved ({programs.length})</p>
+          <p className="text-label uppercase tracking-label text-muted">Saved ({programs.length})</p>
           {programs.length > 0 && picked === null && (
             <button
               type="button"
               onClick={() => setPicked([])}
-              className="h-11 px-2 text-xs text-accent"
+              className="h-11 px-2 text-body text-accent"
             >
               Select
             </button>
           )}
         </div>
         {shared && (
-          <p role="status" className="mt-2 text-xs text-accent">
+          <p role="status" className="mt-2 text-body text-accent">
             {shared}
           </p>
         )}
         {programs.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Nothing saved yet. Tap + to add one.</p>
+          <div className="mt-3">
+            <p className="text-body text-muted">Nothing saved yet.</p>
+            <a
+              href="#/programs/new"
+              className="mt-2 flex h-12 items-center justify-center rounded-xl bg-accent text-body font-gym text-ink"
+            >
+              Add your first program
+            </a>
+          </div>
         ) : (
           <ul className="mt-3 space-y-2">
             {programs.map((p) => {
@@ -187,7 +193,7 @@ export function Programs() {
               <li
                 key={p.id}
                 className={`flex items-center justify-between gap-2 rounded-xl border bg-surface px-4 py-3 ${
-                  on ? 'border-accent' : 'border-line'
+                  on ? 'border-accent/60' : 'border-line'
                 }`}
               >
                 {picked !== null ? (
@@ -201,15 +207,15 @@ export function Programs() {
                   >
                     <span
                       aria-hidden
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-label ${
                         on ? 'border-accent bg-accent font-semibold text-ink' : 'border-muted'
                       }`}
                     >
                       {on ? '✓' : ''}
                     </span>
                     <span className="min-w-0">
-                      <p className="truncate font-medium">{p.name}</p>
-                      <p className="text-xs text-muted">
+                      <p className="truncate text-row font-medium">{p.name}</p>
+                      <p className="text-body text-muted">
                         {exerciseCount(p.exercises.length)} · {formatDays(p.scheduleDays)}
                       </p>
                     </span>
@@ -217,8 +223,8 @@ export function Programs() {
                 ) : (
                 <>
                 <a href={`#/program/${p.id}`} className="min-w-0 flex-1 py-1">
-                  <p className="truncate font-medium">{p.name}</p>
-                  <p className="text-xs text-muted">
+                  <p className="truncate text-row font-medium">{p.name}</p>
+                  <p className="text-body text-muted">
                     {exerciseCount(p.exercises.length)} · {formatDays(p.scheduleDays)}
                   </p>
                 </a>
@@ -226,13 +232,13 @@ export function Programs() {
                   <button
                     type="button"
                     onClick={() => void share(p)}
-                    className="h-11 rounded-lg border border-line px-3 text-xs"
+                    className="h-11 rounded-lg border border-line px-3 text-body"
                   >
                     Share
                   </button>
                   <a
                     href={`#/program/${p.id}/edit`}
-                    className="flex h-11 items-center rounded-lg border border-line px-3 text-xs"
+                    className="flex h-11 items-center rounded-lg border border-line px-3 text-body"
                   >
                     Edit
                   </a>
@@ -243,7 +249,7 @@ export function Programs() {
                         void remove(p.id);
                       }
                     }}
-                    className="h-11 rounded-lg border border-line px-3 text-xs text-danger"
+                    className="h-11 rounded-lg border border-line px-3 text-body text-danger"
                   >
                     Delete
                   </button>
@@ -266,7 +272,7 @@ export function Programs() {
             <button
               type="button"
               onClick={() => setPicked(null)}
-              className="h-12 flex-1 rounded-xl border border-line text-sm"
+              className="h-12 flex-1 rounded-xl border border-line text-body"
             >
               Cancel
             </button>

@@ -5,7 +5,7 @@ import { isIOS, isStandalone } from '../../lib/device';
 export const ADD_PRIMARY =
   'mt-4 h-12 w-full rounded-xl bg-accent font-semibold text-ink disabled:bg-surface disabled:text-muted';
 export const ADD_SECONDARY =
-  'mt-4 h-12 w-full rounded-xl border border-line text-sm font-semibold disabled:text-muted';
+  'mt-4 h-12 w-full rounded-xl border border-line text-body font-semibold disabled:text-muted';
 
 /**
  * On iOS every web app keeps its own storage: Safari, the home-screen app and a chat
@@ -17,7 +17,7 @@ export function showCopyForApp(): boolean {
   return isIOS() && !isStandalone();
 }
 
-const CHOICE = 'h-12 flex-1 rounded-xl border border-accent px-2 text-sm font-semibold text-accent';
+const CHOICE = 'h-12 flex-1 rounded-xl border border-line px-2 text-body font-semibold text-accent';
 
 export function CopyForApp({ onHere }: { onHere: () => void }) {
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
@@ -34,8 +34,8 @@ export function CopyForApp({ onHere }: { onHere: () => void }) {
 
   return (
     <section className="mt-4 rounded-xl border border-accent/50 bg-surface p-4">
-      <p className="text-sm font-semibold">Where do you use Workout Companion?</p>
-      <p className="mt-1 text-xs text-muted">
+      <p className="text-body font-semibold">Where do you use Workout Companion?</p>
+      <p className="mt-1 text-body text-muted">
         On iPhone the home-screen app keeps its own storage, so a program added here would not
         show up there.
       </p>
@@ -48,12 +48,12 @@ export function CopyForApp({ onHere }: { onHere: () => void }) {
         </button>
       </div>
       {copied === 'yes' && (
-        <p role="status" className="mt-2 text-xs text-accent">
+        <p role="status" className="mt-2 text-body text-accent">
           Copied. Open Workout Companion and go to Programs → + → Paste a link.
         </p>
       )}
       {copied === 'no' && (
-        <p role="status" className="mt-2 text-xs text-danger">
+        <p role="status" className="mt-2 text-body text-danger">
           Copy was blocked. Press and hold the address bar to copy the link instead.
         </p>
       )}

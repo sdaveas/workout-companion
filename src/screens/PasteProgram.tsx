@@ -206,7 +206,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
               : { to: '#/programs', label: 'Programs', compact: true }
         }
         title={
-          <h1 className="text-sm font-semibold uppercase tracking-widest">
+          <h1 className="text-label font-semibold uppercase tracking-label">
             {initial ? 'Shared program' : 'Paste a program'}
           </h1>
         }
@@ -214,9 +214,9 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
 
       {!initial && (
         <section className="mt-5 rounded-xl border border-line bg-surface p-4">
-          <p className="text-[10px] uppercase tracking-widest text-accent">Step 1</p>
-          <h2 className="mt-1 text-lg font-semibold">Talk to a coach</h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-label uppercase tracking-label text-muted">Step 1</p>
+          <h2 className="mt-1 text-screen font-semibold">Talk to a coach</h2>
+          <p className="mt-1 text-body text-muted">
             ChatGPT asks about your goal, days, equipment and time, then hands back one card per
             training day, each followed by that day's program. Copy the whole answer and paste it
             below.
@@ -231,7 +231,9 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
               // already in view when the reader comes back.
               requestAnimationFrame(() => answer.current?.scrollIntoView({ block: 'center' }));
             }}
-            className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-accent font-semibold text-ink"
+            className={`mt-3 flex h-12 w-full items-center justify-center rounded-xl text-body font-semibold ${
+              sent || updateTarget ? 'border border-line' : 'bg-accent text-ink'
+            }`}
           >
             Open ChatGPT
           </a>
@@ -242,7 +244,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
                 answer.current?.scrollIntoView({ block: 'center' });
                 answer.current?.focus();
               }}
-              className="mt-2 text-xs text-accent underline"
+              className="mt-2 text-body text-accent underline"
             >
               Back from ChatGPT? Paste it in Step 2.
             </button>
@@ -250,22 +252,22 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
           <button
             type="button"
             onClick={() => void copy()}
-            className="mt-2 h-12 w-full rounded-xl border border-line text-sm font-semibold"
+            className="mt-2 h-12 w-full rounded-xl border border-line text-body font-semibold"
           >
             Copy the prompt
           </button>
           {copied === 'yes' && (
-            <p role="status" className="mt-2 text-xs text-accent">
+            <p role="status" className="mt-2 text-body text-accent">
               Copied. Paste it into any chat assistant, then bring the answer back here.
             </p>
           )}
           {copied === 'no' && (
-            <p role="status" className="mt-2 text-xs text-danger">
+            <p role="status" className="mt-2 text-body text-danger">
               Copy was blocked. Open the prompt below and select it by hand.
             </p>
           )}
           <details className="group mt-3">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 text-xs uppercase tracking-widest text-muted [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 text-label uppercase tracking-label text-muted [&::-webkit-details-marker]:hidden">
               Show the prompt
               <ChevronIcon className="h-3 w-3 transition-transform group-open:rotate-180" />
             </summary>
@@ -273,22 +275,22 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
               readOnly
               value={prompt}
               aria-label="The prompt to paste into ChatGPT"
-              className="mt-2 h-32 w-full rounded-lg bg-field p-3 font-mono text-base outline-none"
+              className="mt-2 h-32 w-full rounded-lg bg-field p-3 font-mono text-row outline-none"
             />
             <button
               type="button"
               onClick={() => void copyFull()}
-              className="mt-2 h-11 w-full rounded-lg border border-line text-xs font-semibold"
+              className="mt-2 h-11 w-full rounded-lg border border-line text-body font-semibold"
             >
               Copy the full instructions instead
             </button>
             {copiedFull === 'yes' && (
-              <p role="status" className="mt-2 text-xs text-accent">
+              <p role="status" className="mt-2 text-body text-accent">
                 Copied the whole coach, for an assistant that cannot open links.
               </p>
             )}
             {copiedFull === 'no' && (
-              <p role="status" className="mt-2 text-xs text-danger">
+              <p role="status" className="mt-2 text-body text-danger">
                 Could not fetch them.{' '}
                 <a href={COACH_FILE} className="underline">
                   Open the file
@@ -304,11 +306,11 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
 
       {initial && error && (
         <section className="mt-5 rounded-xl border border-line bg-surface p-4">
-          <p className="text-sm font-semibold text-danger">This link did not carry a program</p>
-          <p className="mt-1 whitespace-pre-line text-xs text-danger">{error}</p>
+          <p className="text-body font-semibold text-danger">This link did not carry a program</p>
+          <p className="mt-1 whitespace-pre-line text-body text-danger">{error}</p>
           <a
             href="#/paste"
-            className="mt-3 flex h-12 w-full items-center justify-center rounded-xl border border-line text-sm font-semibold"
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-xl border border-line text-body font-semibold"
           >
             Paste it by hand instead
           </a>
@@ -316,7 +318,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
       )}
 
       {!initial && updateTarget && (
-        <p className="mt-4 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-xs">
+        <p className="mt-4 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-body">
           Last sent to your coach: «{updateTarget.name}». A reply that keeps its id updates it —
           you see what changes first. Anything else is added as a copy.
         </p>
@@ -325,19 +327,21 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
       {!initial && (
         <section
           className={`mt-4 rounded-xl border bg-surface p-4 ${
-            (sent || updateTarget) && !text ? 'border-accent ring-2 ring-accent' : 'border-line'
+            (sent || updateTarget) && !text ? 'border-accent/60 ring-2 ring-accent/40' : 'border-line'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-widest text-accent">Step 2</p>
-          <h2 className="mt-1 text-lg font-semibold">Paste the answer</h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-label uppercase tracking-label text-muted">Step 2</p>
+          <h2 className="mt-1 text-screen font-semibold">Paste the answer</h2>
+          <p className="mt-1 text-body text-muted">
             Copy the whole answer in ChatGPT, then tap below. Every program in it is read, a
             three-day week in one go.
           </p>
           <button
             type="button"
             onClick={() => void pasteClipboard()}
-            className="mt-3 h-12 w-full rounded-xl bg-accent font-semibold text-ink"
+            className={`mt-3 h-12 w-full rounded-xl text-body font-semibold ${
+              sent || updateTarget ? 'bg-accent text-ink' : 'border border-line'
+            }`}
           >
             Paste from clipboard
           </button>
@@ -350,12 +354,12 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="mt-3 h-40 w-full resize-none rounded-lg bg-field p-3 font-mono text-base outline-none focus:ring-2 focus:ring-accent"
+            className="mt-3 h-40 w-full resize-none rounded-lg bg-field p-3 font-mono text-row outline-none focus:ring-2 focus:ring-accent"
           />
           {error && (
             <p
               role="alert"
-              className="mt-2 whitespace-pre-line rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+              className="mt-2 whitespace-pre-line rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-body text-danger"
             >
               {error}
             </p>
@@ -364,7 +368,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
             type="button"
             disabled={!text.trim()}
             onClick={read}
-            className="mt-3 h-12 w-full rounded-xl border border-line text-sm font-semibold disabled:text-muted"
+            className="mt-3 h-12 w-full rounded-xl border border-line text-body font-semibold disabled:text-muted"
           >
             Read it
           </button>
@@ -373,22 +377,22 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
 
       {offers.length > 0 && (
         <section className="mt-4 rounded-xl border border-accent/50 bg-surface p-4">
-          <p className="text-[10px] uppercase tracking-widest text-accent">
+          <p className="text-label uppercase tracking-label text-muted">
             {offers.length === 1 ? 'That is a program' : `${offers.length} programs`}
           </p>
           <ul className="mt-2 space-y-3">
             {offers.map((offer) => (
               <li key={offer.id}>
-                <p className="text-lg font-semibold">{offer.name}</p>
-                <p className="text-xs text-muted">
+                <p className="text-screen font-semibold">{offer.name}</p>
+                <p className="text-body text-muted">
                   {offer.exercises.length} exercise{offer.exercises.length === 1 ? '' : 's'} ·{' '}
                   {formatDays(offer.scheduleDays)}
                 </p>
-                {offer.description && <p className="mt-1 text-sm text-muted">{offer.description}</p>}
+                {offer.description && <p className="mt-1 text-body text-muted">{offer.description}</p>}
                 {offers.length === 1 && (
                   <ul className="mt-3 space-y-1">
                     {offer.exercises.map((e) => (
-                      <li key={e.id} className="flex justify-between text-sm">
+                      <li key={e.id} className="flex justify-between text-body">
                         <span className="truncate">{e.name}</span>
                         <span className="ml-2 shrink-0 text-muted">
                           {e.sets}×
@@ -405,13 +409,13 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
             <>
               {changes && (
                 <div className="mt-3 rounded-lg border border-line bg-field px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-widest text-muted">What changes</p>
+                  <p className="text-label uppercase tracking-label text-muted">What changes</p>
                   {changes.length === 0 ? (
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1 text-body text-muted">
                       Nothing. This is the program you sent, written back as it was.
                     </p>
                   ) : (
-                    <ul className="mt-1 space-y-1 text-xs">
+                    <ul className="mt-1 space-y-1 text-body">
                       {changes.map((line) => (
                         <li key={line}>{line}</li>
                       ))}
@@ -419,7 +423,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
                   )}
                 </div>
               )}
-              <p className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs">
+              <p className="mt-3 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-body">
                 This replaces the copy saved here. The days you picked stay as they are.
               </p>
             </>
@@ -441,7 +445,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
               type="button"
               disabled={busy}
               onClick={() => void add('copy')}
-              className="mt-2 h-11 w-full text-xs text-muted underline"
+              className="mt-2 h-11 w-full text-body text-muted underline"
             >
               Add a copy instead
             </button>
@@ -449,7 +453,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
           <button
             type="button"
             onClick={() => setOffers([])}
-            className="mt-2 h-11 w-full text-xs text-muted underline"
+            className="mt-2 h-11 w-full text-body text-muted underline"
           >
             Not this one
           </button>

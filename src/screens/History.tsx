@@ -45,7 +45,7 @@ export function History() {
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
         back={{ to: '#/', label: 'Home', compact: true }}
-        title={<h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>}
+        title={<h1 className="text-label font-semibold uppercase tracking-label">History</h1>}
         actions={
           <button
             type="button"
@@ -68,14 +68,14 @@ export function History() {
       </div>
 
       <div className="mt-4 flex shrink-0 items-baseline justify-between">
-        <p className="text-xs uppercase tracking-widest text-muted">{heading}</p>
+        <p className="text-label uppercase tracking-label text-muted">{heading}</p>
         {day !== null && (
           <button
             type="button"
             onClick={() => setDay(null)}
             // 44 tall, sunk into the 20 px gap above and the 8 px below it: neither
             // band holds anything tappable, so the words stay where they were.
-            className="-mt-5 -mb-2 flex min-h-11 min-w-11 items-start justify-center pb-2 pt-5 text-xs text-accent"
+            className="-mt-5 -mb-2 flex min-h-11 min-w-11 items-start justify-center pb-2 pt-5 text-body text-accent"
           >
             Show all
           </button>
@@ -83,7 +83,7 @@ export function History() {
       </div>
 
       {loaded && shown.length === 0 && (
-        <p className="mt-6 text-center text-sm text-muted">
+        <p className="mt-6 text-center text-body text-muted">
           {day === null ? 'No finished sessions yet.' : 'Nothing logged that day.'}
         </p>
       )}

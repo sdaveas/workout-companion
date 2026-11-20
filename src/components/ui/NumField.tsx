@@ -19,7 +19,7 @@ export function NumField({
 }) {
   return (
     <label className="block">
-      <span className="text-[10px] uppercase tracking-widest text-muted">{label}</span>
+      <span className="text-label uppercase tracking-label text-muted">{label}</span>
       <input
         ref={inputRef}
         type="number"

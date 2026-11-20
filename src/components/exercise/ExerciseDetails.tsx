@@ -19,11 +19,11 @@ export function ExerciseDetails({
 
   return (
     <details open={open} className="group mt-4 rounded-xl border border-line bg-surface px-4 py-3">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xs uppercase tracking-widest text-muted [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-label uppercase tracking-label text-muted [&::-webkit-details-marker]:hidden">
         How to do it
         <ChevronIcon className="h-3 w-3 transition-transform group-open:rotate-180" />
       </summary>
-      <div className="mt-3 space-y-3 text-sm">
+      <div className="mt-3 space-y-3 text-body">
         {exercise.instructions.length > 0 && (
           <ol className="list-decimal space-y-1 pl-5 text-muted">
             {exercise.instructions.map((line) => (
@@ -33,12 +33,12 @@ export function ExerciseDetails({
         )}
         {exercise.commonMistakes.length > 0 && (
           <p className="text-muted">
-            <span className="text-xs uppercase tracking-widest">Avoid: </span>
+            <span className="text-label uppercase tracking-label">Avoid: </span>
             {exercise.commonMistakes.join('; ')}
           </p>
         )}
         {(exercise.muscleGroups.length > 0 || exercise.equipment.length > 0) && (
-          <p className="text-xs text-muted">
+          <p className="text-body text-muted">
             {[...exercise.muscleGroups, ...exercise.equipment].join(' · ')}
           </p>
         )}

@@ -26,22 +26,22 @@ function Stepper({
 }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-xs uppercase tracking-widest text-muted">{label}</span>
+      <span className="text-label uppercase tracking-label text-muted">{label}</span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-xl"
+          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-screen"
         >
           −
         </button>
-        <span className="min-w-24 text-center text-2xl font-semibold tabular-nums">{display}</span>
+        <span className="min-w-24 text-center text-screen font-semibold tabular-nums">{display}</span>
         <button
           type="button"
           aria-label={`Increase ${label}`}
           onClick={() => onChange(value + step)}
-          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-xl"
+          className="h-12 w-12 shrink-0 rounded-xl border border-line bg-surface text-screen"
         >
           +
         </button>
@@ -77,7 +77,7 @@ export function CompactStepper({
       <span
         className={
           showLabel
-            ? `text-[11px] uppercase tracking-widest text-muted ${stacked ? 'pl-1' : ''}`
+            ? `text-label uppercase tracking-label text-muted ${stacked ? 'pl-1' : ''}`
             : 'sr-only'
         }
       >
@@ -88,16 +88,16 @@ export function CompactStepper({
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-lg"
+          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-screen"
         >
           −
         </button>
-        <span className="min-w-0 flex-1 truncate text-center text-lg font-semibold tabular-nums">{display}</span>
+        <span className="min-w-0 flex-1 truncate text-center text-screen font-semibold tabular-nums">{display}</span>
         <button
           type="button"
           aria-label={`Increase ${label}`}
           onClick={() => onChange(value + step)}
-          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-lg"
+          className="h-11 w-11 shrink-0 rounded-lg border border-line bg-surface text-screen"
         >
           +
         </button>
@@ -133,7 +133,7 @@ export function SetEntry({ exercise, draft, onChange, compact = false }: Props) 
             showLabel={false}
           />
         ) : (
-          <p className="self-center text-sm text-muted">Bodyweight</p>
+          <p className="self-center text-body text-muted">Bodyweight</p>
         )}
       </div>
     );
@@ -160,8 +160,8 @@ export function SetEntry({ exercise, draft, onChange, compact = false }: Props) 
         />
       ) : (
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs uppercase tracking-widest text-muted">Weight</span>
-          <span className="text-sm text-muted">Bodyweight</span>
+          <span className="text-label uppercase tracking-label text-muted">Weight</span>
+          <span className="text-body text-muted">Bodyweight</span>
         </div>
       )}
     </div>

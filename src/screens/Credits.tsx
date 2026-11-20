@@ -37,8 +37,8 @@ function Row({ href, icon, title, note }: { href: string; icon: ReactNode; title
     <a href={href} target="_blank" rel="noreferrer" className="flex min-h-14 items-center gap-3 px-4">
       <span className="text-muted">{icon}</span>
       <span className="flex-1">
-        <span className="block text-sm">{title}</span>
-        {note && <span className="block text-xs text-muted">{note}</span>}
+        <span className="block text-row">{title}</span>
+        {note && <span className="block text-body text-muted">{note}</span>}
       </span>
       <span aria-hidden className="text-muted">
         ↗
@@ -52,11 +52,11 @@ export function Credits() {
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
         back={{ to: '#/', label: 'Home', compact: true }}
-        title={<h1 className="text-sm font-semibold uppercase tracking-widest">Credits</h1>}
+        title={<h1 className="text-label font-semibold uppercase tracking-label">Credits</h1>}
       />
 
-      <h2 className="mt-8 text-[10px] uppercase tracking-widest text-muted">Exercise illustrations</h2>
-      <p className="mt-2 text-sm text-muted">
+      <h2 className="mt-8 text-label uppercase tracking-label text-muted">Exercise illustrations</h2>
+      <p className="mt-2 text-body text-muted">
         Line drawings of each lift, recoloured to match the theme. Two poses per exercise, flipped
         so you can see the movement.
       </p>
@@ -74,12 +74,12 @@ export function Credits() {
           note="drawings, CC BY-SA 4.0"
         />
       </div>
-      <p className="mt-2 px-1 text-xs text-muted">
+      <p className="mt-2 px-1 text-body text-muted">
         Illustrations are CC BY-SA 4.0. Full notice in <code>exercises/ATTRIBUTION.txt</code>.
       </p>
 
-      <h2 className="mt-8 text-[10px] uppercase tracking-widest text-muted">The app</h2>
-      <p className="mt-2 text-sm text-muted">
+      <h2 className="mt-8 text-label uppercase tracking-label text-muted">The app</h2>
+      <p className="mt-2 text-body text-muted">
         Runs entirely on this phone. Nothing you log leaves it.
       </p>
       <div className="mt-3 divide-y divide-line rounded-2xl border border-line">

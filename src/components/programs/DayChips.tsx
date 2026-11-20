@@ -37,7 +37,7 @@ export function DayChips({
               aria-pressed={on}
               disabled={readOnly}
               onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])}
-              className={`min-h-11 min-w-0 rounded-full border px-0 text-xs disabled:opacity-100 ${
+              className={`min-h-11 min-w-0 rounded-full border px-0 text-label disabled:opacity-100 ${
                 on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
               }`}
             >
@@ -46,7 +46,7 @@ export function DayChips({
           );
         })}
       </div>
-      <p className="mt-1 text-[11px] text-muted">
+      <p className="mt-1 text-body text-muted">
         {days.length === 0
           ? 'Any day — no fixed routine.'
           : readOnly

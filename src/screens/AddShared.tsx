@@ -49,13 +49,13 @@ function logged(sets: (PerformedSet | null)[] | null): string {
 function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[]) => void }) {
   return (
     <div className="mt-4">
-      <p className="text-[10px] uppercase tracking-widest text-muted">Train it</p>
+      <p className="text-label uppercase tracking-label text-muted">Train it</p>
       <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Train it">
         <button
           type="button"
           aria-pressed={days.length === 0}
           onClick={() => onChange([])}
-          className={`min-h-11 rounded-full border px-3 text-xs ${
+          className={`min-h-11 rounded-full border px-3 text-label ${
             days.length === 0
               ? 'border-accent bg-accent font-semibold text-ink'
               : 'border-line text-muted'
@@ -71,7 +71,7 @@ function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])}
-              className={`min-h-11 rounded-full border px-3 text-xs ${
+              className={`min-h-11 rounded-full border px-3 text-label ${
                 on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
               }`}
             >
@@ -80,7 +80,7 @@ function DayPicker({ days, onChange }: { days: Weekday[]; onChange: (d: Weekday[
           );
         })}
       </div>
-      <p className="mt-1 text-[11px] text-muted">
+      <p className="mt-1 text-body text-muted">
         {days.length === 0
           ? 'One-off: it waits in your list until you start it.'
           : 'Home shows it every week on the days you picked.'}
@@ -181,7 +181,7 @@ export function AddShared({ payload }: { payload: string }) {
       <ScreenHeader
         back={{ to: '#/', label: 'Home', compact: true }}
         title={
-          <h1 className="text-sm font-semibold uppercase tracking-widest">
+          <h1 className="text-label font-semibold uppercase tracking-label">
             {shared.length > 1
               ? 'Shared programs'
               : performed
@@ -194,39 +194,39 @@ export function AddShared({ payload }: { payload: string }) {
       {state.kind === 'ready' && bridge && <CopyForApp onHere={() => setHere(true)} />}
 
       {error && (
-        <p role="alert" className="mt-4 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <p role="alert" className="mt-4 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-body text-danger">
           {error}
         </p>
       )}
 
-      {state.kind === 'loading' && <p className="mt-6 text-sm text-muted">Reading the link…</p>}
+      {state.kind === 'loading' && <p className="mt-6 text-body text-muted">Reading the link…</p>}
 
       {state.kind === 'error' && (
         <section className="mt-6 rounded-xl border border-line bg-surface p-4">
-          <p className="text-sm font-semibold text-danger">This link is not a program</p>
-          <p className="mt-1 text-sm text-muted">{state.message}</p>
-          <p className="mt-2 text-xs text-muted">Ask again for the full link — messages sometimes cut it.</p>
+          <p className="text-body font-semibold text-danger">This link is not a program</p>
+          <p className="mt-1 text-body text-muted">{state.message}</p>
+          <p className="mt-2 text-body text-muted">Ask again for the full link — messages sometimes cut it.</p>
         </section>
       )}
 
       {state.kind === 'ready' && !loaded && (
-        <p className="mt-6 text-sm text-muted">Checking your programs…</p>
+        <p className="mt-6 text-body text-muted">Checking your programs…</p>
       )}
 
       {shared.length > 1 && loaded && (
         <section className="mt-6 rounded-xl border border-line bg-surface p-4">
-          <p className="text-xs uppercase tracking-widest text-accent">Someone shared these</p>
+          <p className="text-label uppercase tracking-label text-muted">Someone shared these</p>
           <ul className="mt-2 space-y-2">
             {shared.map((p) => (
               <li key={p.id} className="flex items-baseline justify-between gap-3">
-                <span className="truncate font-medium">{p.name}</span>
-                <span className="shrink-0 text-xs text-muted">
+                <span className="truncate text-row font-medium">{p.name}</span>
+                <span className="shrink-0 text-body text-muted">
                   {exerciseCount(p.exercises.length)}
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-muted">Set their days on Home once they are in.</p>
+          <p className="mt-2 text-body text-muted">Set their days on Home once they are in.</p>
           <button
             type="button"
             disabled={busy}
@@ -235,42 +235,42 @@ export function AddShared({ payload }: { payload: string }) {
           >
             Add all {shared.length}
           </button>
-          <a href="#/" className="mt-2 flex h-11 items-center justify-center text-xs text-muted underline">
+          <a href="#/" className="mt-2 flex h-11 items-center justify-center text-body text-muted underline">
             Don’t add them
           </a>
-          <p className="text-center text-xs text-muted">Nothing is saved until you add them.</p>
+          <p className="text-center text-body text-muted">Nothing is saved until you add them.</p>
         </section>
       )}
 
       {single && loaded && !clash && (
         <section className="mt-6 rounded-xl border border-line bg-surface p-4">
-          <p className="text-xs uppercase tracking-widest text-accent">
+          <p className="text-label uppercase tracking-label text-muted">
             {performed ? 'Someone shared this workout' : 'Someone shared this'}
           </p>
-          <p className="mt-2 text-lg font-semibold">{single.name}</p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-2 text-screen font-semibold">{single.name}</p>
+          <p className="mt-1 text-body text-muted">
             {single.exercises.length} exercise
             {single.exercises.length === 1 ? '' : 's'}
           </p>
           {performed && (
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-body text-muted">
               The numbers are what they did. You get the plan, and your own numbers.
             </p>
           )}
           {single.description && (
-            <p className="mt-2 text-sm text-muted">{single.description}</p>
+            <p className="mt-2 text-body text-muted">{single.description}</p>
           )}
           <ul className="mt-3 space-y-1.5">
             {single.exercises.map((e, i) => (
               <li key={e.id}>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-body">
                   <span className="truncate">{e.name}</span>
                   <span className="ml-2 shrink-0 text-muted">
                     {e.sets}×{e.reps.min === e.reps.max ? e.reps.min : `${e.reps.min}–${e.reps.max}`}
                   </span>
                 </div>
                 {performed && (
-                  <p className="font-mono text-xs leading-relaxed text-accent/80">
+                  <p className="font-mono text-body leading-relaxed text-accent/80">
                     {logged(performed[i] ?? null)}
                   </p>
                 )}
@@ -286,22 +286,22 @@ export function AddShared({ payload }: { payload: string }) {
           >
             Add to my programs
           </button>
-          <a href="#/" className="mt-2 flex h-11 items-center justify-center text-xs text-muted underline">
+          <a href="#/" className="mt-2 flex h-11 items-center justify-center text-body text-muted underline">
             Don’t add it
           </a>
-          <p className="text-center text-xs text-muted">Nothing is saved until you add it.</p>
+          <p className="text-center text-body text-muted">Nothing is saved until you add it.</p>
         </section>
       )}
 
       {single && loaded && clash && (
         <>
           <section className="mt-6 rounded-xl border border-line bg-surface p-4">
-            <p className="text-lg font-semibold">{single.name}</p>
-            <p className="mt-1 text-sm text-muted">
+            <p className="text-screen font-semibold">{single.name}</p>
+            <p className="mt-1 text-body text-muted">
               {single.exercises.length} exercise
               {single.exercises.length === 1 ? '' : 's'}
             </p>
-            <p className="mt-2 text-sm">You already have a program with this name.</p>
+            <p className="mt-2 text-body">You already have a program with this name.</p>
           </section>
           <DayPicker days={days} onChange={setDays} />
           <NameConflict
