@@ -32,6 +32,15 @@ and the summary's stat row spans its grid. `flows.mjs` asserts the last three.
 **Landed 20 Nov 2026: U14.** The add-door's interview is the screen's single accent fill;
 the other three stay outlined under it, and "routines" is now "programs" everywhere.
 
+**Landed 20 Nov 2026: U11, U18.** Every measured sub-44 target is 44×44 now (Add +, More,
+Show all, How ▾, the detail row buttons, the sheet's Cancel), and the per-side box has an
+`aria-label`. The day chips are seven equal columns, so Sunday stays on Monday's line at
+360. `style-rules.mjs` fails on any target under 44 on a reachable screen.
+
+**U8 superseded.** Twelve weeks at 20×20 with a 4 px gutter replaces 18 weeks at 14×14:
+the spacing exception holds (24 px between centres) and the grid fits 360. 14 weeks was
+tested and clips.
+
 | # | Issue | Evidence | Where |
 | --- | --- | --- | --- |
 | U1 | **The how-to sheet is a div over a live set.** It has no `role`, no Esc and no focus trap; **measured**: with it open, Tab reached the covered `Skip set` and Enter moved the pips `Set 1/3` → `Set 2/3`. A covered control takes the keyboard's Enter. | `b-09-sheet` | `ActiveWorkout.tsx:224`, `:1156` |

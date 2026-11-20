@@ -24,7 +24,10 @@ export function DayChips({
 }) {
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Scheduled day">
+      {/* U11: six 44 px chips plus gaps is 368 in a 350 gutter, so Sunday wrapped to a
+          second line and the row cost 50 px it did not have. Seven equal columns keep
+          the week on one line at every viewport; 45 px is still a full thumb target. */}
+      <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Scheduled day">
         {DAYS.map((d) => {
           const on = days.includes(d);
           return (
@@ -34,7 +37,7 @@ export function DayChips({
               aria-pressed={on}
               disabled={readOnly}
               onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])}
-              className={`min-h-11 min-w-11 rounded-full border px-3 text-xs disabled:opacity-100 ${
+              className={`min-h-11 min-w-0 rounded-full border px-0 text-xs disabled:opacity-100 ${
                 on ? 'border-accent bg-accent font-semibold text-ink' : 'border-line text-muted'
               }`}
             >
