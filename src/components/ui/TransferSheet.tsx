@@ -34,17 +34,19 @@ function Check({
  * programs-only copy can never overwrite the one with history in it.
  */
 export function TransferSheet({
-  mode,
+  mode: initialMode,
   now,
   initial,
   onClose,
 }: {
+  /** Which direction the sheet opens on; the tabs switch it. */
   mode: 'import' | 'export';
   now: number;
   /** What is already ticked; a history screen starts with history only. */
   initial?: Parts;
   onClose: () => void;
 }) {
+  const [mode, setMode] = useState(initialMode);
   const [programs, setPrograms] = useState(initial?.programs ?? true);
   const [history, setHistory] = useState(initial?.history ?? true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export function TransferSheet({
   return (
     <dialog
       ref={sheet}
-      aria-label={mode === 'import' ? 'Import' : 'Export'}
+      aria-label="Transfer"
       // Esc and the backdrop both land here; the parent owns whether the sheet exists.
       onClose={onClose}
       onClick={(event) => {
@@ -96,9 +98,7 @@ export function TransferSheet({
     >
       <div className="p-4">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-widest">
-            {mode === 'import' ? 'Import' : 'Export'}
-          </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest">Transfer</h2>
           <button
             type="button"
             onClick={() => sheet.current?.close()}
@@ -106,6 +106,25 @@ export function TransferSheet({
           >
             Cancel
           </button>
+        </div>
+
+        {/* U13: the screen used to offer two unlabelled arrows for this. One control
+            opens the sheet; the direction is a choice you can see and change here.
+            Not an accent fill — inside this sheet the fill belongs to the door. */}
+        <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-line p-1">
+          {(['import', 'export'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => setMode(m)}
+              className={`h-11 rounded-lg text-sm capitalize ${
+                mode === m ? 'bg-field font-semibold text-white' : 'text-muted'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
         </div>
 
         <p className="mt-3 text-xs uppercase tracking-widest text-muted">What</p>

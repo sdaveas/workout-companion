@@ -33,7 +33,7 @@ async function fresh() {
 /** One program, through the sheet the user actually has. */
 async function seed(page) {
   await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await page.getByRole('button', { name: 'Transfer', exact: true }).click();
   await page.locator('dialog[open] input[type=file]').setInputFiles(FIXTURE);
   await page.getByText(/^Imported/).waitFor({ timeout: 15_000 });
   await page.keyboard.press('Escape');

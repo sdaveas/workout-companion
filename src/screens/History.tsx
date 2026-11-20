@@ -7,7 +7,6 @@ import { useSession } from '../store/sessionStore';
 import { useNow } from '../hooks/useNow';
 import { dayKey } from '../lib/activity';
 import { TransferSheet } from '../components/ui/TransferSheet';
-import { ExportIcon, ImportIcon } from '../components/ui/icons';
 
 /**
  * The full log, with the training grid on top. The grid is the filter: tap a day
@@ -48,25 +47,14 @@ export function History() {
         back={{ to: '#/', label: 'Home', compact: true }}
         title={<h1 className="text-sm font-semibold uppercase tracking-widest">History</h1>}
         actions={
-          <>
-            <button
-              type="button"
-              aria-label="Import history"
-              onClick={() => setSheet('import')}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              <ImportIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="Export history"
-              onClick={() => setSheet('export')}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              {/* Saving a file points down, so it cannot be mistaken for a row's share. */}
-              <ExportIcon />
-            </button>
-          </>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setSheet('export')}
+            className="flex h-11 items-center rounded-xl border border-line px-3 text-body text-muted"
+          >
+            Transfer
+          </button>
         }
       />
 

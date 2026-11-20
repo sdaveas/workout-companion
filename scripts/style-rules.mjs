@@ -231,7 +231,7 @@ await page.goto(`${BASE}/${route}`);
 await page.waitForTimeout(300);
 report(`${route} empty`, await audit(page));
 
-await page.getByRole('button', { name: 'Import', exact: true }).click();
+await page.getByRole('button', { name: 'Transfer', exact: true }).click();
 await page.locator('input[type=file]').setInputFiles(`${TMP}/program.json`);
 await page.getByText(/^Imported/).waitFor({ timeout: 10_000 });
 await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -288,7 +288,7 @@ await sizes.waitForTimeout(300);
 await checkSizes('home empty');
 
 // One backup: a program and one finished session, so the calendar is on screen.
-await sizes.getByRole('button', { name: 'Import', exact: true }).click();
+await sizes.getByRole('button', { name: 'Transfer', exact: true }).click();
 await sizes.locator('dialog[open] input[type=file]').setInputFiles(`${TMP}/backup.json`);
 await sizes.getByText(/^Imported/).waitFor({ timeout: 10_000 });
 await sizes.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -302,9 +302,13 @@ for (const [path, label] of screens) {
 // The sheet is a screen: it carries its own close button.
 await sizes.goto(`${BASE}/#/`);
 await sizes.waitForTimeout(300);
-await sizes.getByRole('button', { name: 'Export', exact: true }).click();
+await sizes.getByRole('button', { name: 'Transfer', exact: true }).click();
+// The sheet is one control with two directions; both faces are measured.
 await sizes.waitForTimeout(200);
-await checkSizes('export sheet');
+await checkSizes('transfer sheet, import');
+await sizes.getByRole('button', { name: 'export', exact: true }).click();
+await sizes.waitForTimeout(150);
+await checkSizes('transfer sheet, export');
 
 // History's filtered state has the one control Home does not: Show all.
 await sizes.keyboard.press('Escape');

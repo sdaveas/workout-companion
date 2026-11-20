@@ -66,7 +66,7 @@ async function seed() {
   const file = join(dir, 'workout-b.json');
   await writeFile(file, program);
   await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await page.getByRole('button', { name: 'Transfer', exact: true }).click();
   await page.locator('input[type=file]').setInputFiles(file);
   await page.getByText(/^Imported/).waitFor({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -74,8 +74,8 @@ async function seed() {
 
 // ── U2: transfer sheet ────────────────────────────────────────────────────────
 await page.goto(`${BASE}/#/`);
-const exportButton = page.getByRole('button', { name: 'Export', exact: true });
-await exportButton.click();
+const transferButton = page.getByRole('button', { name: 'Transfer', exact: true });
+await transferButton.click();
 await page.waitForSelector('dialog[open]');
 
 check('transfer: focus moves into the dialog', await focusInDialog(), await focused());
@@ -91,7 +91,7 @@ check('transfer: 5× Tab never reaches the page behind', left.length === 0, left
 await page.keyboard.press('Escape');
 await page.waitForFunction(() => !document.querySelector('dialog[open]'), null, { timeout: 2000 });
 check('transfer: Escape closes it', (await openDialogCount()) === 0);
-check('transfer: focus returns to the Export button', await waitForFocus(exportButton), await focused());
+check('transfer: focus returns to the Transfer button', await waitForFocus(transferButton), await focused());
 
 // ── U1: how-to sheet over a live set ─────────────────────────────────────────
 await seed();

@@ -15,7 +15,7 @@ import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { ActivityGrid } from '../components/ui/ActivityGrid';
 import { SessionRow } from '../components/ui/SessionRow';
 import { TransferSheet } from '../components/ui/TransferSheet';
-import { ExportIcon, ImportIcon } from '../components/ui/icons';
+
 
 /**
  * One page: what is on today, every program, the last few sessions, and two doors
@@ -127,24 +127,14 @@ export function Home() {
           </div>
         }
         actions={
-          <>
-            <button
-              type="button"
-              aria-label="Import"
-              onClick={() => setSheet('import')}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              <ImportIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="Export"
-              onClick={() => setSheet('export')}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-muted"
-            >
-              <ExportIcon />
-            </button>
-          </>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setSheet('import')}
+            className="flex h-11 items-center rounded-xl border border-line px-3 text-body text-muted"
+          >
+            Transfer
+          </button>
         }
       />
 

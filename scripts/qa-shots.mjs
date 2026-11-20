@@ -78,7 +78,7 @@ async function shoot(page, name) {
 /** Seeds one program through the real import sheet; `#/settings` no longer exists. */
 async function ready(page) {
   await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await page.getByRole('button', { name: 'Transfer', exact: true }).click();
   await page.locator('input[type=file]').setInputFiles(`${OUT}/program.json`);
   await page.getByText(/^Imported/).waitFor({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -93,7 +93,9 @@ async function staticScreens(page, prefix) {
   await page.goto(`${BASE}/#/program/workout-b`);
   await shoot(page, `${prefix}-03-program`);
   await page.goto(`${BASE}/#/`);
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Transfer', exact: true }).click();
+  // The sheet opens on Import now; the export face is a tab. Both get a shot.
+  await page.getByRole('button', { name: 'export', exact: true }).click();
   await shoot(page, `${prefix}-04-export-sheet`);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.goto(`${BASE}/#/history`);
