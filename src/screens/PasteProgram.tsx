@@ -1,3 +1,4 @@
+import { ChevronIcon } from '../components/ui/icons';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { describeError, parseProgram } from '../schemas/program';
@@ -263,9 +264,10 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
               Copy was blocked. Open the prompt below and select it by hand.
             </p>
           )}
-          <details className="mt-3">
-            <summary className="min-h-11 cursor-pointer text-xs uppercase tracking-widest text-muted">
+          <details className="group mt-3">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 text-xs uppercase tracking-widest text-muted [&::-webkit-details-marker]:hidden">
               Show the prompt
+              <ChevronIcon className="h-3 w-3 transition-transform group-open:rotate-180" />
             </summary>
             <textarea
               readOnly

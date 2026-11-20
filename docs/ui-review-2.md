@@ -41,6 +41,13 @@ Show all, How ▾, the detail row buttons, the sheet's Cancel), and the per-side
 the spacing exception holds (24 px between centres) and the grid fits 360. 14 weeks was
 tested and clips.
 
+**Landed 20 Nov 2026: U13 (the sheet half), U17.** Inside the transfer sheet the fill is
+now the file door and Google Drive is outlined under it, with one line saying Drive is
+the only door that leaves the browser. One chevron glyph covers every disclosure: the
+hand-typed `▾` on `How`, the UA marker on the two `<details>`, and `How` now reports
+`aria-expanded`. Still open: Home's two header arrows carry no visible label (icon-only,
+named for screen readers, distinguishable only by direction).
+
 | # | Issue | Evidence | Where |
 | --- | --- | --- | --- |
 | U1 | **The how-to sheet is a div over a live set.** It has no `role`, no Esc and no focus trap; **measured**: with it open, Tab reached the covered `Skip set` and Enter moved the pips `Set 1/3` → `Set 2/3`. A covered control takes the keyboard's Enter. | `b-09-sheet` | `ActiveWorkout.tsx:224`, `:1156` |

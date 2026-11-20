@@ -123,6 +123,20 @@ export function TransferSheet({
           {mode === 'import' ? 'From' : 'To'}
         </p>
         <div className="mt-2 grid grid-cols-2 gap-2">
+          {/* U13: the accent sat on Google Drive inside an app that tells you nothing
+              leaves the browser. The file is the default door and takes the fill; Drive
+              is offered next to it, and the line below says what choosing it means. */}
+          <button
+            type="button"
+            disabled={none || busyNow}
+            onClick={() => {
+              if (mode === 'export') void run('file', () => exportParts(parts, 'file', now));
+              else fileInput.current?.click();
+            }}
+            className="h-12 rounded-xl bg-accent text-sm font-semibold text-ink disabled:opacity-40"
+          >
+            {busy === 'file' ? 'Working…' : 'File'}
+          </button>
           <button
             type="button"
             disabled={none || busyNow}
@@ -131,22 +145,14 @@ export function TransferSheet({
                 mode === 'export' ? exportParts(parts, 'drive', now) : importFromDrive(parts),
               )
             }
-            className="h-12 rounded-xl bg-accent text-sm font-semibold text-ink disabled:opacity-40"
+            className="h-12 rounded-xl border border-line text-sm disabled:opacity-40"
           >
             {busy === 'drive' ? 'Working…' : 'Google Drive'}
           </button>
-          <button
-            type="button"
-            disabled={none || busyNow}
-            onClick={() => {
-              if (mode === 'export') void run('file', () => exportParts(parts, 'file', now));
-              else fileInput.current?.click();
-            }}
-            className="h-12 rounded-xl border border-line text-sm disabled:opacity-40"
-          >
-            {busy === 'file' ? 'Working…' : 'File'}
-          </button>
         </div>
+        <p className="mt-2 text-xs text-muted">
+          A file stays on this device. Google Drive is the only door that leaves the browser.
+        </p>
 
         <input
           ref={fileInput}

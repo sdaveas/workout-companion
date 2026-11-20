@@ -1,3 +1,4 @@
+import { ChevronIcon } from '../ui/icons';
 import type { ProgramExercise } from '../../engine/types';
 
 export function ExerciseDetails({
@@ -17,9 +18,10 @@ export function ExerciseDetails({
   if (!hasDetails) return null;
 
   return (
-    <details open={open} className="mt-4 rounded-xl border border-line bg-surface px-4 py-3">
-      <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted">
+    <details open={open} className="group mt-4 rounded-xl border border-line bg-surface px-4 py-3">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xs uppercase tracking-widest text-muted [&::-webkit-details-marker]:hidden">
         How to do it
+        <ChevronIcon className="h-3 w-3 transition-transform group-open:rotate-180" />
       </summary>
       <div className="mt-3 space-y-3 text-sm">
         {exercise.instructions.length > 0 && (

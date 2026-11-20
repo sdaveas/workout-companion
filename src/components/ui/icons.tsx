@@ -1,5 +1,23 @@
 /** The header icons. One copy, so a share control looks the same on every screen. */
 
+/** One disclosure glyph for the whole app: the hand-typed ▾ and the UA marker differed. */
+export function ChevronIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 export function ShareIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg

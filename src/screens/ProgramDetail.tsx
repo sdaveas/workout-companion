@@ -17,7 +17,7 @@ import { stashProgram } from '../lib/briefSnapshot';
 import { shareProgram } from '../lib/shareProgram';
 import { suggestedName } from '../lib/identity';
 import type { Program } from '../engine/types';
-import { ShareIcon } from '../components/ui/icons';
+import { ChevronIcon, ShareIcon } from '../components/ui/icons';
 
 /**
  * One program, either being read or being changed. `#/program/<id>/edit` opens it in
@@ -329,9 +329,13 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
                   <button
                     type="button"
                     onClick={() => setHow(how === i ? null : i)}
-                    className="flex h-11 min-w-11 items-center text-xs text-accent"
+                    aria-expanded={how === i}
+                    className="flex h-11 min-w-11 items-center gap-1 text-xs text-accent"
                   >
-                    How {how === i ? '▴' : '▾'}
+                    How
+                    <ChevronIcon
+                      className={`h-3 w-3 transition-transform ${how === i ? 'rotate-180' : ''}`}
+                    />
                   </button>
                 )}
               </div>
