@@ -95,6 +95,56 @@ async function endSession(page) {
   await context.close();
 }
 
+// --- 2b. the clock announces nothing, the stage does (U12) ------------------
+{
+  const { context, page, errors } = await fresh();
+  await seed(page);
+  await startWorkout(page);
+  const live = page.getByTestId('stage-live');
+  const said = await live.innerText();
+  check('the live region says what set is up', /Set .+\. .+ reps\./.test(said), said);
+  check('the clock is not itself a live region', (await page.getByTestId('stage-big').getAttribute('role')) === null);
+  await page.waitForTimeout(2200);
+  check('a ticking clock does not re-announce', (await live.innerText()) === said);
+  await page.getByText('Complete set', { exact: true }).click();
+  await page.waitForTimeout(500);
+  check('a completed set does announce', (await live.innerText()) !== said, await live.innerText());
+  check('no errors while announcing', errors.length === 0, errors.slice(0, 2).join(' | '));
+  await context.close();
+}
+
+// --- 2c. at 200% text the stage still scrolls to its last row (U9) ----------
+{
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.documentElement.style.fontSize = '32px';
+    });
+  });
+  await seed(page);
+  await startWorkout(page);
+  const zoom = await page.evaluate(() => {
+    const stage = document.querySelector('[data-testid=stage]');
+    const box = stage.getBoundingClientRect();
+    stage.scrollTop = stage.scrollHeight;
+    const last = stage.lastElementChild?.getBoundingClientRect();
+    return {
+      overflow: stage.scrollHeight - stage.clientHeight,
+      reachable: !!last && last.bottom <= box.bottom + 1,
+      across: document.documentElement.scrollWidth - window.innerWidth,
+    };
+  });
+  check('200% text: the stage scrolls', zoom.overflow > 0, `${zoom.overflow}px`);
+  check('200% text: its last row is reachable', zoom.reachable);
+  check('200% text: nothing runs off the side', zoom.across === 0, `${zoom.across}px`);
+  await context.close();
+}
+
 // --- 3. reload mid-set keeps the work --------------------------------------
 {
   const { context, page, errors } = await fresh();

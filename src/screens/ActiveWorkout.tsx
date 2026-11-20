@@ -638,6 +638,35 @@ export function ActiveWorkout() {
   })();
 
   /**
+   * U12: the big number is a clock. `role="status"` sat on it, so a screen reader
+   * re-read the countdown every second — a wall of numbers over the one thing the
+   * user needs to hear. This region is silent unless the stage, the exercise or the
+   * set changes, and it is derived from state rather than `now`, so ticking cannot
+   * retrigger it.
+   */
+  const announcement = (() => {
+    const name = exercise?.name ?? '';
+    const thisSet = exercise
+      ? formatSet(side, state.currentSetIndex + 1, record?.sets.length ?? 0)
+      : '';
+    if (isReady) return `Ready. ${state.program.name}. Start when you are ready.`;
+    if (state.status === 'exercise_active' && exercise)
+      return `Set ${thisSet}. ${name}, ${repsText(exercise.reps)} reps.`;
+    if (state.status === 'resting')
+      return restLeft > 0
+        ? `Rest.${exercise ? ` Next: set ${thisSet}, ${name}.` : ''}`
+        : 'Rest complete.';
+    if (state.status === 'exercise_complete')
+      return nextExercise && state.restStartedAt != null
+        ? restLeft > 0
+          ? `Exercise complete. Rest, then ${nextExercise.name}.`
+          : `Exercise complete. Continue when ready for ${nextExercise.name}.`
+        : 'Exercise complete. Continue when ready.';
+    if (state.status === 'paused') return pausedInRest ? 'Paused. Break.' : 'Paused. Set.';
+    return '';
+  })();
+
+  /**
    * Auto timing: on the preview screen this is only the preference, since the clock
    * starts with the session; once started it flips the live stage clock.
    */
@@ -755,8 +784,13 @@ export function ActiveWorkout() {
 
       <section
         data-testid="stage"
-        className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-2 pt-3"
+        // U9: at 200% text the stage is taller than the phone. Scrolling it keeps every
+        // row reachable; `overflow-hidden` used to clip the bottom ones with no way down.
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-5 pb-2 pt-3"
       >
+        <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="stage-live">
+          {announcement}
+        </p>
         <div className="flex shrink-0 items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
           {(inSet || isReady) && exercise && exercise.sets > 1 && record && (
@@ -767,7 +801,7 @@ export function ActiveWorkout() {
         {/* The −15s/+15s pair hugs the clock it moves, so a short screen keeps its rows. */}
         <div className="mt-1 flex shrink-0 items-center gap-2">
           {bigSlot && (
-            <p data-testid="stage-big" className={`font-gym tabular-nums ${bigClass}`} role="status">
+            <p data-testid="stage-big" className={`font-gym tabular-nums ${bigClass}`}>
               {exercise && bigSlot === repsText(exercise.reps) ? <RepsTarget reps={exercise.reps} /> : bigSlot}
             </p>
           )}
