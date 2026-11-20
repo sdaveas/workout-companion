@@ -52,17 +52,20 @@ export function AddProgram() {
 
   return (
     <div className="mt-6 space-y-3">
+      {/* U14: four identical outlined doors made the recommended path invisible. The
+          interview is the one this app is built around, so it is the screen's single
+          accent fill and the other three stay outlined beneath it. */}
       <a
         href="#/paste"
-        className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3"
+        className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-accent px-4 py-3 text-ink"
       >
         <span>
           <span className="block font-medium">Talk to ChatGPT</span>
-          <span className="block text-xs text-muted">
+          <span className="block text-xs text-ink/70">
             It interviews you, then writes a program for each training day.
           </span>
         </span>
-        <span aria-hidden className="text-muted">
+        <span aria-hidden className="text-ink/70">
           →
         </span>
       </a>

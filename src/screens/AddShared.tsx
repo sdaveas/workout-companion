@@ -284,7 +284,7 @@ export function AddShared({ payload }: { payload: string }) {
             onClick={() => void add(single)}
             className={bridge ? ADD_SECONDARY : ADD_PRIMARY}
           >
-            Add to my routines
+            Add to my programs
           </button>
           <a href="#/" className="mt-2 flex h-11 items-center justify-center text-xs text-muted underline">
             Don’t add it

@@ -22,6 +22,16 @@ node scripts/qa-shots.mjs --out /tmp/wc-review
 opener restored on close (`scripts/a11y-sheets.mjs` asserts all ten behaviours), Summary
 pins `Done` to the bottom, and Home's `PROGRAMS ›` heading links to `#/programs`.
 
+**Landed 20 Nov 2026: U4, U7, U8, U9, U12, U15, U16.** The break drawing has a floor
+(20.2 % / 25.4 % at 360 / 375), the grid hides itself when there are no sessions, the
+calendar is one tab stop with arrow keys, the stage scrolls at 200 % text (normal type
+still scrolls 0 px), the countdown is no longer a live region — a `sr-only` region keyed
+to the stage, exercise and set speaks instead, `ended early` is `text-muted` everywhere,
+and the summary's stat row spans its grid. `flows.mjs` asserts the last three.
+
+**Landed 20 Nov 2026: U14.** The add-door's interview is the screen's single accent fill;
+the other three stay outlined under it, and "routines" is now "programs" everywhere.
+
 | # | Issue | Evidence | Where |
 | --- | --- | --- | --- |
 | U1 | **The how-to sheet is a div over a live set.** It has no `role`, no Esc and no focus trap; **measured**: with it open, Tab reached the covered `Skip set` and Enter moved the pips `Set 1/3` → `Set 2/3`. A covered control takes the keyboard's Enter. | `b-09-sheet` | `ActiveWorkout.tsx:224`, `:1156` |

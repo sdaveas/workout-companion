@@ -431,7 +431,7 @@ export function PasteProgram({ initial, from }: { initial?: string; from?: strin
             {updating
               ? `Update "${updating.name}"`
               : offers.length === 1
-                ? 'Add to my routines'
+                ? 'Add to my programs'
                 : `Add all ${offers.length}`}
           </button>
           {updating && (
