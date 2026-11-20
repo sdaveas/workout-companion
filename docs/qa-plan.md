@@ -19,7 +19,9 @@ smaller than a thumb".
 All of these need the dev server: `npx vite --port 5183`. `flows.mjs` accepts `BASE=`.
 `scripts/qa-shots.mjs` writes `/tmp/wc-review/*.png` plus `metrics.json`
 (header/footer/stage/drawing boxes, page and stage overflow, every interactive target
-under 44×44).
+under 44×44). Its `smallTargets` list is a raw dump — it includes the calendar cells and
+the 16 px ticks inside 44 px labels — so do not read it as a failure count:
+`style-rules.mjs` is what gates target size.
 
 **Retired 20 Nov 2026:** `phase3`, `phase4`, `phase5`, `phase6`, `scenarios` and `smoke`.
 They seeded through `#/settings` and `#backup-file`, both removed by the one-page
