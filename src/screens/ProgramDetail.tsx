@@ -163,7 +163,8 @@ function ProgramView({ program, startEditing }: { program: Program; startEditing
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        back={{ to: '#/', label: 'Home', compact: true }}
+        // The list is this screen's parent, whichever card you arrived from.
+        back={{ to: '#/programs', label: 'Programs', compact: true }}
         actions={
           // Both modes keep the seats: taking the buttons away would slide the title.
           <div className={editing ? 'invisible flex gap-2' : 'flex gap-2'}>

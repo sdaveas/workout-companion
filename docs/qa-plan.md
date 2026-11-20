@@ -11,15 +11,21 @@ smaller than a thumb".
 | Engine + component tests | `npm test` | state machine, timers, selectors, headers |
 | Types | `npm run typecheck` | nothing structural, but cheap |
 | Build + service worker | `npm run build` | broken imports, PWA manifest |
-| Phase 3 E2E | `node scripts/phase3.mjs` | a whole session through the UI, history, delete |
-| Phase 4 E2E | `node scripts/phase4.mjs` | reload mid-set, pause recovery, corrupt row |
-| Phase 5 E2E | `node scripts/phase5.mjs` | offline shell, a11y pass |
-| Phase 6 E2E | `node scripts/phase6.mjs` | auto mode, one-screen layout, every back target |
+| Journeys | `node scripts/flows.mjs` | seed through the sheet, a whole session, reload mid-set, Delete, every screen's back target, the calendar's one tab stop |
+| Sheet keyboard | `node scripts/a11y-sheets.mjs` | focus trap, Escape, focus returned to the trigger, a covered control never takes Enter |
+| Accent and type rules | `node scripts/style-rules.mjs` | one accent fill per screen, no accent borders, no off-scale sizes (Home, the pilot screen) |
 | Screenshot sweep | `node scripts/qa-shots.mjs` | layout at 5 viewports, target sizes, overflow |
 
-`HEADED=1` on any phase script runs it in real Chrome. `scripts/qa-shots.mjs` writes
-`/tmp/wc-review/*.png` plus `metrics.json` (header/footer/stage/drawing boxes, page and
-stage overflow, every interactive target under 44×44).
+All of these need the dev server: `npx vite --port 5183`. `flows.mjs` accepts `BASE=`.
+`scripts/qa-shots.mjs` writes `/tmp/wc-review/*.png` plus `metrics.json`
+(header/footer/stage/drawing boxes, page and stage overflow, every interactive target
+under 44×44).
+
+**Retired 20 Nov 2026:** `phase3`, `phase4`, `phase5`, `phase6`, `scenarios` and `smoke`.
+They seeded through `#/settings` and `#backup-file`, both removed by the one-page
+refactor (`8dfc57f`), so every one of them failed on its first line while this table
+still called them gates. `flows.mjs` covers the journeys that remain reachable; the
+offline-shell and corrupt-row cases went with them and are **not** covered automatically.
 
 ## 2. Layout matrix
 

@@ -55,8 +55,13 @@ export function Programs() {
   return (
     <main className="mx-auto max-w-md px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <ScreenHeader
-        // Everything starts at Home now; the list below is not a place in the flow.
-        back={{ to: '#/', label: 'Home', compact: true }}
+        // The list hangs off Home; the builder and the add-door hang off the list, so
+        // backing out of either keeps you in the program flow instead of jumping home.
+        back={
+          building || adding
+            ? { to: '#/programs', label: 'Programs', compact: true }
+            : { to: '#/', label: 'Home', compact: true }
+        }
         title={
           <h1 className="text-sm font-semibold uppercase tracking-widest">
             {building ? 'New program' : adding ? 'Add a program' : 'Programs'}
